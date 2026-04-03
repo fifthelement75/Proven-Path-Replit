@@ -3,20 +3,34 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Career Passport API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: companies
+    description: Company operations
+  - name: employees
+    description: Employee operations
+  - name: reviews
+    description: Performance review operations
+  - name: feedback
+    description: Continuous feedback log operations
+  - name: devplan
+    description: AI Development plan operations
+  - name: share
+    description: Share link operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +38,704 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/register:
+    post:
+      operationId: registerCompany
+      tags: [auth]
+      summary: Register a new company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterCompanyBody"
+      responses:
+        "201":
+          description: Company registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Companies
+  /companies/me:
+    get:
+      operationId: getMyCompany
+      tags: [companies]
+      summary: Get current company details
+      responses:
+        "200":
+          description: Company details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /companies/me/health:
+    get:
+      operationId: getCompanyHealth
+      tags: [companies]
+      summary: Get company health stats (wow endpoint)
+      responses:
+        "200":
+          description: Company health summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyHealth"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /companies/me/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [companies]
+      summary: Get recent activity feed (wow endpoint)
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Employees
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List all employees in the company
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: level
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Add a new employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeBody"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /employees/{id}:
+    get:
+      operationId: getEmployee
+      tags: [employees]
+      summary: Get an employee by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Employee details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update an employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeBody"
+      responses:
+        "200":
+          description: Employee updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteEmployee
+      tags: [employees]
+      summary: Delete an employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /employees/{id}/score-history:
+    get:
+      operationId: getEmployeeScoreHistory
+      tags: [employees]
+      summary: Get employee score history over time (wow endpoint)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Score history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScoreHistoryItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Performance Reviews
+  /employees/{employeeId}/reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      summary: List all reviews for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Create a performance review
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewBody"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /employees/{employeeId}/reviews/{reviewId}:
+    get:
+      operationId: getReview
+      tags: [reviews]
+      summary: Get a specific review
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Review details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateReview
+      tags: [reviews]
+      summary: Update a review
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReviewBody"
+      responses:
+        "200":
+          description: Review updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Feedback Log
+  /employees/{employeeId}/feedback:
+    get:
+      operationId: listFeedback
+      tags: [feedback]
+      summary: List feedback log entries for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feedback entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedbackEntry"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createFeedback
+      tags: [feedback]
+      summary: Create a feedback log entry
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFeedbackBody"
+      responses:
+        "201":
+          description: Feedback entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackEntry"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /employees/{employeeId}/feedback/{feedbackId}/respond:
+    post:
+      operationId: respondToFeedback
+      tags: [feedback]
+      summary: Employee responds to a feedback entry
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: feedbackId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackResponseBody"
+      responses:
+        "200":
+          description: Response saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackEntry"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Dev Plan
+  /employees/{employeeId}/dev-plan:
+    get:
+      operationId: getDevPlan
+      tags: [devplan]
+      summary: Get the development plan for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dev plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevPlan"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /employees/{employeeId}/dev-plan/generate:
+    post:
+      operationId: generateDevPlan
+      tags: [devplan]
+      summary: Generate/regenerate AI development plan
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dev plan generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevPlan"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /employees/{employeeId}/dev-plan/skills/{skillId}/complete:
+    patch:
+      operationId: markSkillComplete
+      tags: [devplan]
+      summary: Mark a dev plan skill as complete
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: skillId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkSkillCompleteBody"
+      responses:
+        "200":
+          description: Skill updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevPlanSkill"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Share Links
+  /employees/{employeeId}/share:
+    post:
+      operationId: createShareLink
+      tags: [share]
+      summary: Generate a shareable read-only link
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShareLinkBody"
+      responses:
+        "201":
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareLink"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      operationId: listShareLinks
+      tags: [share]
+      summary: List existing share links for an employee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Share links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShareLink"
+
+  /share/{token}:
+    get:
+      operationId: getPublicProfile
+      tags: [share]
+      summary: Get public profile via share token (no auth required)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfile"
+        "404":
+          description: Not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +746,654 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    RegisterCompanyBody:
+      type: object
+      properties:
+        companyName:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - companyName
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+      required:
+        - token
+        - user
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        companyId:
+          type: integer
+        companyName:
+          type: string
+        role:
+          type: string
+      required:
+        - id
+        - email
+        - companyId
+        - companyName
+        - role
+
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+        employeeCount:
+          type: integer
+      required:
+        - id
+        - name
+        - email
+        - createdAt
+        - employeeCount
+
+    CompanyHealth:
+      type: object
+      properties:
+        avgOverallScore:
+          type: ["number", "null"]
+        avgTechnicalScore:
+          type: ["number", "null"]
+        avgCommunicationScore:
+          type: ["number", "null"]
+        avgProblemSolvingScore:
+          type: ["number", "null"]
+        avgTeamworkScore:
+          type: ["number", "null"]
+        avgLeadershipScore:
+          type: ["number", "null"]
+        employeeCount:
+          type: integer
+        reviewCount:
+          type: integer
+        feedbackCount:
+          type: integer
+        departmentBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentStat"
+        levelBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/LevelStat"
+      required:
+        - avgOverallScore
+        - avgTechnicalScore
+        - avgCommunicationScore
+        - avgProblemSolvingScore
+        - avgTeamworkScore
+        - avgLeadershipScore
+        - employeeCount
+        - reviewCount
+        - feedbackCount
+        - departmentBreakdown
+        - levelBreakdown
+
+    DepartmentStat:
+      type: object
+      properties:
+        department:
+          type: string
+        count:
+          type: integer
+        avgScore:
+          type: ["number", "null"]
+      required:
+        - department
+        - count
+        - avgScore
+
+    LevelStat:
+      type: object
+      properties:
+        level:
+          type: string
+        count:
+          type: integer
+      required:
+        - level
+        - count
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        description:
+          type: string
+        employeeId:
+          type: ["integer", "null"]
+        employeeName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - description
+        - employeeId
+        - employeeName
+        - createdAt
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+        level:
+          type: string
+        startDate:
+          type: string
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        latestScore:
+          type: ["number", "null"]
+      required:
+        - id
+        - companyId
+        - name
+        - email
+        - role
+        - department
+        - level
+        - startDate
+        - createdAt
+        - managerId
+        - managerName
+        - latestScore
+
+    EmployeeDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+        level:
+          type: string
+        startDate:
+          type: string
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        latestScore:
+          type: ["number", "null"]
+        reviewCount:
+          type: integer
+        feedbackCount:
+          type: integer
+        hasDevPlan:
+          type: boolean
+      required:
+        - id
+        - companyId
+        - name
+        - email
+        - role
+        - department
+        - level
+        - startDate
+        - createdAt
+        - managerId
+        - managerName
+        - latestScore
+        - reviewCount
+        - feedbackCount
+        - hasDevPlan
+
+    CreateEmployeeBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+        level:
+          type: string
+        startDate:
+          type: string
+        managerId:
+          type: ["integer", "null"]
+      required:
+        - name
+        - email
+        - role
+        - department
+        - level
+        - startDate
+
+    UpdateEmployeeBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+        level:
+          type: string
+        startDate:
+          type: string
+        managerId:
+          type: ["integer", "null"]
+
+    ScoreHistoryItem:
+      type: object
+      properties:
+        reviewId:
+          type: integer
+        reviewType:
+          type: string
+        period:
+          type: string
+        overallScore:
+          type: ["number", "null"]
+        technicalScore:
+          type: ["integer", "null"]
+        communicationScore:
+          type: ["integer", "null"]
+        problemSolvingScore:
+          type: ["integer", "null"]
+        teamworkScore:
+          type: ["integer", "null"]
+        leadershipScore:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - reviewId
+        - reviewType
+        - period
+        - overallScore
+        - technicalScore
+        - communicationScore
+        - problemSolvingScore
+        - teamworkScore
+        - leadershipScore
+        - createdAt
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        reviewType:
+          type: string
+        reviewerId:
+          type: ["integer", "null"]
+        reviewerName:
+          type: ["string", "null"]
+        period:
+          type: string
+        status:
+          type: string
+        technicalScore:
+          type: ["integer", "null"]
+        communicationScore:
+          type: ["integer", "null"]
+        problemSolvingScore:
+          type: ["integer", "null"]
+        teamworkScore:
+          type: ["integer", "null"]
+        leadershipScore:
+          type: ["integer", "null"]
+        overallScore:
+          type: ["number", "null"]
+        strengths:
+          type: ["string", "null"]
+        areasToImprove:
+          type: ["string", "null"]
+        goals:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - employeeId
+        - reviewType
+        - reviewerId
+        - reviewerName
+        - period
+        - status
+        - technicalScore
+        - communicationScore
+        - problemSolvingScore
+        - teamworkScore
+        - leadershipScore
+        - overallScore
+        - strengths
+        - areasToImprove
+        - goals
+        - createdAt
+        - updatedAt
+
+    CreateReviewBody:
+      type: object
+      properties:
+        reviewType:
+          type: string
+          enum: [self, peer, manager]
+        reviewerId:
+          type: ["integer", "null"]
+        period:
+          type: string
+        technicalScore:
+          type: ["integer", "null"]
+        communicationScore:
+          type: ["integer", "null"]
+        problemSolvingScore:
+          type: ["integer", "null"]
+        teamworkScore:
+          type: ["integer", "null"]
+        leadershipScore:
+          type: ["integer", "null"]
+        strengths:
+          type: ["string", "null"]
+        areasToImprove:
+          type: ["string", "null"]
+        goals:
+          type: ["string", "null"]
+      required:
+        - reviewType
+        - period
+
+    UpdateReviewBody:
+      type: object
+      properties:
+        period:
+          type: string
+        status:
+          type: string
+        technicalScore:
+          type: ["integer", "null"]
+        communicationScore:
+          type: ["integer", "null"]
+        problemSolvingScore:
+          type: ["integer", "null"]
+        teamworkScore:
+          type: ["integer", "null"]
+        leadershipScore:
+          type: ["integer", "null"]
+        strengths:
+          type: ["string", "null"]
+        areasToImprove:
+          type: ["string", "null"]
+        goals:
+          type: ["string", "null"]
+
+    FeedbackEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+        meetingType:
+          type: string
+        meetingDate:
+          type: string
+        whatWentWell:
+          type: ["string", "null"]
+        areasToImprove:
+          type: ["string", "null"]
+        actionItems:
+          type: ["string", "null"]
+        nextSteps:
+          type: ["string", "null"]
+        employeeResponse:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - employeeId
+        - managerId
+        - managerName
+        - meetingType
+        - meetingDate
+        - whatWentWell
+        - areasToImprove
+        - actionItems
+        - nextSteps
+        - employeeResponse
+        - createdAt
+
+    CreateFeedbackBody:
+      type: object
+      properties:
+        meetingType:
+          type: string
+          enum: [one_on_one, performance_check_in, project_debrief, career_conversation, other]
+        meetingDate:
+          type: string
+        whatWentWell:
+          type: ["string", "null"]
+        areasToImprove:
+          type: ["string", "null"]
+        actionItems:
+          type: ["string", "null"]
+        nextSteps:
+          type: ["string", "null"]
+      required:
+        - meetingType
+        - meetingDate
+
+    FeedbackResponseBody:
+      type: object
+      properties:
+        employeeResponse:
+          type: string
+      required:
+        - employeeResponse
+
+    DevPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        generatedAt:
+          type: string
+        summary:
+          type: string
+        skills:
+          type: array
+          items:
+            $ref: "#/components/schemas/DevPlanSkill"
+      required:
+        - id
+        - employeeId
+        - generatedAt
+        - summary
+        - skills
+
+    DevPlanSkill:
+      type: object
+      properties:
+        id:
+          type: integer
+        devPlanId:
+          type: integer
+        skillName:
+          type: string
+        priority:
+          type: integer
+        description:
+          type: string
+        resources:
+          type: ["string", "null"]
+        timeline:
+          type: ["string", "null"]
+        nextSteps:
+          type: ["string", "null"]
+        completed:
+          type: boolean
+        completedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - devPlanId
+        - skillName
+        - priority
+        - description
+        - resources
+        - timeline
+        - nextSteps
+        - completed
+        - completedAt
+
+    MarkSkillCompleteBody:
+      type: object
+      properties:
+        completed:
+          type: boolean
+      required:
+        - completed
+
+    ShareLink:
+      type: object
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        token:
+          type: string
+        expiresAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        url:
+          type: string
+      required:
+        - id
+        - employeeId
+        - token
+        - expiresAt
+        - createdAt
+        - url
+
+    CreateShareLinkBody:
+      type: object
+      properties:
+        expiresIn:
+          type: string
+          enum: ["7days", "30days", "never"]
+      required:
+        - expiresIn
+
+    PublicProfile:
+      type: object
+      properties:
+        employee:
+          $ref: "#/components/schemas/Employee"
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        devPlan:
+          $ref: "#/components/schemas/DevPlan"
+        sharedAt:
+          type: string
+        expiresAt:
+          type: ["string", "null"]
+      required:
+        - employee
+        - reviews
+        - devPlan
+        - sharedAt
+        - expiresAt
