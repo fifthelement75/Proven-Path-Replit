@@ -1,7 +1,10 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "career-passport-secret-key-2024";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable must be set");
+}
 
 export interface AuthPayload {
   companyId: number;
