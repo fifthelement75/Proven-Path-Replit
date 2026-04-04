@@ -1,10 +1,11 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
+const _rawSecret = process.env.JWT_SECRET;
+if (!_rawSecret) {
   throw new Error("JWT_SECRET environment variable must be set");
 }
+const JWT_SECRET: string = _rawSecret;
 
 export interface AuthPayload {
   companyId: number;
@@ -29,7 +30,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
+    const payload = jwt.verify(token, JWT_SECRET) as unknown as AuthPayload;
     req.auth = payload;
     next();
   } catch {

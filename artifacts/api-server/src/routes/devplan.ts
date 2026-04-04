@@ -178,7 +178,15 @@ router.patch("/employees/:employeeId/dev-plan/skills/:skillId/complete", require
     res.status(404).json({ error: "Employee not found" });
     return;
   }
-  const [skill] = await db.select().from(devPlanSkillsTable).where(eq(devPlanSkillsTable.id, params.data.skillId)).limit(1);
+  // Verify the skill belongs to a dev plan that belongs to this employee (prevents IDOR)
+  const [plan] = await db.select({ id: devPlansTable.id }).from(devPlansTable)
+    .where(eq(devPlansTable.employeeId, params.data.employeeId)).limit(1);
+  if (!plan) {
+    res.status(404).json({ error: "No development plan found for this employee" });
+    return;
+  }
+  const [skill] = await db.select().from(devPlanSkillsTable)
+    .where(and(eq(devPlanSkillsTable.id, params.data.skillId), eq(devPlanSkillsTable.devPlanId, plan.id))).limit(1);
   if (!skill) {
     res.status(404).json({ error: "Skill not found" });
     return;

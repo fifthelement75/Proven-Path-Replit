@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { companiesTable } from "./companies";
@@ -12,7 +12,7 @@ export const employeesTable = pgTable("employees", {
   department: text("department").notNull(),
   level: text("level").notNull(),
   startDate: text("start_date").notNull(),
-  managerId: integer("manager_id").references((): any => employeesTable.id, { onDelete: "set null" }),
+  managerId: integer("manager_id").references((): AnyPgColumn => employeesTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
