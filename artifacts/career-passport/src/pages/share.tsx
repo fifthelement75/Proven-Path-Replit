@@ -7,6 +7,57 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getApiUrl } from "@/lib/api";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 
+interface PublicReview {
+  id: number;
+  reviewType: string;
+  period: string;
+  technicalScore: number | null;
+  communicationScore: number | null;
+  problemSolvingScore: number | null;
+  teamworkScore: number | null;
+  leadershipScore: number | null;
+  overallScore: number | null;
+  strengths: string | null;
+  areasToImprove: string | null;
+  goals: string | null;
+}
+
+interface PublicDevPlanSkill {
+  id: number;
+  skillName: string;
+  description: string | null;
+  priority: number;
+  timeline: string | null;
+  resources: string | null;
+  nextSteps: string | null;
+  completed: boolean;
+}
+
+interface PublicDevPlan {
+  id: number;
+  summary: string | null;
+  generatedAt: string;
+  skills: PublicDevPlanSkill[];
+}
+
+interface PublicEmployee {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  level: string;
+  startDate: string;
+}
+
+interface PublicProfile {
+  employee: PublicEmployee;
+  reviews: PublicReview[];
+  devPlan: PublicDevPlan | null;
+  sharedAt: string;
+  expiresAt: string | null;
+}
+
 function ScoreBar({ label, value }: { label: string; value: number | null }) {
   if (value == null) return null;
   const pct = (value / 5) * 100;
@@ -28,7 +79,7 @@ export default function SharePage() {
   const params = useParams<{ token: string }>();
   const token = params.token!;
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery<PublicProfile>({
     queryKey: ["share", token],
     queryFn: async () => {
       const res = await fetch(getApiUrl(`/share/${token}`));
@@ -56,11 +107,11 @@ export default function SharePage() {
   const { employee, reviews, devPlan } = data;
 
   const avgScores = reviews.length ? {
-    technicalScore: reviews.filter((r: any) => r.technicalScore).reduce((s: number, r: any) => s + r.technicalScore, 0) / reviews.filter((r: any) => r.technicalScore).length || null,
-    communicationScore: reviews.filter((r: any) => r.communicationScore).reduce((s: number, r: any) => s + r.communicationScore, 0) / reviews.filter((r: any) => r.communicationScore).length || null,
-    problemSolvingScore: reviews.filter((r: any) => r.problemSolvingScore).reduce((s: number, r: any) => s + r.problemSolvingScore, 0) / reviews.filter((r: any) => r.problemSolvingScore).length || null,
-    teamworkScore: reviews.filter((r: any) => r.teamworkScore).reduce((s: number, r: any) => s + r.teamworkScore, 0) / reviews.filter((r: any) => r.teamworkScore).length || null,
-    leadershipScore: reviews.filter((r: any) => r.leadershipScore).reduce((s: number, r: any) => s + r.leadershipScore, 0) / reviews.filter((r: any) => r.leadershipScore).length || null,
+    technicalScore: reviews.filter(r => r.technicalScore).reduce((s, r) => s + (r.technicalScore ?? 0), 0) / reviews.filter(r => r.technicalScore).length || null,
+    communicationScore: reviews.filter(r => r.communicationScore).reduce((s, r) => s + (r.communicationScore ?? 0), 0) / reviews.filter(r => r.communicationScore).length || null,
+    problemSolvingScore: reviews.filter(r => r.problemSolvingScore).reduce((s, r) => s + (r.problemSolvingScore ?? 0), 0) / reviews.filter(r => r.problemSolvingScore).length || null,
+    teamworkScore: reviews.filter(r => r.teamworkScore).reduce((s, r) => s + (r.teamworkScore ?? 0), 0) / reviews.filter(r => r.teamworkScore).length || null,
+    leadershipScore: reviews.filter(r => r.leadershipScore).reduce((s, r) => s + (r.leadershipScore ?? 0), 0) / reviews.filter(r => r.leadershipScore).length || null,
   } : null;
 
   const radarData = avgScores ? [
@@ -140,7 +191,7 @@ export default function SharePage() {
               </CardContent>
             </Card>
             <div className="space-y-3">
-              {devPlan.skills?.map((skill: any) => (
+              {devPlan.skills?.map((skill) => (
                 <Card key={skill.id} className={skill.completed ? "opacity-60" : ""}>
                   <CardContent className="pt-4 pb-4">
                     <div className="flex items-start gap-3">
