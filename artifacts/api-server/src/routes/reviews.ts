@@ -81,6 +81,14 @@ router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Pro
     res.status(404).json({ error: "Employee not found" });
     return;
   }
+  if (body.data.reviewerId != null) {
+    const reviewerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
+      .where(and(eq(employeesTable.id, body.data.reviewerId), eq(employeesTable.companyId, companyId))).limit(1);
+    if (reviewerCheck.length === 0) {
+      res.status(400).json({ error: "Reviewer not found in your company" });
+      return;
+    }
+  }
   const { technicalScore, communicationScore, problemSolvingScore, teamworkScore, leadershipScore } = body.data;
   const overallScore = computeOverall([technicalScore ?? null, communicationScore ?? null, problemSolvingScore ?? null, teamworkScore ?? null, leadershipScore ?? null]);
   const [review] = await db.insert(reviewsTable).values({
