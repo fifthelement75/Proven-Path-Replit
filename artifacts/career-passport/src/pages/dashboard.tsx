@@ -9,6 +9,34 @@ import { getToken } from "@/lib/auth";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { Link } from "wouter";
 
+interface DepartmentStat {
+  department: string;
+  avgScore: number;
+  employeeCount: number;
+}
+
+interface CompanyHealth {
+  employeeCount: number;
+  reviewCount: number;
+  feedbackCount: number;
+  avgOverallScore: number | null;
+  avgTechnicalScore: number | null;
+  avgCommunicationScore: number | null;
+  avgProblemSolvingScore: number | null;
+  avgTeamworkScore: number | null;
+  avgLeadershipScore: number | null;
+  departmentBreakdown: DepartmentStat[];
+}
+
+interface ActivityItem {
+  id: number;
+  employeeName: string;
+  description: string;
+  type: string;
+  entityId: number;
+  createdAt: string;
+}
+
 function authHeaders(): Record<string, string> {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -44,7 +72,7 @@ export default function DashboardPage() {
     },
   });
 
-  const { data: health, isLoading: loadingHealth } = useQuery({
+  const { data: health, isLoading: loadingHealth } = useQuery<CompanyHealth>({
     queryKey: ["health"],
     queryFn: async () => {
       const res = await fetch(getApiUrl("/companies/me/health"), { headers: authHeaders() });
@@ -53,7 +81,7 @@ export default function DashboardPage() {
     },
   });
 
-  const { data: activity, isLoading: loadingActivity } = useQuery({
+  const { data: activity, isLoading: loadingActivity } = useQuery<ActivityItem[]>({
     queryKey: ["activity"],
     queryFn: async () => {
       const res = await fetch(getApiUrl("/companies/me/activity"), { headers: authHeaders() });
@@ -145,7 +173,7 @@ export default function DashboardPage() {
                     <YAxis domain={[0, 5]} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(v: number) => v.toFixed(1)} />
                     <Bar dataKey="avgScore" name="Avg Score" radius={[3, 3, 0, 0]}>
-                      {health.departmentBreakdown.map((_: any, i: number) => (
+                      {health.departmentBreakdown.map((_, i) => (
                         <Cell key={i} fill={`hsl(${210 + i * 40} 83% ${50 + i * 5}%)`} />
                       ))}
                     </Bar>
@@ -193,7 +221,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="divide-y">
-                {(activity as any[]).map((item: any) => (
+                {activity.map((item) => (
                   <div key={item.id} className="py-2.5 flex items-center justify-between gap-2">
                     <div>
                       <span className="font-medium text-sm">{item.employeeName}</span>

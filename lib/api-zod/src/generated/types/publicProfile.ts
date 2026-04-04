@@ -12,7 +12,7 @@ import type { Review } from "./review";
 export interface PublicProfile {
   employee: Employee;
   reviews: Review[];
-  devPlan: DevPlan;
+  devPlan: DevPlan | null;
   sharedAt: string;
   /** @nullable */
   expiresAt: string | null;

@@ -1386,7 +1386,9 @@ components:
           items:
             $ref: "#/components/schemas/Review"
         devPlan:
-          $ref: "#/components/schemas/DevPlan"
+          oneOf:
+            - $ref: "#/components/schemas/DevPlan"
+            - type: "null"
         sharedAt:
           type: string
         expiresAt:

@@ -19,6 +19,79 @@ import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
+interface ReviewItem {
+  id: number;
+  employeeId: number;
+  reviewType: string;
+  period: string;
+  technicalScore: number | null;
+  communicationScore: number | null;
+  problemSolvingScore: number | null;
+  teamworkScore: number | null;
+  leadershipScore: number | null;
+  overallScore: number | null;
+  strengths: string | null;
+  areasToImprove: string | null;
+  goals: string | null;
+  createdAt: string;
+}
+
+interface FeedbackEntry {
+  id: number;
+  employeeId: number;
+  meetingType: string;
+  meetingDate: string;
+  whatWentWell: string | null;
+  areasToImprove: string | null;
+  actionItems: string | null;
+  nextSteps: string | null;
+  employeeResponse: string | null;
+  createdAt: string;
+}
+
+interface DevPlanSkill {
+  id: number;
+  devPlanId: number;
+  skillName: string;
+  description: string | null;
+  priority: number;
+  timeline: string | null;
+  resources: string | null;
+  nextSteps: string | null;
+  completed: boolean;
+}
+
+interface ScoreHistoryItem {
+  id: number;
+  period: string;
+  reviewType: string;
+  overallScore: number | null;
+}
+
+type ExpiresIn = "7days" | "30days" | "never";
+
+interface ReviewFormData {
+  reviewType: string;
+  period: string;
+  technicalScore: number;
+  communicationScore: number;
+  problemSolvingScore: number;
+  teamworkScore: number;
+  leadershipScore: number;
+  strengths: string;
+  areasToImprove: string;
+  goals: string;
+}
+
+interface FeedbackFormData {
+  meetingType: string;
+  meetingDate: string;
+  whatWentWell: string;
+  areasToImprove: string;
+  actionItems: string;
+  nextSteps: string;
+}
+
 function authHeaders(): Record<string, string> {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -61,7 +134,7 @@ function AddReviewDialog({ open, onClose, employeeId }: { open: boolean; onClose
   const [error, setError] = useState("");
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: ReviewFormData) => {
       const res = await fetch(getApiUrl(`/employees/${employeeId}/reviews`), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
@@ -166,7 +239,7 @@ function AddFeedbackDialog({ open, onClose, employeeId }: { open: boolean; onClo
   const [error, setError] = useState("");
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: FeedbackFormData) => {
       const res = await fetch(getApiUrl(`/employees/${employeeId}/feedback`), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
@@ -234,7 +307,7 @@ function AddFeedbackDialog({ open, onClose, employeeId }: { open: boolean; onClo
 }
 
 function ShareDialog({ open, onClose, employeeId }: { open: boolean; onClose: () => void; employeeId: number }) {
-  const [expiresIn, setExpiresIn] = useState<"7days" | "30days" | "never">("7days");
+  const [expiresIn, setExpiresIn] = useState<ExpiresIn>("7days");
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -274,7 +347,7 @@ function ShareDialog({ open, onClose, employeeId }: { open: boolean; onClose: ()
           {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
           <div className="space-y-1.5">
             <Label>Link expires in</Label>
-            <Select value={expiresIn} onValueChange={v => setExpiresIn(v as any)}>
+            <Select value={expiresIn} onValueChange={v => setExpiresIn(v as ExpiresIn)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="7days">7 days</SelectItem>
@@ -342,8 +415,8 @@ function DevPlanTab({ employeeId }: { employeeId: number }) {
       });
       if (!res.ok) throw new Error((await res.json()).error || "Generation failed");
       queryClient.invalidateQueries({ queryKey: ["devplan", employeeId] });
-    } catch (err: any) {
-      setGenError(err.message);
+    } catch (err: unknown) {
+      setGenError(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setGenerating(false);
     }
@@ -390,7 +463,7 @@ function DevPlanTab({ employeeId }: { employeeId: number }) {
             </CardContent>
           </Card>
           <div className="space-y-3">
-            {plan.skills?.map((skill: any) => (
+            {plan.skills?.map((skill: DevPlanSkill) => (
               <Card key={skill.id} className={skill.completed ? "opacity-60" : ""}>
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-start gap-3">
@@ -429,6 +502,85 @@ function DevPlanTab({ employeeId }: { employeeId: number }) {
   );
 }
 
+function FeedbackCard({ entry, employeeId, onResponded }: { entry: FeedbackEntry; employeeId: number; onResponded: () => void }) {
+  const [responding, setResponding] = useState(false);
+  const [responseText, setResponseText] = useState(entry.employeeResponse || "");
+  const [error, setError] = useState("");
+
+  const { mutate: submitResponse, isPending } = useMutation({
+    mutationFn: async (employeeResponse: string) => {
+      const res = await fetch(getApiUrl(`/employees/${employeeId}/feedback/${entry.id}/respond`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ employeeResponse }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed to save response");
+      return res.json();
+    },
+    onSuccess: () => {
+      setResponding(false);
+      setError("");
+      onResponded();
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  return (
+    <Card>
+      <CardContent className="pt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Badge variant="outline">{MEETING_TYPES.find(m => m.value === entry.meetingType)?.label || entry.meetingType}</Badge>
+          <span className="text-sm text-muted-foreground">{entry.meetingDate}</span>
+        </div>
+        {entry.whatWentWell && <p className="text-sm mb-1"><span className="font-medium">What went well: </span><span className="text-muted-foreground">{entry.whatWentWell}</span></p>}
+        {entry.areasToImprove && <p className="text-sm mb-1"><span className="font-medium">Areas to improve: </span><span className="text-muted-foreground">{entry.areasToImprove}</span></p>}
+        {entry.actionItems && <p className="text-sm mb-1"><span className="font-medium">Action items: </span><span className="text-muted-foreground">{entry.actionItems}</span></p>}
+        {entry.nextSteps && <p className="text-sm mb-1"><span className="font-medium">Next steps: </span><span className="text-muted-foreground">{entry.nextSteps}</span></p>}
+
+        {entry.employeeResponse && !responding && (
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Employee response</p>
+            <p className="text-sm text-muted-foreground">{entry.employeeResponse}</p>
+            <Button variant="ghost" size="sm" className="mt-1 h-7 px-2 text-xs" onClick={() => { setResponseText(entry.employeeResponse || ""); setResponding(true); }}>
+              Edit response
+            </Button>
+          </div>
+        )}
+
+        {!entry.employeeResponse && !responding && (
+          <div className="mt-3 pt-3 border-t">
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setResponding(true)}>
+              Add employee response
+            </Button>
+          </div>
+        )}
+
+        {responding && (
+          <div className="mt-3 pt-3 border-t space-y-2">
+            <Label className="text-xs font-medium">Employee response</Label>
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            <Textarea
+              value={responseText}
+              onChange={e => setResponseText(e.target.value)}
+              rows={3}
+              placeholder="Employee's perspective on this session..."
+              className="text-sm"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" className="h-7 text-xs" disabled={isPending} onClick={() => submitResponse(responseText)}>
+                {isPending ? "Saving..." : "Save response"}
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setResponding(false); setError(""); }}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function EmployeeDetailPage() {
   const params = useParams<{ id: string }>();
   const employeeId = parseInt(params.id!);
@@ -448,7 +600,7 @@ export default function EmployeeDetailPage() {
     },
   });
 
-  const { data: reviews = [], isLoading: loadingReviews } = useQuery<any[]>({
+  const { data: reviews = [], isLoading: loadingReviews } = useQuery<ReviewItem[]>({
     queryKey: ["reviews", employeeId],
     queryFn: async () => {
       const res = await fetch(getApiUrl(`/employees/${employeeId}/reviews`), { headers: authHeaders() });
@@ -457,7 +609,7 @@ export default function EmployeeDetailPage() {
     },
   });
 
-  const { data: feedback = [], isLoading: loadingFeedback } = useQuery<any[]>({
+  const { data: feedback = [], isLoading: loadingFeedback } = useQuery<FeedbackEntry[]>({
     queryKey: ["feedback", employeeId],
     queryFn: async () => {
       const res = await fetch(getApiUrl(`/employees/${employeeId}/feedback`), { headers: authHeaders() });
@@ -466,7 +618,7 @@ export default function EmployeeDetailPage() {
     },
   });
 
-  const { data: scoreHistory = [] } = useQuery<any[]>({
+  const { data: scoreHistory = [] } = useQuery<ScoreHistoryItem[]>({
     queryKey: ["scoreHistory", employeeId],
     queryFn: async () => {
       const res = await fetch(getApiUrl(`/employees/${employeeId}/score-history`), { headers: authHeaders() });
@@ -490,11 +642,11 @@ export default function EmployeeDetailPage() {
   });
 
   const avgReviewScores = reviews.length ? {
-    technicalScore: reviews.reduce((s: number, r: any) => s + (r.technicalScore || 0), 0) / reviews.filter((r: any) => r.technicalScore).length || null,
-    communicationScore: reviews.reduce((s: number, r: any) => s + (r.communicationScore || 0), 0) / reviews.filter((r: any) => r.communicationScore).length || null,
-    problemSolvingScore: reviews.reduce((s: number, r: any) => s + (r.problemSolvingScore || 0), 0) / reviews.filter((r: any) => r.problemSolvingScore).length || null,
-    teamworkScore: reviews.reduce((s: number, r: any) => s + (r.teamworkScore || 0), 0) / reviews.filter((r: any) => r.teamworkScore).length || null,
-    leadershipScore: reviews.reduce((s: number, r: any) => s + (r.leadershipScore || 0), 0) / reviews.filter((r: any) => r.leadershipScore).length || null,
+    technicalScore: reviews.reduce((s, r) => s + (r.technicalScore || 0), 0) / reviews.filter(r => r.technicalScore).length || null,
+    communicationScore: reviews.reduce((s, r) => s + (r.communicationScore || 0), 0) / reviews.filter(r => r.communicationScore).length || null,
+    problemSolvingScore: reviews.reduce((s, r) => s + (r.problemSolvingScore || 0), 0) / reviews.filter(r => r.problemSolvingScore).length || null,
+    teamworkScore: reviews.reduce((s, r) => s + (r.teamworkScore || 0), 0) / reviews.filter(r => r.teamworkScore).length || null,
+    leadershipScore: reviews.reduce((s, r) => s + (r.leadershipScore || 0), 0) / reviews.filter(r => r.leadershipScore).length || null,
   } : null;
 
   const radarData = avgReviewScores ? [
@@ -505,9 +657,9 @@ export default function EmployeeDetailPage() {
     { subject: "Leadership", A: avgReviewScores.leadershipScore || 0 },
   ] : [];
 
-  const chartData = scoreHistory.filter((r: any) => r.overallScore != null).map((r: any) => ({
+  const chartData = scoreHistory.filter(r => r.overallScore != null).map(r => ({
     period: r.period,
-    score: parseFloat(r.overallScore?.toFixed(2)),
+    score: parseFloat((r.overallScore as number).toFixed(2)),
     type: r.reviewType,
   }));
 
@@ -624,7 +776,7 @@ export default function EmployeeDetailPage() {
           <TabsContent value="reviews" className="mt-4 space-y-3">
             {loadingReviews ? <Skeleton className="h-32 w-full" /> : reviews.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">No reviews yet.</CardContent></Card>
-            ) : reviews.map((review: any) => (
+            ) : reviews.map((review) => (
               <Card key={review.id}>
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between mb-3">
@@ -663,19 +815,13 @@ export default function EmployeeDetailPage() {
           <TabsContent value="feedback" className="mt-4 space-y-3">
             {loadingFeedback ? <Skeleton className="h-32 w-full" /> : feedback.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">No feedback sessions logged yet.</CardContent></Card>
-            ) : feedback.map((entry: any) => (
-              <Card key={entry.id}>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="outline">{MEETING_TYPES.find(m => m.value === entry.meetingType)?.label || entry.meetingType}</Badge>
-                    <span className="text-sm text-muted-foreground">{entry.meetingDate}</span>
-                  </div>
-                  {entry.whatWentWell && <p className="text-sm mb-1"><span className="font-medium">What went well: </span><span className="text-muted-foreground">{entry.whatWentWell}</span></p>}
-                  {entry.areasToImprove && <p className="text-sm mb-1"><span className="font-medium">Areas to improve: </span><span className="text-muted-foreground">{entry.areasToImprove}</span></p>}
-                  {entry.actionItems && <p className="text-sm mb-1"><span className="font-medium">Action items: </span><span className="text-muted-foreground">{entry.actionItems}</span></p>}
-                  {entry.nextSteps && <p className="text-sm"><span className="font-medium">Next steps: </span><span className="text-muted-foreground">{entry.nextSteps}</span></p>}
-                </CardContent>
-              </Card>
+            ) : feedback.map((entry) => (
+              <FeedbackCard
+                key={entry.id}
+                entry={entry}
+                employeeId={employeeId}
+                onResponded={() => queryClient.invalidateQueries({ queryKey: ["feedback", employeeId] })}
+              />
             ))}
           </TabsContent>
 

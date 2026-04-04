@@ -55,8 +55,18 @@ function AddEmployeeDialog({
   });
   const [error, setError] = useState("");
 
+  interface CreateEmployeeInput {
+    name: string;
+    email: string;
+    role: string;
+    department: string;
+    level: string;
+    startDate: string;
+    managerId: number | null;
+  }
+
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: CreateEmployeeInput) => {
       const res = await fetch(getApiUrl("/employees"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },

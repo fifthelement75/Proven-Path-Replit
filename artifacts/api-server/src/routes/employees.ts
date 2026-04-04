@@ -93,6 +93,14 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { managerId, ...rest } = parsed.data;
+  if (managerId != null) {
+    const managerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
+      .where(and(eq(employeesTable.id, managerId), eq(employeesTable.companyId, companyId))).limit(1);
+    if (managerCheck.length === 0) {
+      res.status(400).json({ error: "Manager not found in your company" });
+      return;
+    }
+  }
   const [emp] = await db.insert(employeesTable).values({ ...rest, companyId, managerId: managerId ?? null }).returning();
   res.status(201).json({
     ...emp,
@@ -167,6 +175,14 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
   if (existing.length === 0) {
     res.status(404).json({ error: "Employee not found" });
     return;
+  }
+  if (body.data.managerId != null) {
+    const managerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
+      .where(and(eq(employeesTable.id, body.data.managerId), eq(employeesTable.companyId, companyId))).limit(1);
+    if (managerCheck.length === 0) {
+      res.status(400).json({ error: "Manager not found in your company" });
+      return;
+    }
   }
   const [updated] = await db.update(employeesTable).set(body.data).where(eq(employeesTable.id, params.data.id)).returning();
   res.json({ ...updated, managerName: null, createdAt: updated.createdAt.toISOString(), latestScore: null });

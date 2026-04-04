@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { db, shareLinksTable, employeesTable, reviewsTable, feedbackTable, devPlansTable, devPlanSkillsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
@@ -7,7 +7,7 @@ import crypto from "crypto";
 
 const router = Router();
 
-function getBaseUrl(req: any): string {
+function getBaseUrl(req: Request): string {
   const domains = process.env.REPLIT_DOMAINS;
   if (domains) {
     return `https://${domains.split(",")[0]}`;
