@@ -1,0 +1,109 @@
+# Career Passport - Fix These Missing Features
+
+Add these specific features to the existing Career Passport app:
+
+---
+
+## 1. User Profile Access (Critical!)
+
+Currently logged-in users can't access their own profile. Fix this:
+
+**After login:**
+- Redirect to `/dashboard` which shows company overview
+- Add a "My Profile" button in navbar (or dropdown with user name)
+- Clicking "My Profile" goes to `/profile/me` or `/employees/me`
+- This page shows:
+  - Current user's profile (name, role, department, level)
+  - Their own reviews (self-assessment tab)
+  - Their development plan
+  - Their feedback history
+  - "Share My Profile" button
+- User can edit their own profile info (except role/level)
+- User can view but not edit company-assigned fields
+
+---
+
+## 2. Role-Based Permissions (Critical!)
+
+Add proper access control with middleware:
+
+**Data Model:**
+```
+Users table add: role (admin | manager | employee)
+Employees table: managerId (links to another employee)
+```
+
+**Permissions:**
+| Role | Access |
+|------|--------|
+| **Admin** | Full company access, can add/remove employees, view all |
+| **Manager** | Only can see employees where employee.managerId = their user id, can add reviews for direct reports |
+| **Employee** | Only can see own profile, own reviews, own dev plan |
+
+**Implement:**
+- Add auth middleware that checks user.role
+- Protect routes: /api/employees (only admin sees all)
+- Managers get /api/employees?managerId={id} for their team
+- Employees get /api/employees/me
+
+---
+
+## 3. Performance Timeline
+
+Add a "Timeline" tab on Employee Profile page:
+
+- Vertical timeline showing all reviews chronologically
+- Each entry shows: Date, Review Type, Overall Score
+- Click to expand and see full review details
+- Show level changes if any
+- Development plan milestones as markers
+
+---
+
+## 4. Enhanced Development Plan Display
+
+In the Development Plan tab:
+
+- Show "Skills to Develop" as cards with priority badges (High/Medium/Low)
+- Show "Recommended Resources" with links (can be placeholder URLs)
+- Show "Timeline" - 6 month / 1 year view
+- Show "Next Steps" as checklist
+- Add "Mark Complete" checkbox per skill
+
+---
+
+## 5. Manager Recommendation Field
+
+In Manager Review form, add:
+- Dropdown: "Promotable" | "Meets Expectations" | "Needs Improvement"
+- This displays on employee timeline/profile
+
+---
+
+## 6. HR Integration Settings (Admin Only)
+
+Add a "Settings" or "Integrations" page (Admin only):
+
+**Menu Options:**
+- HRIS Integration (Workday, BambooHR, ADP) - dropdown to select
+- ATS Integration (Greenhouse, Lever) - dropdown to select
+- Meeting Tools (for future: Fireflies, Granola, Otter.ai)
+- Export Data (download all company data as CSV)
+
+**For MVP:** Just show the UI with dropdowns and "Connect" buttons that display "Coming Soon" toast.
+
+Later phases can implement actual integrations.
+
+---
+
+## Summary of What to Build
+
+1. ✅ Skills dropdown (exists)
+2. ❌ User profile access for logged-in employees
+3. ❌ Role-based permissions (admin/manager/employee)
+4. ❌ Performance Timeline tab
+5. ❌ Enhanced Development Plan display
+6. ❌ Manager recommendation in review
+7. ❌ Integrations page (UI only for MVP)
+
+Make these updates and the app will be feature-complete for MVP!

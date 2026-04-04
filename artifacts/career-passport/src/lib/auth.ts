@@ -7,6 +7,7 @@ export interface User {
   companyId: number;
   companyName: string;
   role: string;
+  employeeId?: number | null;
 }
 
 export function getToken(): string | null {

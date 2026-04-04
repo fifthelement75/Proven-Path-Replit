@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { db, companiesTable, employeesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { signToken, requireAuth } from "../middlewares/auth";
 import { RegisterCompanyBody, LoginBody } from "@workspace/api-zod";
 
@@ -24,10 +24,10 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   const passwordHash = await bcrypt.hash(password, 10);
   const [company] = await db.insert(companiesTable).values({ name: companyName, email, passwordHash }).returning();
 
-  const token = signToken({ companyId: company.id, userId: company.id, email: company.email, role: "admin" });
+  const token = signToken({ companyId: company.id, userId: company.id, email: company.email, role: "admin", employeeId: null });
   res.status(201).json({
     token,
-    user: { id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin" }
+    user: { id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin", employeeId: null }
   });
 });
 
@@ -40,21 +40,56 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   const { email, password } = parsed.data;
 
   const [company] = await db.select().from(companiesTable).where(eq(companiesTable.email, email)).limit(1);
-  if (!company) {
+  if (company) {
+    const valid = await bcrypt.compare(password, company.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: "Invalid email or password" });
+      return;
+    }
+    const token = signToken({ companyId: company.id, userId: company.id, email: company.email, role: "admin", employeeId: null });
+    res.json({
+      token,
+      user: { id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin", employeeId: null }
+    });
+    return;
+  }
+
+  const employees = await db
+    .select({ emp: employeesTable, companyName: companiesTable.name })
+    .from(employeesTable)
+    .leftJoin(companiesTable, eq(employeesTable.companyId, companiesTable.id))
+    .where(eq(employeesTable.email, email))
+    .limit(1);
+
+  if (!employees.length || !employees[0].emp.passwordHash) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
 
-  const valid = await bcrypt.compare(password, company.passwordHash);
+  const { emp, companyName } = employees[0];
+  const valid = await bcrypt.compare(password, emp.passwordHash!);
   if (!valid) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
 
-  const token = signToken({ companyId: company.id, userId: company.id, email: company.email, role: "admin" });
+  const token = signToken({
+    companyId: emp.companyId,
+    userId: emp.id,
+    email: emp.email,
+    role: emp.userRole,
+    employeeId: emp.id,
+  });
   res.json({
     token,
-    user: { id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin" }
+    user: {
+      id: emp.id,
+      email: emp.email,
+      companyId: emp.companyId,
+      companyName: companyName || "",
+      role: emp.userRole,
+      employeeId: emp.id,
+    }
   });
 });
 
@@ -64,12 +99,42 @@ router.post("/auth/logout", async (_req, res): Promise<void> => {
 
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   const auth = req.auth!;
-  const [company] = await db.select().from(companiesTable).where(eq(companiesTable.id, auth.companyId)).limit(1);
-  if (!company) {
-    res.status(401).json({ error: "Unauthorized" });
+
+  if (auth.role === "admin") {
+    const [company] = await db.select().from(companiesTable).where(eq(companiesTable.id, auth.companyId)).limit(1);
+    if (!company) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    res.json({ id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin", employeeId: null });
     return;
   }
-  res.json({ id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin" });
+
+  if (auth.employeeId) {
+    const employees = await db
+      .select({ emp: employeesTable, companyName: companiesTable.name })
+      .from(employeesTable)
+      .leftJoin(companiesTable, eq(employeesTable.companyId, companiesTable.id))
+      .where(and(eq(employeesTable.id, auth.employeeId), eq(employeesTable.companyId, auth.companyId)))
+      .limit(1);
+
+    if (!employees.length) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const { emp, companyName } = employees[0];
+    res.json({
+      id: emp.id,
+      email: emp.email,
+      companyId: emp.companyId,
+      companyName: companyName || "",
+      role: emp.userRole,
+      employeeId: emp.id,
+    });
+    return;
+  }
+
+  res.status(401).json({ error: "Unauthorized" });
 });
 
 export default router;

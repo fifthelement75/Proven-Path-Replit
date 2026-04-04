@@ -19,6 +19,7 @@ export const reviewsTable = pgTable("reviews", {
   strengths: text("strengths"),
   areasToImprove: text("areas_to_improve"),
   goals: text("goals"),
+  recommendation: text("recommendation"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

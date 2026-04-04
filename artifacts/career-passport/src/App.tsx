@@ -10,6 +10,8 @@ import DashboardPage from "@/pages/dashboard";
 import EmployeesPage from "@/pages/employees";
 import EmployeeDetailPage from "@/pages/employee-detail";
 import SharePage from "@/pages/share";
+import SettingsPage from "@/pages/settings";
+import MyProfileRedirect from "@/pages/my-profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,9 +28,21 @@ function PrivateRoute({ component: Component }: { component: React.ComponentType
   return <Component />;
 }
 
+function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, user } = useAuthContext();
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (user?.role !== "admin") return <Redirect to="/employees/me" />;
+  return <Component />;
+}
+
 function PublicOnlyRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated } = useAuthContext();
-  if (isAuthenticated) return <Redirect to="/dashboard" />;
+  const { isAuthenticated, user } = useAuthContext();
+  if (isAuthenticated) {
+    if (user?.role === "employee" || user?.role === "manager") {
+      return <Redirect to="/employees/me" />;
+    }
+    return <Redirect to="/dashboard" />;
+  }
   return <Component />;
 }
 
@@ -38,9 +52,11 @@ function Router() {
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/login" component={() => <PublicOnlyRoute component={LoginPage} />} />
       <Route path="/register" component={() => <PublicOnlyRoute component={RegisterPage} />} />
-      <Route path="/dashboard" component={() => <PrivateRoute component={DashboardPage} />} />
-      <Route path="/employees" component={() => <PrivateRoute component={EmployeesPage} />} />
+      <Route path="/dashboard" component={() => <AdminRoute component={DashboardPage} />} />
+      <Route path="/employees" component={() => <AdminRoute component={EmployeesPage} />} />
+      <Route path="/employees/me" component={() => <PrivateRoute component={MyProfileRedirect} />} />
       <Route path="/employees/:id" component={() => <PrivateRoute component={EmployeeDetailPage} />} />
+      <Route path="/settings" component={() => <AdminRoute component={SettingsPage} />} />
       <Route path="/share/:token" component={SharePage} />
       <Route component={NotFound} />
     </Switch>

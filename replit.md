@@ -43,13 +43,16 @@ lib/
 
 ## Key Features
 
-- **Auth**: Company register/login with JWT — `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
-- **Employees**: CRUD with search/filter by department+level, score tracking, manager relationships
-- **Reviews**: 3 types (self/peer/manager), 5 competencies scored 1-5, period tracking
+- **Auth**: Company register/login with JWT — `/api/auth/register`, `/api/auth/login`, `/api/auth/me`; also employee login via passwordHash field
+- **Role-based access**: admin (full access), manager (own team), employee (own profile only)
+- **Employees**: CRUD with search/filter by department+level, score tracking, manager relationships; `GET /employees/me` returns current user's employee record
+- **Reviews**: 3 types (self/peer/manager), 5 competencies scored 1-5, period tracking, `recommendation` field (promotable/meets_expectations/needs_improvement) for manager reviews
 - **Feedback**: 1:1 feedback log with meeting types, action items, employee responses
-- **Dev Plans**: AI-generated from review+feedback data, skill tracking with completion checkboxes
+- **Dev Plans**: AI-generated from review+feedback data, skill tracking with High/Medium/Low priority badges, resource chips, next-steps list, completion checkboxes
 - **Share Links**: Read-only shareable profiles with configurable expiry (7days/30days/never)
 - **Dashboard**: Company health stats, competency radar chart, department bar chart, activity feed
+- **Timeline Tab**: Chronological view of all reviews + feedback sessions, expandable event cards
+- **Settings Page**: Integration stubs for HRIS (Workday, BambooHR), ATS (Greenhouse, Lever), Meeting tools (Fireflies, Granola), and CSV data export
 
 ## Key Commands
 

@@ -6,6 +6,8 @@ import { CreateReviewBody, UpdateReviewBody, ListReviewsParams, CreateReviewPara
 
 const router = Router();
 
+const VALID_RECOMMENDATIONS = ["promotable", "meets_expectations", "needs_improvement"];
+
 function computeOverall(scores: (number | null)[]): number | null {
   const valid = scores.filter((s): s is number => s != null);
   return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
@@ -30,6 +32,7 @@ function formatReview(r: typeof reviewsTable.$inferSelect, reviewerName: string 
     strengths: r.strengths,
     areasToImprove: r.areasToImprove,
     goals: r.goals,
+    recommendation: r.recommendation,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
@@ -50,7 +53,7 @@ router.get("/employees/:employeeId/reviews", requireAuth, async (req, res): Prom
     return;
   }
   const reviews = await db.select().from(reviewsTable).where(eq(reviewsTable.employeeId, employeeId));
-  
+
   const reviewerIds = reviews.filter(r => r.reviewerId != null).map(r => r.reviewerId!);
   const reviewers: Record<number, string> = {};
   if (reviewerIds.length > 0) {
@@ -58,7 +61,7 @@ router.get("/employees/:employeeId/reviews", requireAuth, async (req, res): Prom
       .where(eq(employeesTable.companyId, companyId));
     for (const e of reviewerEmps) reviewers[e.id] = e.name;
   }
-  
+
   res.json(reviews.map(r => formatReview(r, r.reviewerId ? reviewers[r.reviewerId] ?? null : null)));
 });
 
@@ -91,6 +94,9 @@ router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Pro
   }
   const { technicalScore, communicationScore, problemSolvingScore, teamworkScore, leadershipScore } = body.data;
   const overallScore = computeOverall([technicalScore ?? null, communicationScore ?? null, problemSolvingScore ?? null, teamworkScore ?? null, leadershipScore ?? null]);
+
+  const rawRec = typeof req.body.recommendation === "string" && VALID_RECOMMENDATIONS.includes(req.body.recommendation) ? req.body.recommendation : null;
+
   const [review] = await db.insert(reviewsTable).values({
     ...body.data,
     employeeId,
@@ -105,6 +111,7 @@ router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Pro
     strengths: body.data.strengths ?? null,
     areasToImprove: body.data.areasToImprove ?? null,
     goals: body.data.goals ?? null,
+    recommendation: rawRec,
   }).returning();
   res.status(201).json(formatReview(review));
 });
@@ -157,9 +164,13 @@ router.patch("/employees/:employeeId/reviews/:reviewId", requireAuth, async (req
     res.status(404).json({ error: "Review not found" });
     return;
   }
+
+  const rawRec = typeof req.body.recommendation === "string" && VALID_RECOMMENDATIONS.includes(req.body.recommendation) ? req.body.recommendation : undefined;
+  const recUpdate = rawRec !== undefined ? { recommendation: rawRec } : {};
+
   const merged = { ...existing, ...body.data };
   const overallScore = computeOverall([merged.technicalScore, merged.communicationScore, merged.problemSolvingScore, merged.teamworkScore, merged.leadershipScore]);
-  const [updated] = await db.update(reviewsTable).set({ ...body.data, overallScore }).where(eq(reviewsTable.id, reviewId)).returning();
+  const [updated] = await db.update(reviewsTable).set({ ...body.data, overallScore, ...recUpdate }).where(eq(reviewsTable.id, reviewId)).returning();
   res.json(formatReview(updated));
 });
 

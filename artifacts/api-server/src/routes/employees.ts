@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, employeesTable, reviewsTable, feedbackTable, devPlansTable } from "@workspace/db";
-import { eq, and, ilike, sql, count } from "drizzle-orm";
+import { eq, and, sql, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import {
   CreateEmployeeBody, UpdateEmployeeBody, GetEmployeeParams,
@@ -16,17 +16,69 @@ function computeOverall(r: { technicalScore: number | null; communicationScore: 
   return scores.reduce((a, b) => a + b, 0) / scores.length;
 }
 
+router.get("/employees/me", requireAuth, async (req, res): Promise<void> => {
+  const auth = req.auth!;
+  const { companyId, email, employeeId } = auth;
+
+  let emps;
+  if (employeeId) {
+    emps = await db.select({
+      emp: employeesTable,
+      managerName: sql<string | null>`m.name`,
+    }).from(employeesTable)
+      .leftJoin(sql`employees m`, sql`m.id = ${employeesTable.managerId}`)
+      .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId)));
+  } else {
+    emps = await db.select({
+      emp: employeesTable,
+      managerName: sql<string | null>`m.name`,
+    }).from(employeesTable)
+      .leftJoin(sql`employees m`, sql`m.id = ${employeesTable.managerId}`)
+      .where(and(eq(employeesTable.email, email), eq(employeesTable.companyId, companyId)));
+  }
+
+  if (emps.length === 0) {
+    res.status(404).json({ error: "No employee profile found for your account" });
+    return;
+  }
+  const { emp, managerName } = emps[0];
+
+  const reviews = await db.select().from(reviewsTable).where(eq(reviewsTable.employeeId, emp.id));
+  const [{ cnt: fbCnt }] = await db.select({ cnt: count() }).from(feedbackTable).where(eq(feedbackTable.employeeId, emp.id));
+  const devPlanRows = await db.select({ id: devPlansTable.id }).from(devPlansTable).where(eq(devPlansTable.employeeId, emp.id));
+  const scores = reviews.map(r => r.overallScore ?? computeOverall(r)).filter((s): s is number => s != null);
+  const latestScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+
+  res.json({
+    id: emp.id,
+    companyId: emp.companyId,
+    name: emp.name,
+    email: emp.email,
+    role: emp.role,
+    department: emp.department,
+    level: emp.level,
+    startDate: emp.startDate,
+    managerId: emp.managerId,
+    managerName: managerName ?? null,
+    createdAt: emp.createdAt.toISOString(),
+    latestScore,
+    reviewCount: reviews.length,
+    feedbackCount: Number(fbCnt),
+    hasDevPlan: devPlanRows.length > 0,
+  });
+});
+
 router.get("/employees", requireAuth, async (req, res): Promise<void> => {
-  const { companyId } = req.auth!;
+  const auth = req.auth!;
+  const { companyId, role, employeeId } = auth;
+
+  if (role === "employee") {
+    res.status(403).json({ error: "Employees can only view their own profile. Use /employees/me." });
+    return;
+  }
+
   const qp = ListEmployeesQueryParams.safeParse(req.query);
   const params = qp.success ? qp.data : {};
-
-  let query = db.select({
-    emp: employeesTable,
-    managerName: sql<string | null>`m.name`,
-  }).from(employeesTable)
-    .leftJoin(sql`employees m`, sql`m.id = ${employeesTable.managerId}`)
-    .where(eq(employeesTable.companyId, companyId));
 
   const allEmps = await db
     .select({ emp: employeesTable, managerName: sql<string | null>`m.name` })
@@ -35,6 +87,11 @@ router.get("/employees", requireAuth, async (req, res): Promise<void> => {
     .where(eq(employeesTable.companyId, companyId));
 
   let filtered = allEmps;
+
+  if (role === "manager" && employeeId) {
+    filtered = filtered.filter(r => r.emp.managerId === employeeId || r.emp.id === employeeId);
+  }
+
   if (params.search) {
     const s = params.search.toLowerCase();
     filtered = filtered.filter(r => r.emp.name.toLowerCase().includes(s) || r.emp.email.toLowerCase().includes(s) || r.emp.role.toLowerCase().includes(s));
@@ -58,7 +115,7 @@ router.get("/employees", requireAuth, async (req, res): Promise<void> => {
       leadershipScore: reviewsTable.leadershipScore,
       overallScore: reviewsTable.overallScore,
     }).from(reviewsTable).where(sql`${reviewsTable.employeeId} = ANY(ARRAY[${sql.join(empIds.map(id => sql`${id}`), sql`, `)}]::integer[])`);
-    
+
     for (const empId of empIds) {
       const empReviews = reviews.filter(r => r.employeeId === empId);
       if (empReviews.length === 0) { latestScores[empId] = null; continue; }
@@ -86,7 +143,14 @@ router.get("/employees", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.post("/employees", requireAuth, async (req, res): Promise<void> => {
-  const { companyId } = req.auth!;
+  const auth = req.auth!;
+  const { companyId, role } = auth;
+
+  if (role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+
   const parsed = CreateEmployeeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -111,13 +175,19 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.get("/employees/:id", requireAuth, async (req, res): Promise<void> => {
-  const { companyId } = req.auth!;
+  const auth = req.auth!;
+  const { companyId, role, employeeId: authEmployeeId } = auth;
   const params = GetEmployeeParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
   const { id } = params.data;
+
+  if (role === "employee" && authEmployeeId !== id) {
+    res.status(403).json({ error: "You can only view your own profile" });
+    return;
+  }
 
   const emps = await db.select({
     emp: employeesTable,
@@ -159,7 +229,8 @@ router.get("/employees/:id", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
-  const { companyId } = req.auth!;
+  const auth = req.auth!;
+  const { companyId, role, employeeId: authEmployeeId } = auth;
   const params = UpdateEmployeeParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -170,13 +241,26 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: body.error.message });
     return;
   }
+
+  if (role === "employee" && authEmployeeId !== params.data.id) {
+    res.status(403).json({ error: "You can only edit your own profile" });
+    return;
+  }
+
   const existing = await db.select({ id: employeesTable.id }).from(employeesTable)
     .where(and(eq(employeesTable.id, params.data.id), eq(employeesTable.companyId, companyId))).limit(1);
   if (existing.length === 0) {
     res.status(404).json({ error: "Employee not found" });
     return;
   }
-  if (body.data.managerId != null) {
+
+  let updateData = body.data;
+  if (role === "employee") {
+    const { role: _role, level: _level, department: _dept, managerId: _mgr, ...allowedFields } = updateData as Record<string, unknown>;
+    updateData = allowedFields as typeof body.data;
+  }
+
+  if (body.data.managerId != null && role === "admin") {
     const managerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
       .where(and(eq(employeesTable.id, body.data.managerId), eq(employeesTable.companyId, companyId))).limit(1);
     if (managerCheck.length === 0) {
@@ -184,12 +268,19 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
       return;
     }
   }
-  const [updated] = await db.update(employeesTable).set(body.data).where(eq(employeesTable.id, params.data.id)).returning();
+  const [updated] = await db.update(employeesTable).set(updateData).where(eq(employeesTable.id, params.data.id)).returning();
   res.json({ ...updated, managerName: null, createdAt: updated.createdAt.toISOString(), latestScore: null });
 });
 
 router.delete("/employees/:id", requireAuth, async (req, res): Promise<void> => {
-  const { companyId } = req.auth!;
+  const auth = req.auth!;
+  const { companyId, role } = auth;
+
+  if (role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+
   const params = DeleteEmployeeParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -206,12 +297,19 @@ router.delete("/employees/:id", requireAuth, async (req, res): Promise<void> => 
 });
 
 router.get("/employees/:id/score-history", requireAuth, async (req, res): Promise<void> => {
-  const { companyId } = req.auth!;
+  const auth = req.auth!;
+  const { companyId, role, employeeId: authEmployeeId } = auth;
   const params = GetEmployeeScoreHistoryParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
+
+  if (role === "employee" && authEmployeeId !== params.data.id) {
+    res.status(403).json({ error: "You can only view your own score history" });
+    return;
+  }
+
   const existing = await db.select({ id: employeesTable.id }).from(employeesTable)
     .where(and(eq(employeesTable.id, params.data.id), eq(employeesTable.companyId, companyId))).limit(1);
   if (existing.length === 0) {

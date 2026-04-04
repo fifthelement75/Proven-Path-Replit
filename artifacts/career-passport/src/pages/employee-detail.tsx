@@ -5,14 +5,13 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert } from "@/components/ui/alert";
 import { getApiUrl } from "@/lib/api";
@@ -33,6 +32,7 @@ interface ReviewItem {
   strengths: string | null;
   areasToImprove: string | null;
   goals: string | null;
+  recommendation: string | null;
   createdAt: string;
 }
 
@@ -81,6 +81,7 @@ interface ReviewFormData {
   strengths: string;
   areasToImprove: string;
   goals: string;
+  recommendation: string;
 }
 
 interface FeedbackFormData {
@@ -107,6 +108,37 @@ const MEETING_TYPES = [
 
 const REVIEW_TYPES = ["self", "peer", "manager"];
 
+const RECOMMENDATION_OPTIONS = [
+  { value: "promotable", label: "Promotable" },
+  { value: "meets_expectations", label: "Meets Expectations" },
+  { value: "needs_improvement", label: "Needs Improvement" },
+];
+
+function recommendationBadge(rec: string | null) {
+  if (!rec) return null;
+  const colors: Record<string, string> = {
+    promotable: "bg-green-100 text-green-800 border-green-200",
+    meets_expectations: "bg-blue-100 text-blue-800 border-blue-200",
+    needs_improvement: "bg-orange-100 text-orange-800 border-orange-200",
+  };
+  const labels: Record<string, string> = {
+    promotable: "Promotable",
+    meets_expectations: "Meets Expectations",
+    needs_improvement: "Needs Improvement",
+  };
+  return (
+    <Badge className={`text-xs ${colors[rec] ?? "bg-gray-100 text-gray-800"}`}>
+      {labels[rec] ?? rec}
+    </Badge>
+  );
+}
+
+function priorityLabel(priority: number): { label: string; className: string } {
+  if (priority === 1) return { label: "High", className: "bg-red-100 text-red-800 border-red-200" };
+  if (priority === 2) return { label: "Medium", className: "bg-yellow-100 text-yellow-800 border-yellow-200" };
+  return { label: "Low", className: "bg-green-100 text-green-800 border-green-200" };
+}
+
 function ScoreBar({ label, value }: { label: string; value: number | null }) {
   if (value == null) return null;
   const pct = (value / 5) * 100;
@@ -129,7 +161,7 @@ function AddReviewDialog({ open, onClose, employeeId }: { open: boolean; onClose
   const [form, setForm] = useState({
     reviewType: "manager", period: new Date().toISOString().slice(0, 7),
     technicalScore: "3", communicationScore: "3", problemSolvingScore: "3", teamworkScore: "3", leadershipScore: "3",
-    strengths: "", areasToImprove: "", goals: "",
+    strengths: "", areasToImprove: "", goals: "", recommendation: "",
   });
   const [error, setError] = useState("");
 
@@ -164,7 +196,7 @@ function AddReviewDialog({ open, onClose, employeeId }: { open: boolean; onClose
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Review type</Label>
-              <Select value={form.reviewType} onValueChange={v => setForm(f => ({ ...f, reviewType: v }))}>
+              <Select value={form.reviewType} onValueChange={v => setForm(f => ({ ...f, reviewType: v, recommendation: "" }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {REVIEW_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
@@ -176,6 +208,20 @@ function AddReviewDialog({ open, onClose, employeeId }: { open: boolean; onClose
               <Input value={form.period} onChange={e => setForm(f => ({ ...f, period: e.target.value }))} placeholder="2024-Q4" required />
             </div>
           </div>
+
+          {form.reviewType === "manager" && (
+            <div className="space-y-1.5">
+              <Label>Manager Recommendation</Label>
+              <Select value={form.recommendation} onValueChange={v => setForm(f => ({ ...f, recommendation: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select recommendation..." /></SelectTrigger>
+                <SelectContent>
+                  {RECOMMENDATION_OPTIONS.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-3">
             <Label className="text-sm font-medium">Scores (1-5)</Label>
@@ -462,39 +508,76 @@ function DevPlanTab({ employeeId }: { employeeId: number }) {
               <p className="text-sm leading-relaxed">{plan.summary}</p>
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-3 gap-3 text-center">
+            {["high", "medium", "low"].map(lvl => {
+              const count = (plan.skills ?? []).filter((s: DevPlanSkill) => {
+                const p = s.priority;
+                return lvl === "high" ? p === 1 : lvl === "medium" ? p === 2 : p >= 3;
+              }).length;
+              const colors: Record<string, string> = { high: "text-red-600", medium: "text-yellow-600", low: "text-green-600" };
+              return (
+                <div key={lvl} className="bg-muted/40 rounded-lg p-3">
+                  <div className={`text-xl font-bold ${colors[lvl]}`}>{count}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{lvl} priority</div>
+                </div>
+              );
+            })}
+          </div>
+
           <div className="space-y-3">
-            {plan.skills?.map((skill: DevPlanSkill) => (
-              <Card key={skill.id} className={skill.completed ? "opacity-60" : ""}>
-                <CardContent className="pt-4 pb-4">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={skill.completed}
-                      onCheckedChange={(checked) => toggleSkill({ skillId: skill.id, completed: !!checked })}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-medium text-sm ${skill.completed ? "line-through text-muted-foreground" : ""}`}>{skill.skillName}</span>
-                        <Badge variant="outline" className="text-xs">Priority {skill.priority}</Badge>
-                        {skill.timeline && <Badge variant="secondary" className="text-xs">{skill.timeline}</Badge>}
+            {(plan.skills ?? []).map((skill: DevPlanSkill) => {
+              const { label, className } = priorityLabel(skill.priority);
+              const resourceList = skill.resources ? skill.resources.split(",").map((r: string) => r.trim()).filter(Boolean) : [];
+              const nextStepList = skill.nextSteps ? skill.nextSteps.split(".").map((s: string) => s.trim()).filter(Boolean) : [];
+
+              return (
+                <Card key={skill.id} className={skill.completed ? "opacity-60" : ""}>
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={skill.completed}
+                        onCheckedChange={(checked) => toggleSkill({ skillId: skill.id, completed: !!checked })}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className={`font-medium text-sm ${skill.completed ? "line-through text-muted-foreground" : ""}`}>{skill.skillName}</span>
+                          <Badge className={`text-xs ${className}`}>{label}</Badge>
+                          {skill.timeline && <Badge variant="secondary" className="text-xs">{skill.timeline}</Badge>}
+                        </div>
+                        {skill.description && <p className="text-sm text-muted-foreground mb-2">{skill.description}</p>}
+
+                        {nextStepList.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-xs font-medium mb-1">Next steps</p>
+                            <ul className="space-y-0.5">
+                              {nextStepList.map((step, i) => (
+                                <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                  <span className="mt-0.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0 inline-block" />
+                                  {step}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {resourceList.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium mb-1">Resources</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {resourceList.map((res, i) => (
+                                <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">{res}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">{skill.description}</p>
-                      {skill.nextSteps && (
-                        <div className="mt-2 text-xs">
-                          <span className="font-medium">Next step: </span>
-                          <span className="text-muted-foreground">{skill.nextSteps}</span>
-                        </div>
-                      )}
-                      {skill.resources && (
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          <span className="font-medium">Resources: </span>{skill.resources}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
@@ -578,6 +661,103 @@ function FeedbackCard({ entry, employeeId, onResponded }: { entry: FeedbackEntry
         )}
       </CardContent>
     </Card>
+  );
+}
+
+interface TimelineEvent {
+  date: string;
+  type: "review" | "feedback";
+  label: string;
+  badge: string;
+  score?: number | null;
+  recommendation?: string | null;
+  details: string[];
+}
+
+function TimelineTab({ reviews, feedback }: { reviews: ReviewItem[]; feedback: FeedbackEntry[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const events: TimelineEvent[] = [
+    ...reviews.map(r => ({
+      date: r.createdAt,
+      type: "review" as const,
+      label: `${r.reviewType.charAt(0).toUpperCase() + r.reviewType.slice(1)} Review — ${r.period}`,
+      badge: r.reviewType,
+      score: r.overallScore,
+      recommendation: r.recommendation,
+      details: [
+        r.strengths ? `Strengths: ${r.strengths}` : "",
+        r.areasToImprove ? `Areas to improve: ${r.areasToImprove}` : "",
+        r.goals ? `Goals: ${r.goals}` : "",
+      ].filter(Boolean),
+    })),
+    ...feedback.map(f => ({
+      date: f.meetingDate,
+      type: "feedback" as const,
+      label: `${MEETING_TYPES.find(m => m.value === f.meetingType)?.label ?? f.meetingType}`,
+      badge: "feedback",
+      score: null,
+      recommendation: null,
+      details: [
+        f.whatWentWell ? `What went well: ${f.whatWentWell}` : "",
+        f.areasToImprove ? `Areas to improve: ${f.areasToImprove}` : "",
+        f.actionItems ? `Action items: ${f.actionItems}` : "",
+        f.nextSteps ? `Next steps: ${f.nextSteps}` : "",
+      ].filter(Boolean),
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  if (events.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-muted-foreground text-sm">
+          No reviews or feedback sessions yet. Add some to see a performance timeline.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+      <div className="space-y-4 pl-10">
+        {events.map((event, i) => {
+          const key = `${event.type}-${i}`;
+          const isOpen = expanded === key;
+          const dotColor = event.type === "review" ? "bg-primary" : "bg-muted-foreground";
+          return (
+            <div key={key} className="relative">
+              <div className={`absolute -left-6 top-3 w-3 h-3 rounded-full border-2 border-background ${dotColor}`} />
+              <Card className="cursor-pointer hover:shadow-sm transition-shadow" onClick={() => setExpanded(isOpen ? null : key)}>
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <Badge variant="outline" className="capitalize text-xs shrink-0">{event.badge}</Badge>
+                      <span className="text-sm font-medium truncate">{event.label}</span>
+                      {event.recommendation && recommendationBadge(event.recommendation)}
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {event.score != null && (
+                        <span className="text-sm font-bold">{event.score.toFixed(1)}<span className="text-xs text-muted-foreground font-normal">/5</span></span>
+                      )}
+                      <span className="text-xs text-muted-foreground">{new Date(event.date).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">{isOpen ? "▲" : "▼"}</span>
+                    </div>
+                  </div>
+                  {isOpen && event.details.length > 0 && (
+                    <div className="mt-3 pt-3 border-t space-y-1">
+                      {event.details.map((d, j) => (
+                        <p key={j} className="text-xs text-muted-foreground">{d}</p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -681,7 +861,6 @@ export default function EmployeeDetailPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
@@ -708,7 +887,6 @@ export default function EmployeeDetailPage() {
           </div>
         </div>
 
-        {/* Info cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card><CardContent className="pt-3 pb-3"><div className="text-xs text-muted-foreground">Email</div><div className="text-sm font-medium truncate">{employee.email}</div></CardContent></Card>
           <Card><CardContent className="pt-3 pb-3"><div className="text-xs text-muted-foreground">Start date</div><div className="text-sm font-medium">{employee.startDate}</div></CardContent></Card>
@@ -719,6 +897,7 @@ export default function EmployeeDetailPage() {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
             <TabsTrigger value="feedback">Feedback ({feedback.length})</TabsTrigger>
             <TabsTrigger value="devplan">Dev Plan</TabsTrigger>
@@ -773,6 +952,13 @@ export default function EmployeeDetailPage() {
             )}
           </TabsContent>
 
+          <TabsContent value="timeline" className="mt-4">
+            {loadingReviews || loadingFeedback
+              ? <Skeleton className="h-48 w-full" />
+              : <TimelineTab reviews={reviews} feedback={feedback} />
+            }
+          </TabsContent>
+
           <TabsContent value="reviews" className="mt-4 space-y-3">
             {loadingReviews ? <Skeleton className="h-32 w-full" /> : reviews.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">No reviews yet.</CardContent></Card>
@@ -780,9 +966,10 @@ export default function EmployeeDetailPage() {
               <Card key={review.id}>
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline" className="capitalize">{review.reviewType}</Badge>
                       <span className="text-sm font-medium">{review.period}</span>
+                      {review.recommendation && recommendationBadge(review.recommendation)}
                     </div>
                     {review.overallScore != null && (
                       <span className="text-lg font-bold">{review.overallScore.toFixed(1)}<span className="text-xs text-muted-foreground font-normal">/5</span></span>
@@ -797,7 +984,7 @@ export default function EmployeeDetailPage() {
                       ["Lead", review.leadershipScore],
                     ].map(([label, score]) => (
                       score != null && (
-                        <div key={label} className="text-center">
+                        <div key={label as string} className="text-center">
                           <div className="text-sm font-medium">{score}</div>
                           <div className="text-xs text-muted-foreground">{label}</div>
                         </div>
@@ -830,7 +1017,6 @@ export default function EmployeeDetailPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Danger zone */}
         <div className="border-t pt-4">
           {!deleteConfirm ? (
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteConfirm(true)}>
