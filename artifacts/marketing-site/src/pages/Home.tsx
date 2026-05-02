@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { fadeIn, staggerContainer } from "@/lib/animations";
 import employerImage from "@assets/christina-wocintechchat-com-m-fjza4oBV8ic-unsplash_1777758998149.jpg";
 import employeeImage from "@assets/daria-pimkina-tYaccl19A3Q-unsplash_1777758998150.jpg";
+import differentiationImage from "@assets/the-jopwell-collection-4WTb4tR45JQ-unsplash_1777761038392.jpg";
 import {
   Brain,
   ShieldCheck,
@@ -153,7 +154,7 @@ export default function Home() {
           />
 
           <Container className="relative z-10">
-            <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="text-center max-w-3xl mx-auto mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 What Makes Proven Path Different
               </h2>
@@ -161,7 +162,23 @@ export default function Home() {
                 Stop relying on gut-feel decisions and disconnected spreadsheets. Build a defensible talent strategy with structured, verified data.
               </p>
             </div>
-            
+
+            {/* Feature image */}
+            <div className="relative max-w-5xl mx-auto mb-16">
+              <div
+                aria-hidden
+                className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/20 via-indigo-400/15 to-warning/15 blur-2xl opacity-70 rounded-[2rem]"
+              />
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
+                <img
+                  src={differentiationImage}
+                  alt="Two colleagues smiling and collaborating around a laptop"
+                  className="w-full h-[260px] sm:h-[360px] lg:h-[420px] object-cover block"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
