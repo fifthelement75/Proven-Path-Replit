@@ -8,6 +8,38 @@ import { Link } from "wouter";
 export default function Pricing() {
   const tiers = [
     {
+      name: "Free",
+      price: "$0",
+      period: "/month",
+      tagline: "Try the personal experience",
+      features: [
+        "Basic Proven Path profile",
+        "Self-assessment tools",
+        "3 verified references",
+        "Career timeline view"
+      ],
+      cta: "Get Started Free",
+      link: "/signup",
+      popular: false
+    },
+    {
+      name: "Professional",
+      price: "$9.99",
+      period: "/month",
+      tagline: "For individual contributors",
+      features: [
+        "Personal Proven Path profile",
+        "Unlimited verified references",
+        "AI development plans",
+        "Public profile page",
+        "Career coaching insights",
+        "Priority support"
+      ],
+      cta: "Start Free Trial",
+      link: "/signup",
+      popular: false
+    },
+    {
       name: "Team",
       price: "$29",
       period: "/user/month",
@@ -42,38 +74,6 @@ export default function Pricing() {
       ],
       cta: "Contact Sales",
       link: "/contact",
-      popular: false
-    },
-    {
-      name: "Professional",
-      price: "$9.99",
-      period: "/month",
-      tagline: "For individual contributors",
-      features: [
-        "Personal Proven Path profile",
-        "Unlimited verified references",
-        "AI development plans",
-        "Public profile page",
-        "Career coaching insights",
-        "Priority support"
-      ],
-      cta: "Start Free Trial",
-      link: "/signup",
-      popular: false
-    },
-    {
-      name: "Free",
-      price: "$0",
-      period: "/month",
-      tagline: "Try the personal experience",
-      features: [
-        "Basic Proven Path profile",
-        "Self-assessment tools",
-        "3 verified references",
-        "Career timeline view"
-      ],
-      cta: "Get Started Free",
-      link: "/signup",
       popular: false
     }
   ];
