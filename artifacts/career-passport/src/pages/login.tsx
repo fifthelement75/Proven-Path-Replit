@@ -39,13 +39,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 overflow-hidden">
+      {/* Subtle dot grid */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(37,99,235,0.18)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]"
+      />
+
+      {/* Soft radial color washes */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-[120px]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -right-32 w-[30rem] h-[30rem] rounded-full bg-indigo-400/20 blur-[130px]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-amber-200/25 blur-[100px]"
+      />
+
+      <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-primary">Career Passport</h1>
           <p className="text-sm text-muted-foreground mt-1">Performance management platform</p>
         </div>
-        <Card>
+        <Card className="shadow-xl border-gray-200/80 backdrop-blur-sm bg-white/90">
           <CardHeader>
             <CardTitle>Sign in</CardTitle>
             <CardDescription>Enter your company credentials to continue</CardDescription>
