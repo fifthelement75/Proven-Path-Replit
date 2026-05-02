@@ -415,7 +415,7 @@ export default function Home() {
                 { icon: Route, title: "Career Timelines", desc: "Visual progression from junior IC to leadership across your org" },
                 { icon: BadgeCheck, title: "Verified References", desc: "Convert internal feedback into portable, audit-ready references" },
                 { icon: Rocket, title: "Promotion Readiness", desc: "AI flags which employees are ready for the next level—and why" },
-                { icon: Fingerprint, title: "Identity Verification", desc: "Secure background checks via Clear.me integration" },
+                { icon: Fingerprint, title: "Identity Verification", desc: "Secure background checks via Plaid.com integration" },
               ].map((feature, i) => {
                 const Icon = feature.icon;
                 return (
