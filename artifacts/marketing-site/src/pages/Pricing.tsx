@@ -8,25 +8,49 @@ import { Link } from "wouter";
 export default function Pricing() {
   const tiers = [
     {
-      name: "Free",
-      price: "$0",
-      period: "/month",
+      name: "Team",
+      price: "$29",
+      period: "/user/month",
+      sub: "(billed annually, min 10 users)",
+      tagline: "For growing HR teams",
       features: [
-        "Basic Career Passport",
-        "Self-assessment tools",
-        "3 verified references",
-        "Career timeline view"
+        "Interview scoring module",
+        "360° performance reviews",
+        "Team analytics dashboard",
+        "Custom skill matrices & career ladders",
+        "Manager tools",
+        "AI development plans",
+        "Email support"
       ],
-      cta: "Get Started Free",
-      link: "/signup",
+      cta: "Book a Demo",
+      link: "/contact",
+      popular: true
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      period: "Pricing",
+      tagline: "For complex orgs and HRIS-led rollouts",
+      features: [
+        "Everything in Team, plus:",
+        "HRIS integrations (BambooHR, Workday, Gusto)",
+        "SSO & advanced security (SOC 2)",
+        "Dedicated account manager",
+        "Custom workflows & permissions",
+        "API access",
+        "SLA guarantee"
+      ],
+      cta: "Contact Sales",
+      link: "/contact",
       popular: false
     },
     {
       name: "Professional",
       price: "$9.99",
       period: "/month",
+      tagline: "For individual contributors",
       features: [
-        "Everything in Free, plus:",
+        "Personal Proven Path profile",
         "Unlimited verified references",
         "AI development plans",
         "Public profile page",
@@ -35,42 +59,21 @@ export default function Pricing() {
       ],
       cta: "Start Free Trial",
       link: "/signup",
-      popular: true
-    },
-    {
-      name: "Team",
-      price: "$29",
-      period: "/user/month",
-      sub: "(billed annually)",
-      features: [
-        "Everything in Professional, plus:",
-        "Interview scoring module",
-        "360° performance reviews",
-        "Team analytics dashboard",
-        "Custom skill matrices",
-        "Manager tools",
-        "Email support",
-        "Minimum 10 users"
-      ],
-      cta: "Request Demo",
-      link: "/contact",
       popular: false
     },
     {
-      name: "Enterprise",
-      price: "Custom",
-      period: "Pricing",
+      name: "Free",
+      price: "$0",
+      period: "/month",
+      tagline: "Try the personal experience",
       features: [
-        "Everything in Team, plus:",
-        "HRIS integrations (BambooHR, Workday, Gusto)",
-        "SSO & advanced security",
-        "Dedicated account manager",
-        "Custom workflows",
-        "API access",
-        "SLA guarantee"
+        "Basic Proven Path profile",
+        "Self-assessment tools",
+        "3 verified references",
+        "Career timeline view"
       ],
-      cta: "Contact Sales",
-      link: "/contact",
+      cta: "Get Started Free",
+      link: "/signup",
       popular: false
     }
   ];
@@ -102,10 +105,10 @@ export default function Pricing() {
         <Container>
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Simple, Transparent Pricing
+              Pricing Built for Modern HR Teams
             </h1>
             <p className="text-xl text-gray-600">
-              Choose the plan that fits your career stage or team size.
+              Start with the plan that fits your team today—scale into Enterprise as you grow. Personal plans are available for individual contributors.
             </p>
           </div>
 
@@ -126,7 +129,8 @@ export default function Pricing() {
                 )}
                 
                 <div className="mb-8">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{tier.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{tier.name}</h3>
+                  {tier.tagline && <p className="text-sm text-gray-500 mb-3">{tier.tagline}</p>}
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
                     <span className="text-gray-500 font-medium">{tier.period}</span>

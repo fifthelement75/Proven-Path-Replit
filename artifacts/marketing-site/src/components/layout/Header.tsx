@@ -77,8 +77,8 @@ export function Header() {
             >
               Log in
             </Link>
-            <Link href="/signup">
-              <Button>Get Started</Button>
+            <Link href="/contact">
+              <Button>Book a Demo</Button>
             </Link>
           </div>
 
@@ -120,8 +120,8 @@ export function Header() {
           >
             Log in
           </Link>
-          <Link href="/signup" className="w-full">
-            <Button className="w-full">Get Started</Button>
+          <Link href="/contact" className="w-full">
+            <Button className="w-full">Book a Demo</Button>
           </Link>
         </div>
       )}

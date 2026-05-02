@@ -16,7 +16,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-gray-500 mb-6">
-              Your career, proven and portable
+              Performance intelligence for modern HR teams
             </p>
             <div className="flex gap-4">
               <a

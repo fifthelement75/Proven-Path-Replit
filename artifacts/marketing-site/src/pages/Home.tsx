@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { fadeIn, staggerContainer } from "@/lib/animations";
 import {
   Brain,
-  IdCard,
+  ShieldCheck,
   TrendingUp,
   CheckCircle2,
+  Building2,
   Users,
-  Target,
   FileBadge,
   Activity,
   ArrowRight,
@@ -33,25 +33,32 @@ export default function Home() {
                 variants={staggerContainer}
                 className="max-w-2xl"
               >
+                <motion.div
+                  variants={fadeIn}
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
+                >
+                  <Building2 size={14} />
+                  <span>Built for HR & People Leaders</span>
+                </motion.div>
                 <motion.h1 
                   variants={fadeIn}
                   className="text-5xl sm:text-6xl font-bold tracking-tight text-gray-900 leading-[1.1] mb-6"
                 >
-                  Your Career Growth, Verified and Portable
+                  Performance Intelligence That Powers Better Hiring, Retention & Growth
                 </motion.h1>
                 <motion.p 
                   variants={fadeIn}
                   className="text-xl text-gray-600 mb-8 leading-relaxed"
                 >
-                  The only performance platform that tracks your professional journey from interview to promotion—and travels with you to your next opportunity.
+                  Proven Path gives HR teams and people leaders a single source of truth for candidate assessments, performance reviews, and career development—so every hiring and promotion decision is backed by verified data.
                 </motion.p>
                 <motion.div 
                   variants={fadeIn}
                   className="flex flex-col sm:flex-row gap-4"
                 >
-                  <Link href="/signup">
+                  <Link href="/contact">
                     <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base">
-                      Start Your Career Journey
+                      Book a Demo
                     </Button>
                   </Link>
                   <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-base" onClick={() => document.getElementById('differentiation')?.scrollIntoView({ behavior: 'smooth' })}>
@@ -69,7 +76,7 @@ export default function Home() {
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-gray-100 bg-gray-50">
                   <img 
                     src={`${import.meta.env.BASE_URL}hero-illustration.png`} 
-                    alt="Abstract career progression timeline" 
+                    alt="Talent intelligence dashboard for HR teams" 
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -87,24 +94,27 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 What Makes Proven Path Different
               </h2>
+              <p className="text-lg text-gray-600">
+                Stop relying on gut-feel decisions and disconnected spreadsheets. Build a defensible talent strategy with structured, verified data.
+              </p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
                   icon: Brain,
-                  title: "AI-Powered Development Plans",
-                  description: "Our AI analyzes your performance data and generates personalized, actionable development plans—not generic advice, but specific steps tailored to your career goals and skill gaps."
+                  title: "AI-Powered Talent Insights",
+                  description: "Our AI analyzes interview scores, performance reviews, and skill assessments to surface promotion-ready employees, flag retention risks, and recommend targeted development plans."
                 },
                 {
-                  icon: IdCard,
-                  title: "Portable Career Record",
-                  description: "Your verified performance history travels with you. No more hunting for references or starting from scratch at each new job. Your achievements are permanently documented and transferable."
+                  icon: ShieldCheck,
+                  title: "Verified Performance Records",
+                  description: "Every assessment, review, and reference is captured and verified—giving you confidence in hiring and promotion decisions, and a clean audit trail for your people decisions."
                 },
                 {
                   icon: TrendingUp,
-                  title: "Longitudinal Tracking",
-                  description: "Track your growth from candidate stage through your entire career. See your progression, identify patterns, and prove your value with data."
+                  title: "Longitudinal Talent Intelligence",
+                  description: "See how your people grow from interview through promotion. Spot high performers early, model succession plans, and benchmark teams against your career ladders."
                 }
               ].map((feature, i) => (
                 <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -124,55 +134,30 @@ export default function Home() {
           <Container>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Transform How You Track and Prove Career Growth
+                A Performance Platform Your Team Will Actually Use
               </h2>
+              <p className="text-lg text-gray-600">
+                Designed employer-first, with adoption built in—because your data is only as good as the team that contributes to it.
+              </p>
             </div>
             
             <div className="grid lg:grid-cols-2 gap-16">
+              {/* For Employers — primary, on the left */}
               <div className="relative">
                 <div className="sticky top-24">
                   <div className="mb-8">
                     <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                      <Users className="text-primary" />
-                      For Employees
-                    </h3>
-                    <ul className="space-y-4">
-                      {[
-                        "Own your career data—take it with you anywhere",
-                        "Get AI-powered guidance for skill development",
-                        "Prove your value with verified performance records",
-                        "Eliminate reference-hunting when changing jobs"
-                      ].map((item, i) => (
-                        <li key={i} className="flex items-start gap-3 text-lg text-gray-700">
-                          <CheckCircle2 className="text-success shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="aspect-[16/9] rounded-2xl overflow-hidden shadow-lg border border-gray-100 mt-8">
-                    <img 
-                      src={`${import.meta.env.BASE_URL}portable-record.png`} 
-                      alt="Portable Career Record Abstract" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="relative">
-                <div className="sticky top-24">
-                  <div className="mb-8">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                      <Target className="text-warning" />
+                      <Building2 className="text-primary" />
                       For Employers
                     </h3>
                     <ul className="space-y-4">
                       {[
-                        "Make data-driven promotion decisions",
-                        "Reduce onboarding time with verified candidate histories",
-                        "Identify skill gaps and development needs automatically",
-                        "Improve retention with clear career progression paths"
+                        "Make data-driven hiring and promotion decisions",
+                        "Reduce time-to-productivity with structured 360° reviews",
+                        "Identify skill gaps and build targeted development plans",
+                        "Improve retention with transparent career progression",
+                        "Streamline reference checks with verified performance histories",
+                        "Plug into your HRIS—no rip-and-replace required"
                       ].map((item, i) => (
                         <li key={i} className="flex items-start gap-3 text-lg text-gray-700">
                           <CheckCircle2 className="text-success shrink-0 mt-0.5" />
@@ -184,7 +169,42 @@ export default function Home() {
                   <div className="aspect-[16/9] rounded-2xl overflow-hidden shadow-lg border border-gray-100 mt-8 bg-gray-50">
                     <img 
                       src={`${import.meta.env.BASE_URL}ai-dev-plan.png`} 
-                      alt="AI Development Plan Abstract" 
+                      alt="AI-generated development plans for HR teams" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* For Employees — secondary, on the right */}
+              <div className="relative">
+                <div className="sticky top-24">
+                  <div className="mb-8">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                      <Users className="text-warning" />
+                      For Your Employees
+                    </h3>
+                    <ul className="space-y-4">
+                      {[
+                        "Personalized AI development plans tied to real performance data",
+                        "A verified record of growth that follows them across roles",
+                        "Clear visibility into the path to promotion",
+                        "Faster, lighter-weight reviews instead of annual paperwork"
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-lg text-gray-700">
+                          <CheckCircle2 className="text-success shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-6 text-sm text-gray-500 leading-relaxed">
+                      Higher employee engagement means better data for you—and a stronger employer brand when great people talk about your performance process.
+                    </p>
+                  </div>
+                  <div className="aspect-[16/9] rounded-2xl overflow-hidden shadow-lg border border-gray-100 mt-8">
+                    <img 
+                      src={`${import.meta.env.BASE_URL}portable-record.png`} 
+                      alt="Verified, portable performance record" 
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -199,27 +219,30 @@ export default function Home() {
           <Container>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Built For Modern Professionals and Forward-Thinking Companies
+                Built For Forward-Thinking Companies
               </h2>
+              <p className="text-lg text-gray-300">
+                If you care about how you hire, develop, and retain your people, Proven Path was built for you.
+              </p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
-                  title: "Tech Professionals",
-                  desc: "Software engineers, designers, product managers who change jobs frequently and want to document their growth"
+                  title: "SMB HR Teams (50–500 employees)",
+                  desc: "Growing companies that need modern performance management without enterprise complexity or six-figure HRIS overhauls."
                 },
                 {
-                  title: "SMB HR Teams (50-500 employees)",
-                  desc: "Growing companies that need modern performance management without enterprise complexity"
-                },
-                {
-                  title: "Startups (Pre-seed to Series B)",
-                  desc: "Fast-growing companies needing scalable talent assessment and clear career ladders"
+                  title: "High-Growth Startups (Pre-seed to Series B)",
+                  desc: "Fast-scaling teams that need scalable talent assessment, structured interview loops, and clear career ladders from day one."
                 },
                 {
                   title: "Professional Services Firms",
-                  desc: "Consulting firms, agencies, and fractional talent platforms where portable credentials add value"
+                  desc: "Consulting firms, agencies, and fractional talent platforms where verified credentials and utilization data drive every staffing decision."
+                },
+                {
+                  title: "People-First Tech Companies",
+                  desc: "Engineering, design, and product teams that care about transparent growth paths and want a performance system their people will actually adopt."
                 }
               ].map((profile, i) => (
                 <div key={i} className="bg-gray-800 p-6 rounded-xl border border-gray-700">
@@ -236,19 +259,22 @@ export default function Home() {
           <Container>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Everything You Need to Track and Grow Your Career
+                Everything Your People Team Needs in One Platform
               </h2>
+              <p className="text-lg text-gray-600">
+                From the first interview to the next promotion—structured, verified, and integrated with your HRIS.
+              </p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { title: "Interview Scoring", desc: "Capture candidate assessments from day one" },
-                { title: "360° Reviews", desc: "Self, peer, and manager evaluations in one place" },
-                { title: "Skill Matrix", desc: "Track hard and soft skills across career levels" },
-                { title: "AI Development Plans", desc: "Personalized recommendations based on your data" },
-                { title: "Career Timeline", desc: "Visual progression from junior to leadership" },
-                { title: "Verified References", desc: "Convert feedback into portable references" },
-                { title: "Promotion Readiness", desc: "AI predicts when you're ready for the next level" },
+                { title: "Interview Scoring", desc: "Standardized rubrics and structured candidate assessments from day one" },
+                { title: "360° Reviews", desc: "Self, peer, and manager evaluations consolidated in one place" },
+                { title: "Skill Matrix", desc: "Track hard and soft skills against your career levels and ladders" },
+                { title: "AI Development Plans", desc: "Personalized recommendations grounded in each employee's data" },
+                { title: "Career Timelines", desc: "Visual progression from junior IC to leadership across your org" },
+                { title: "Verified References", desc: "Convert internal feedback into portable, audit-ready references" },
+                { title: "Promotion Readiness", desc: "AI flags which employees are ready for the next level—and why" },
                 { title: "Identity Verification", desc: "Secure background checks via Clear.me integration" },
               ].map((feature, i) => (
                 <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start gap-4 hover:border-primary/30 transition-colors">
@@ -270,16 +296,19 @@ export default function Home() {
           <Container>
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                   How It Works
                 </h2>
+                <p className="text-gray-600 mb-12">
+                  Get from disconnected spreadsheets to a single source of talent truth in weeks, not quarters.
+                </p>
                 
                 <div className="space-y-8">
                   {[
-                    { step: "1", title: "Create Your Profile", desc: "Set up your career passport in minutes" },
-                    { step: "2", title: "Track Performance", desc: "Capture reviews, feedback, and achievements" },
-                    { step: "3", title: "Get AI Insights", desc: "Receive personalized development recommendations" },
-                    { step: "4", title: "Prove Your Growth", desc: "Share verified records with future employers" }
+                    { step: "1", title: "Set Up Your Org", desc: "Define roles, levels, and career ladders—or import them from your existing HRIS." },
+                    { step: "2", title: "Capture Performance", desc: "Run structured interviews, 360° reviews, and skill assessments inside Proven Path." },
+                    { step: "3", title: "Surface AI Insights", desc: "Get promotion recommendations, retention risk flags, and personalized development plans." },
+                    { step: "4", title: "Make Better People Decisions", desc: "Hire, promote, and develop with verified data—and give employees a portable record they value." }
                   ].map((item, i) => (
                     <div key={i} className="flex gap-4">
                       <div className="w-10 h-10 rounded-full bg-primary text-white font-bold flex items-center justify-center shrink-0">
@@ -332,26 +361,26 @@ export default function Home() {
           <Container>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Trusted by Professionals and Companies
+                Trusted by HR Leaders and the Teams They Build
               </h2>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
-                  quote: "Proven Path helped me land my dream job with verified performance data from my previous roles.",
-                  author: "Sarah Chen",
-                  role: "Senior Product Designer"
-                },
-                {
-                  quote: "Finally, a performance platform that our team actually wants to use.",
+                  quote: "Proven Path replaced three separate tools and finally gave us one defensible view of our talent pipeline. Our promotion committee meetings are completely different now.",
                   author: "Michael Rodriguez",
-                  role: "HR Director"
+                  role: "VP of People, Series B SaaS"
                 },
                 {
-                  quote: "The AI development plans are incredibly specific and actionable.",
+                  quote: "We onboarded 80 managers in two weeks. The structured 360° reviews surfaced retention risks we would have completely missed.",
+                  author: "Priya Shah",
+                  role: "HR Director, Professional Services Firm"
+                },
+                {
+                  quote: "For the first time, our engineers are excited about review season. Verified, portable records are a real benefit they talk about in our recruiting pipeline.",
                   author: "James Kim",
-                  role: "Software Engineer"
+                  role: "Engineering Manager"
                 }
               ].map((testimonial, i) => (
                 <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -375,21 +404,26 @@ export default function Home() {
           <Container className="relative z-10">
             <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Start Building Your Career Passport Today
+                Modernize Your Performance Management Today
               </h2>
               <p className="text-xl text-primary-foreground/90 mb-10">
-                Join professionals who are taking control of their career growth
+                Join HR teams using Proven Path to hire smarter, develop faster, and retain longer.
               </p>
-              <div className="flex flex-col items-center gap-4">
-                <Link href="/signup">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="/contact">
                   <Button size="lg" variant="secondary" className="h-14 px-10 text-lg bg-white text-primary hover:bg-gray-50">
-                    Create Free Account
+                    Book a Demo
                   </Button>
                 </Link>
-                <p className="text-sm text-primary-foreground/80">
-                  No credit card required • 14-day free trial
-                </p>
+                <Link href="/pricing">
+                  <Button size="lg" variant="outline" className="h-14 px-10 text-lg bg-transparent text-white border-white/40 hover:bg-white/10 hover:text-white">
+                    See Pricing <ArrowRight size={18} className="ml-2" />
+                  </Button>
+                </Link>
               </div>
+              <p className="text-sm text-primary-foreground/80 mt-6">
+                No credit card required for individual accounts • Custom rollout for teams
+              </p>
             </div>
           </Container>
         </section>

@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "ProvenPath"
+title = "ProvenPath Platform"
 version = "1.0.0"
 id = "artifacts/career-passport"
 router = "path"

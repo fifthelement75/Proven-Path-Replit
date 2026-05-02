@@ -16,10 +16,10 @@ export default function Contact() {
           <div className="max-w-xl mx-auto">
             <div className="text-center mb-12">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Contact Sales
+                Book a Demo
               </h1>
               <p className="text-xl text-gray-600">
-                Ready to transform your team's performance management? Fill out the form below and we'll be in touch.
+                See how HR teams use Proven Path to hire smarter, develop faster, and retain longer. Tell us about your team and we'll set up a tailored walkthrough.
               </p>
             </div>
 
@@ -47,16 +47,21 @@ export default function Contact() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="message">How can we help?</Label>
+                  <Label htmlFor="teamSize">Team Size</Label>
+                  <Input id="teamSize" placeholder="e.g. 50–200 employees" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message">What are you trying to solve?</Label>
                   <Textarea 
                     id="message" 
-                    placeholder="Tell us about your current performance management process..."
+                    placeholder="Tell us about your current performance and hiring process, the tools you use, and what you'd like to change..."
                     className="min-h-[120px]"
                   />
                 </div>
 
                 <Button type="submit" className="w-full h-12 text-lg">
-                  Submit Request
+                  Request Demo
                 </Button>
               </form>
             </div>
