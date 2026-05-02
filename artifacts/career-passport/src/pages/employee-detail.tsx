@@ -83,14 +83,23 @@ interface PeerReview {
   requestId: number;
   peerEmail: string;
   personalPlanningScore: string | null;
+  personalPlanningComment: string | null;
   trackPlanningScore: string | null;
+  trackPlanningComment: string | null;
   solutionDrivenScore: string | null;
+  solutionDrivenComment: string | null;
   teamLeadershipScore: string | null;
+  teamLeadershipComment: string | null;
   persuasionScore: string | null;
+  persuasionComment: string | null;
   crossFunctionalScore: string | null;
+  crossFunctionalComment: string | null;
   businessAlignmentScore: string | null;
+  businessAlignmentComment: string | null;
   customerCentricScore: string | null;
+  customerCentricComment: string | null;
   dataInformedScore: string | null;
+  dataInformedComment: string | null;
   promotionRecommendation: string | null;
   strengths: string | null;
   areasToImprove: string | null;
@@ -594,8 +603,87 @@ function ShareDialog({ open, onClose, employeeId }: { open: boolean; onClose: ()
   );
 }
 
+const PEER_QUESTIONS = [
+  { scoreKey: "personalPlanningScore", commentKey: "personalPlanningComment", label: "Personal planning" },
+  { scoreKey: "trackPlanningScore", commentKey: "trackPlanningComment", label: "Track planning" },
+  { scoreKey: "solutionDrivenScore", commentKey: "solutionDrivenComment", label: "Solution driven" },
+  { scoreKey: "teamLeadershipScore", commentKey: "teamLeadershipComment", label: "Team leadership" },
+  { scoreKey: "persuasionScore", commentKey: "persuasionComment", label: "Persuasion" },
+  { scoreKey: "crossFunctionalScore", commentKey: "crossFunctionalComment", label: "Cross-functional" },
+  { scoreKey: "businessAlignmentScore", commentKey: "businessAlignmentComment", label: "Business alignment" },
+  { scoreKey: "customerCentricScore", commentKey: "customerCentricComment", label: "Customer-centric" },
+  { scoreKey: "dataInformedScore", commentKey: "dataInformedComment", label: "Data-informed" },
+];
+
+const PROMO_REC_LABELS: Record<string, { label: string; color: string }> = {
+  yes: { label: "Ready for promotion", color: "bg-green-100 text-green-800 border-green-200" },
+  no: { label: "Not yet ready", color: "bg-red-100 text-red-800 border-red-200" },
+  unsure: { label: "Unsure", color: "bg-gray-100 text-gray-700 border-gray-200" },
+};
+
+function PeerResponseDetail({ review }: { review: PeerReview }) {
+  const answeredQuestions = PEER_QUESTIONS.filter(
+    q => review[q.scoreKey as keyof PeerReview] || review[q.commentKey as keyof PeerReview]
+  );
+
+  return (
+    <div className="mt-3 pt-3 border-t space-y-4">
+      {answeredQuestions.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Competency Scores</p>
+          <div className="space-y-2">
+            {answeredQuestions.map(q => {
+              const score = review[q.scoreKey as keyof PeerReview] as string | null;
+              const comment = review[q.commentKey as keyof PeerReview] as string | null;
+              if (!score) return null;
+              const scoreInfo = SCORE_LABEL[score];
+              return (
+                <div key={q.scoreKey} className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-36 shrink-0">{q.label}</span>
+                    <Badge className={`text-xs border ${scoreInfo?.color ?? "bg-gray-100 text-gray-600"}`}>
+                      {scoreInfo?.label ?? score}
+                    </Badge>
+                  </div>
+                  {comment && (
+                    <p className="text-xs text-muted-foreground ml-[152px] italic">"{comment}"</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {review.promotionRecommendation && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Promotion Recommendation</p>
+          <Badge className={`text-xs border ${PROMO_REC_LABELS[review.promotionRecommendation]?.color ?? "bg-gray-100 text-gray-600"}`}>
+            {PROMO_REC_LABELS[review.promotionRecommendation]?.label ?? review.promotionRecommendation}
+          </Badge>
+        </div>
+      )}
+
+      {review.strengths && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Strengths</p>
+          <p className="text-sm text-muted-foreground border-l-2 border-green-300 pl-3">{review.strengths}</p>
+        </div>
+      )}
+
+      {review.areasToImprove && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Areas to Improve</p>
+          <p className="text-sm text-muted-foreground border-l-2 border-orange-300 pl-3">{review.areasToImprove}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; employeeName: string }) {
   const [requestOpen, setRequestOpen] = useState(false);
+  const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
 
   const { data: requests = [], isLoading: loadingRequests } = useQuery<PeerReviewRequest[]>({
     queryKey: ["peerReviewRequests", employeeId],
@@ -618,22 +706,12 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
   const completedCount = requests.filter(r => r.status === "completed").length;
   const pendingCount = requests.filter(r => r.status === "pending").length;
 
-  const PEER_QUESTIONS = [
-    { id: "personalPlanningScore", label: "Personal planning" },
-    { id: "trackPlanningScore", label: "Track planning" },
-    { id: "solutionDrivenScore", label: "Solution driven" },
-    { id: "teamLeadershipScore", label: "Team leadership" },
-    { id: "persuasionScore", label: "Persuasion" },
-    { id: "crossFunctionalScore", label: "Cross-functional" },
-    { id: "businessAlignmentScore", label: "Business alignment" },
-    { id: "customerCentricScore", label: "Customer-centric" },
-    { id: "dataInformedScore", label: "Data-informed" },
-  ];
+  const reviewByRequestId = new Map(reviews.map(r => [r.requestId, r]));
 
   const scoreCounts = PEER_QUESTIONS.map(q => {
     const tally: Record<string, number> = {};
     for (const r of reviews) {
-      const val = r[q.id as keyof PeerReview] as string | null;
+      const val = r[q.scoreKey as keyof PeerReview] as string | null;
       if (val) tally[val] = (tally[val] || 0) + 1;
     }
     return { ...q, tally };
@@ -666,7 +744,7 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
 
       <div>
         <h4 className="text-sm font-medium mb-2">Review Requests</h4>
-        {loadingRequests ? <Skeleton className="h-24 w-full" /> : requests.length === 0 ? (
+        {loadingRequests || loadingReviews ? <Skeleton className="h-24 w-full" /> : requests.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
               No peer review requests yet. Click "Request Peer Reviews" to get started.
@@ -674,25 +752,47 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
           </Card>
         ) : (
           <div className="space-y-2">
-            {requests.map(r => (
-              <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                <div>
-                  <span className="text-sm font-medium">{r.peerEmail}</span>
-                  {r.peerName && <span className="text-xs text-muted-foreground ml-2">({r.peerName})</span>}
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Requested {new Date(r.createdAt).toLocaleDateString()}
-                    {r.expiresAt && ` · Expires ${new Date(r.expiresAt).toLocaleDateString()}`}
+            {requests.map(r => {
+              const response = reviewByRequestId.get(r.id);
+              const isCompleted = r.status === "completed" && !!response;
+              const isExpanded = expandedRequestId === r.id;
+              return (
+                <div
+                  key={r.id}
+                  className={`rounded-lg border bg-card transition-shadow ${isCompleted ? "cursor-pointer hover:shadow-sm" : ""}`}
+                  onClick={() => isCompleted && setExpandedRequestId(isExpanded ? null : r.id)}
+                >
+                  <div className="flex items-center justify-between p-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{r.peerEmail}</span>
+                        {r.peerName && <span className="text-xs text-muted-foreground">({r.peerName})</span>}
+                        {isCompleted && (
+                          <span className="text-xs text-muted-foreground">{isExpanded ? "▲" : "▼"}</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Requested {new Date(r.createdAt).toLocaleDateString()}
+                        {r.expiresAt && ` · Expires ${new Date(r.expiresAt).toLocaleDateString()}`}
+                        {response && ` · Submitted ${new Date(response.submittedAt).toLocaleDateString()}`}
+                      </div>
+                    </div>
+                    <Badge className={
+                      r.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
+                      r.status === "expired" ? "bg-gray-100 text-gray-600" :
+                      "bg-yellow-100 text-yellow-800 border-yellow-200"
+                    }>
+                      {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                    </Badge>
                   </div>
+                  {isExpanded && response && (
+                    <div className="px-3 pb-4">
+                      <PeerResponseDetail review={response} />
+                    </div>
+                  )}
                 </div>
-                <Badge className={
-                  r.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
-                  r.status === "expired" ? "bg-gray-100 text-gray-600" :
-                  "bg-yellow-100 text-yellow-800 border-yellow-200"
-                }>
-                  {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                </Badge>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -702,7 +802,7 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
           <h4 className="text-sm font-medium mb-2">Aggregated Results ({reviews.length} response{reviews.length > 1 ? "s" : ""})</h4>
           <div className="space-y-3">
             {scoreCounts.filter(q => Object.keys(q.tally).length > 0).map(q => (
-              <Card key={q.id}>
+              <Card key={q.scoreKey}>
                 <CardContent className="py-3">
                   <p className="text-sm font-medium mb-2">{q.label}</p>
                   <div className="flex flex-wrap gap-2">
@@ -726,7 +826,7 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
                       return c > 0 ? (
                         <div key={v} className="text-center">
                           <div className="text-lg font-bold">{c}</div>
-                          <div className="text-xs text-muted-foreground capitalize">{v}</div>
+                          <div className="text-xs text-muted-foreground capitalize">{v === "yes" ? "Ready" : v === "no" ? "Not yet" : "Unsure"}</div>
                         </div>
                       ) : null;
                     })}
