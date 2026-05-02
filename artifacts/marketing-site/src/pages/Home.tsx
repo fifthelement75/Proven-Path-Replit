@@ -129,8 +129,31 @@ export default function Home() {
         </section>
 
         {/* PLATFORM DIFFERENTIATION SECTION */}
-        <section id="differentiation" className="py-24 bg-gray-50 border-y border-gray-100">
-          <Container>
+        <section
+          id="differentiation"
+          className="relative py-24 border-y border-gray-100 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50"
+        >
+          {/* Blue dot grid with radial mask */}
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(37,99,235,0.18)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]"
+          />
+
+          {/* Soft color washes */}
+          <div
+            aria-hidden
+            className="absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-[120px]"
+          />
+          <div
+            aria-hidden
+            className="absolute -bottom-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-indigo-400/20 blur-[120px]"
+          />
+          <div
+            aria-hidden
+            className="absolute top-1/2 right-1/3 -translate-y-1/2 w-[22rem] h-[22rem] rounded-full bg-warning/15 blur-[120px]"
+          />
+
+          <Container className="relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 What Makes Proven Path Different
@@ -158,7 +181,10 @@ export default function Home() {
                   description: "See how your people grow from interview through promotion. Spot high performers early, model succession plans, and benchmark teams against your career ladders."
                 }
               ].map((feature, i) => (
-                <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div
+                  key={i}
+                  className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl shadow-primary/5 border border-gray-200/80 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5 transition-all"
+                >
                   <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-6">
                     <feature.icon size={24} />
                   </div>
