@@ -166,12 +166,44 @@ export default function Home() {
                       ))}
                     </ul>
                   </div>
-                  <div className="aspect-[16/9] rounded-2xl overflow-hidden shadow-lg border border-gray-100 mt-8 bg-gray-50">
-                    <img 
-                      src={`${import.meta.env.BASE_URL}ai-dev-plan.png`} 
-                      alt="AI-generated development plans for HR teams" 
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative mt-8">
+                    {/* Decorative gradient backdrop */}
+                    <div className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/20 via-success/10 to-warning/10 blur-2xl opacity-70 rounded-full" />
+
+                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
+                      {/* Browser-style window chrome */}
+                      <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
+                        <span className="w-3 h-3 rounded-full bg-red-400" />
+                        <span className="w-3 h-3 rounded-full bg-yellow-400" />
+                        <span className="w-3 h-3 rounded-full bg-green-400" />
+                        <div className="ml-3 flex-1 max-w-xs">
+                          <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">
+                            provenpath.fyi/candidates/jordan-lee/scorecard
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Screenshot itself */}
+                      <div className="bg-white p-3 sm:p-4">
+                        <img
+                          src={`${import.meta.env.BASE_URL}interview-scorecard.png`}
+                          alt="Verified interview scorecard for a Product Marketing Manager candidate, showing skill ratings and a Strong Yes hire recommendation"
+                          className="w-full h-auto block rounded-md"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Floating "Strong Yes" badge */}
+                    <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-success text-white text-sm font-semibold shadow-lg shadow-success/30 ring-4 ring-white">
+                      <CheckCircle2 size={16} />
+                      <span>Strong Yes · 4.5/5</span>
+                    </div>
+
+                    {/* Floating "AI insights" badge */}
+                    <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 px-3 py-2 rounded-xl bg-white text-gray-900 text-xs font-semibold shadow-lg border border-gray-100">
+                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      <span>15 skills scored · AI verified</span>
+                    </div>
                   </div>
                 </div>
               </div>
