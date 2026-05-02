@@ -18,7 +18,6 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/contact" component={Contact} />
       <Route path="/signup" component={Signup} />
-      <Route path="/about" component={() => <Placeholder title="About Us" />} />
       <Route path="/blog" component={() => <Placeholder title="Blog" />} />
       <Route path="/privacy" component={() => <Placeholder title="Privacy Policy" />} />
       <Route path="/terms" component={() => <Placeholder title="Terms of Service" />} />

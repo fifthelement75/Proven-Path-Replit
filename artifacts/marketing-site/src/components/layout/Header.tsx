@@ -60,14 +60,6 @@ export function Header() {
             >
               Pricing
             </Link>
-            <Link
-              href="/about"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                location === "/about" ? "text-primary" : "text-gray-600"
-              }`}
-            >
-              About
-            </Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
@@ -106,12 +98,6 @@ export function Header() {
             className="text-base font-medium text-gray-900 p-2 hover:bg-gray-50 rounded-md"
           >
             Pricing
-          </Link>
-          <Link
-            href="/about"
-            className="text-base font-medium text-gray-900 p-2 hover:bg-gray-50 rounded-md"
-          >
-            About
           </Link>
           <div className="h-px bg-gray-200 my-2" />
           <Link
