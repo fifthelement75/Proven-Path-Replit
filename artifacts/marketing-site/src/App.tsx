@@ -8,6 +8,7 @@ import Pricing from "@/pages/Pricing";
 import Contact from "@/pages/Contact";
 import Signup from "@/pages/Signup";
 import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/not-found";
 
@@ -32,7 +33,7 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/blog" component={() => <Placeholder title="Blog" />} />
       <Route path="/privacy" component={Privacy} />
-      <Route path="/terms" component={() => <Placeholder title="Terms of Service" />} />
+      <Route path="/terms" component={Terms} />
       <Route path="/security" component={() => <Placeholder title="Security" />} />
       <Route component={NotFound} />
     </Switch>
