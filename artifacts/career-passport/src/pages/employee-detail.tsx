@@ -307,19 +307,21 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
               )}
               <div className="space-y-2">
                 {created.map(r => (
-                  <div key={r.token} className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-medium truncate">{r.peerEmail}</p>
-                        {r.emailSent
-                          ? <span className="text-xs text-green-600 shrink-0">Email sent</span>
-                          : <span className="text-xs text-amber-600 shrink-0">Email failed</span>}
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate font-mono">{getLink(r.token)}</p>
+                  <div key={r.token} className="rounded-lg border bg-muted/30 p-3 space-y-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <p className="text-sm font-medium truncate min-w-0 flex-1">{r.peerEmail}</p>
+                      {r.emailSent
+                        ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 shrink-0 font-medium">Email sent</span>
+                        : <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shrink-0 font-medium">Email failed</span>}
                     </div>
-                    <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" onClick={() => copyLink(r.token)}>
-                      {copied === r.token ? "Copied!" : "Copy"}
-                    </Button>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex-1 min-w-0 px-2.5 py-1.5 rounded border bg-background text-xs font-mono text-muted-foreground truncate">
+                        {getLink(r.token)}
+                      </div>
+                      <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={() => copyLink(r.token)}>
+                        {copied === r.token ? "Copied!" : "Copy link"}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
