@@ -92,9 +92,7 @@ export function Footer() {
                 <a
                   href="mailto:info@provenpath.fyi"
                   className="text-sm text-gray-500 hover:text-primary"
-                >
-                  info@provenpath.fyi
-                </a>
+                >info@provenpath.app</a>
               </li>
             </ul>
           </div>
