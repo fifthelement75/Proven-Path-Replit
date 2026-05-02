@@ -73,11 +73,6 @@ export function Footer() {
                   Terms of Service
                 </Link>
               </li>
-              <li>
-                <Link href="/security" className="text-sm text-gray-500 hover:text-primary">
-                  Security
-                </Link>
-              </li>
             </ul>
           </div>
 
