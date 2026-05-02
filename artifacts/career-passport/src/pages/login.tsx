@@ -60,6 +60,14 @@ export default function LoginPage() {
         className="pointer-events-none absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-amber-200/25 blur-[100px]"
       />
 
+      <a
+        href="/marketing/"
+        className="absolute top-4 right-4 z-20 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-full border border-gray-200/80 bg-white/70 backdrop-blur-sm shadow-sm hover:border-primary/40"
+      >
+        Learn more
+        <span aria-hidden>→</span>
+      </a>
+
       <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-primary">Career Passport</h1>
