@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { logger } from "./logger";
 
 interface ResendConnectionSettings {
   settings: {
@@ -80,6 +81,91 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+const CONTACT_INBOX_FALLBACK = "peter.kattan@gmail.com";
+const CONTACT_INBOX = process.env.CONTACT_INBOX_EMAIL?.trim() || CONTACT_INBOX_FALLBACK;
+if (!process.env.CONTACT_INBOX_EMAIL) {
+  logger.warn(
+    { fallback: CONTACT_INBOX_FALLBACK },
+    "CONTACT_INBOX_EMAIL is not set — Book-a-Demo leads will be routed to the fallback inbox.",
+  );
+}
+
+export async function sendContactDemoEmail({
+  firstName,
+  lastName,
+  email,
+  company,
+  teamSize,
+  message,
+}: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  company: string;
+  teamSize: string;
+  message: string;
+}): Promise<void> {
+  const { apiKey, fromEmail } = await getCredentials();
+  const client = new Resend(apiKey);
+
+  const fullName = `${firstName} ${lastName}`.trim();
+  const safeFullName = escapeHtml(fullName);
+  const safeEmail = escapeHtml(email);
+  const safeCompany = escapeHtml(company);
+  const safeTeamSize = escapeHtml(teamSize || "Not provided");
+  const safeMessage = escapeHtml(message || "(no message)").replace(/\n/g, "<br />");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#111827;">
+  <h2 style="margin:0 0 8px;font-size:20px;">New Demo Request</h2>
+  <p style="margin:0 0 16px;color:#374151;">Someone just submitted the Proven Path "Book a Demo" form.</p>
+  <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+    <tr><td style="padding:8px 12px;background:#f3f4f6;font-weight:600;width:140px;">Name</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${safeFullName}</td></tr>
+    <tr><td style="padding:8px 12px;background:#f3f4f6;font-weight:600;">Work email</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;"><a href="mailto:${safeEmail}" style="color:#2563eb;">${safeEmail}</a></td></tr>
+    <tr><td style="padding:8px 12px;background:#f3f4f6;font-weight:600;">Company</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${safeCompany}</td></tr>
+    <tr><td style="padding:8px 12px;background:#f3f4f6;font-weight:600;">Team size</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${safeTeamSize}</td></tr>
+  </table>
+  <h3 style="margin:24px 0 8px;font-size:15px;color:#111827;">What they're trying to solve</h3>
+  <div style="padding:12px 16px;background:#f9fafb;border-left:3px solid #2563eb;border-radius:4px;color:#374151;line-height:1.5;">${safeMessage}</div>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+  <p style="margin:0;color:#9ca3af;font-size:12px;">Reply directly to this email to reach ${safeFullName} at ${safeEmail}.</p>
+</body>
+</html>`;
+
+  const text = `New Demo Request — Proven Path
+
+Name: ${fullName}
+Work email: ${email}
+Company: ${company}
+Team size: ${teamSize || "Not provided"}
+
+What they're trying to solve:
+${message || "(no message)"}
+
+Reply directly to this email to reach ${fullName} at ${email}.`;
+
+  const result = await client.emails.send({
+    from: fromEmail,
+    to: CONTACT_INBOX,
+    replyTo: email,
+    subject: `Demo request from ${fullName} (${company})`,
+    html,
+    text,
+  });
+
+  if (result.error) {
+    const msg = result.error.message || "";
+    if (/domain is not verified/i.test(msg)) {
+      throw new Error(
+        "Email could not be sent because the configured sender domain is not verified with Resend."
+      );
+    }
+    throw new Error(`Resend error: ${msg}`);
+  }
 }
 
 export async function sendPeerReviewEmail({
