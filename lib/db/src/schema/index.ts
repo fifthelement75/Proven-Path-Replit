@@ -7,3 +7,5 @@ export * from "./sharelinks";
 export * from "./peerReviewRequests";
 export * from "./peerReviews";
 export * from "./notifications";
+export * from "./candidateProfiles";
+export * from "./interviewAssessments";

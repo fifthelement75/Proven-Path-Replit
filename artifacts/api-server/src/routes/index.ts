@@ -9,6 +9,7 @@ import devplanRouter from "./devplan";
 import shareRouter from "./share";
 import peerReviewsRouter from "./peerReviews";
 import notificationsRouter from "./notifications";
+import candidatesRouter from "./candidates";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(devplanRouter);
 router.use(shareRouter);
 router.use(peerReviewsRouter);
 router.use(notificationsRouter);
+router.use(candidatesRouter);
 
 export default router;

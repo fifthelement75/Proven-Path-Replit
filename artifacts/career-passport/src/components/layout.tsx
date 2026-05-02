@@ -156,6 +156,7 @@ export function Layout({ children }: LayoutProps) {
   const adminNavItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/employees", label: "Employees" },
+    { href: "/candidates", label: "Interviews" },
     { href: "/settings", label: "Settings" },
   ];
 
