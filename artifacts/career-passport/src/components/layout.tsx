@@ -1,8 +1,8 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
@@ -10,9 +10,123 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+interface Notification {
+  id: number;
+  message: string;
+  type: string;
+  read: boolean;
+  relatedEmployeeId: number | null;
+  createdAt: string;
+}
+
 function authHeaders(): Record<string, string> {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function NotificationBell({ userId }: { userId: number }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const { data: notifications = [] } = useQuery<Notification[]>({
+    queryKey: ["notifications", userId],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl("/notifications"), { headers: authHeaders() });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    refetchInterval: 30000,
+  });
+
+  const { mutate: markAllRead } = useMutation({
+    mutationFn: async () => {
+      await fetch(getApiUrl("/notifications/read-all"), { method: "POST", headers: authHeaders() });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", userId] }),
+  });
+
+  const { mutate: markRead } = useMutation({
+    mutationFn: async (id: number) => {
+      await fetch(getApiUrl(`/notifications/${id}/read`), { method: "PATCH", headers: authHeaders() });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", userId] }),
+  });
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function handleOpen() {
+    setOpen(v => !v);
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={handleOpen}
+        className="relative p-1.5 rounded-md hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+        aria-label="Notifications"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-80 bg-card border rounded-lg shadow-lg z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <span className="text-sm font-semibold">Notifications</span>
+            {unreadCount > 0 && (
+              <button onClick={() => markAllRead()} className="text-xs text-primary hover:underline">
+                Mark all read
+              </button>
+            )}
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                No notifications yet
+              </div>
+            ) : (
+              notifications.slice(0, 20).map(n => (
+                <div
+                  key={n.id}
+                  onClick={() => !n.read && markRead(n.id)}
+                  className={`px-4 py-3 border-b last:border-b-0 cursor-default hover:bg-accent/50 transition-colors ${!n.read ? "bg-blue-50/60" : ""}`}
+                >
+                  <div className="flex items-start gap-2">
+                    {!n.read && <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />}
+                    {n.read && <div className="w-2 h-2 mt-1.5 shrink-0" />}
+                    <div>
+                      <p className="text-xs leading-relaxed">{n.message}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {new Date(n.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Layout({ children }: LayoutProps) {
@@ -21,7 +135,6 @@ export function Layout({ children }: LayoutProps) {
   const queryClient = useQueryClient();
 
   const isAdmin = user?.role === "admin";
-  const isEmployee = user?.role === "employee" || user?.role === "manager";
 
   const { data: myProfile } = useQuery<{ id: number } | null>({
     queryKey: ["employees", "me"],
@@ -85,9 +198,10 @@ export function Layout({ children }: LayoutProps) {
               )}
             </nav>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {user && <NotificationBell userId={user.id} />}
             <span className="text-sm text-muted-foreground hidden sm:block">
-              {isEmployee ? user?.email : user?.companyName}
+              {isAdmin ? user?.companyName : user?.email}
             </span>
             <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
               Sign out

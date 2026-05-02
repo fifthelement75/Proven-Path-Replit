@@ -12,6 +12,7 @@ import EmployeeDetailPage from "@/pages/employee-detail";
 import SharePage from "@/pages/share";
 import SettingsPage from "@/pages/settings";
 import MyProfileRedirect from "@/pages/my-profile";
+import PeerReviewPage from "@/pages/peer-review";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/employees/:id" component={() => <PrivateRoute component={EmployeeDetailPage} />} />
       <Route path="/settings" component={() => <AdminRoute component={SettingsPage} />} />
       <Route path="/share/:token" component={SharePage} />
+      <Route path="/peer-review/:token" component={PeerReviewPage} />
       <Route component={NotFound} />
     </Switch>
   );

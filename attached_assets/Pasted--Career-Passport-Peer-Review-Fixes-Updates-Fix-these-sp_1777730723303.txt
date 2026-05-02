@@ -1,0 +1,107 @@
+# Career Passport - Peer Review Fixes & Updates
+
+Fix these specific issues with the peer review system:
+
+---
+
+## 1. Separate "Request Peer Review" Section
+
+The Peer Review system should NOT be in the same place as "Add Review" (self/manager review).
+
+**Create new navigation section:**
+- Rename or add section called: **"Request Reviews"**
+- Under this section, have two options:
+  - **"Peer Review"** - for requesting soft skills feedback from peers
+  - Keep "Add Review" for self-assessment and manager review only
+
+**Why:** Self/Manager reviews cover HARD skills. Peer review covers SOFT skills. They are different processes and should be visually separated.
+
+---
+
+## 2. Manager Notification When Peers Complete
+
+When peers complete their peer review, the **requesting manager** should be notified on the platform.
+
+**Implementation:**
+- Add a "Notifications" section in manager dashboard
+- When peer submits review → Create notification record:
+  - "Peer review completed for [Employee Name] by [Peer Email]"
+  - "2 of 5 peers have completed their review"
+- Show notification badge on manager's navbar
+- Click notification → shows peer review results progress
+
+**Database:**
+```
+Notification:
+- id
+- userId (manager receiving)
+- message
+- type (peer_review_completed)
+- read (boolean)
+- createdAt
+```
+
+---
+
+## 3. Peer Review Form - Use Attached Template
+
+The peer review form should follow this exact structure (based on attached Designer template):
+
+**Header:**
+"Peer Review"
+Note: "Your answers are kept private and will not be shared publicly with the employee."
+
+**Categories & Questions:**
+
+### Category 1: Project and Team Management
+Questions (each with scoring + optional comment):
+1. Personal planning and delivery: Plans and delivers one's own work on time; communicates status and issues appropriately to key stakeholders
+2. Track-level planning and delivery: Shows a clear understanding of the organization's planning and delivery process and can plan and estimate work effectively
+3. Solution driven and proactive: Always seeks out support and collaboration from team members to share knowledge and remove barriers to complete tasks or goals
+4. Team leadership: Effectively lead/mentors practice in core skills. Seeks out other team's strengths to improve their own work and build their own knowledge
+
+### Category 2: Collaboration
+Questions:
+1. Persuasion and influence: Able to effectively build consensus around their practice solutions. Actively listens, understands, and when appropriate, incorporates other people's points of view into the proposed solution. Use a variety of communication strategies and tools, like workshops and design sessions, to achieve consensus
+2. Working with cross-functional teams: Collaborates effectively with the triad and other stakeholders
+
+### Category 3: Strategic Thinking
+Questions:
+1. Alignment with business goals: Effectively aligns their work with product and organization objectives
+2. Customer-centric thinking: Applies research and customer needs to inform their decisions
+3. Data-informed decision making: Uses data to validate their work
+
+---
+
+## 4. Scoring Scale
+
+For EACH question, use this scoring (same as template):
+- **Needs Improvement** - Not currently effectively using this skill to support the team in their objectives and is actively working to improve the skill
+- **Meets Expectations** - Uses this skill effectively with their team and is actively working to improve their ability in this skill
+- **Often Exceeds** - Able to effectively apply a wide range of strategies to a variety of challenges encountered on the team
+- **Exceptional** - Models the way for fellow team members and is capable of mentoring others in this skill
+- **N/A** - Not applicable
+
+**Plus** optional comment field for each question.
+
+---
+
+## 5. Final Questions After All Scoring
+
+After all skill questions:
+- "Would you recommend this person for promotion?" (Yes / No / Unsure)
+- "What are this person's key strengths?" (text area)
+- "What areas should this person improve?" (text area)
+
+---
+
+## Summary of Changes
+
+1. ✅ Separate "Request Reviews" section from "Add Review"
+2. ✅ Manager gets notified when peers complete reviews
+3. ✅ Peer review form uses exact template structure with categories
+4. ✅ Scoring: Needs Improvement / Meets Expectations / Often Exceeds / Exceptional / N/A
+5. ✅ Optional comment field per question
+6. ✅ Final questions: promotion recommendation + written feedback
+
+Make these updates and peer review will work correctly!

@@ -7,6 +7,8 @@ import reviewsRouter from "./reviews";
 import feedbackRouter from "./feedback";
 import devplanRouter from "./devplan";
 import shareRouter from "./share";
+import peerReviewsRouter from "./peerReviews";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use(reviewsRouter);
 router.use(feedbackRouter);
 router.use(devplanRouter);
 router.use(shareRouter);
+router.use(peerReviewsRouter);
+router.use(notificationsRouter);
 
 export default router;
