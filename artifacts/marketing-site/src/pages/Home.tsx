@@ -5,6 +5,8 @@ import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/button";
 import { fadeIn, staggerContainer } from "@/lib/animations";
+import employerImage from "@assets/christina-wocintechchat-com-m-fjza4oBV8ic-unsplash_1777758998149.jpg";
+import employeeImage from "@assets/daria-pimkina-tYaccl19A3Q-unsplash_1777758998150.jpg";
 import {
   Brain,
   ShieldCheck,
@@ -208,142 +210,99 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="grid lg:grid-cols-2 gap-16">
-              {/* For Employers — primary, on the left */}
-              <div className="relative">
-                <div className="sticky top-24">
-                  <div className="mb-8">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                      <Building2 className="text-primary" />
-                      For Employers
-                    </h3>
-                    <ul className="space-y-4">
-                      {[
-                        "Make data-driven hiring and promotion decisions",
-                        "Reduce time-to-productivity with structured 360° reviews",
-                        "Identify skill gaps and build targeted development plans",
-                        "Improve retention with transparent career progression",
-                        "Streamline reference checks with verified performance histories",
-                        "Plug into your HRIS—no rip-and-replace required"
-                      ].map((item, i) => (
-                        <li key={i} className="flex items-start gap-3 text-lg text-gray-700">
-                          <CheckCircle2 className="text-success shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+            <div className="space-y-20 lg:space-y-28">
+              {/* Row 1 — For Employers (text left, image right) */}
+              <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <Building2 className="text-primary" />
+                    For Employers
+                  </h3>
+                  <ul className="space-y-4">
+                    {[
+                      "Make data-driven hiring and promotion decisions",
+                      "Reduce time-to-productivity with structured 360° reviews",
+                      "Identify skill gaps and build targeted development plans",
+                      "Improve retention with transparent career progression",
+                      "Streamline reference checks with verified performance histories",
+                      "Plug into your HRIS—no rip-and-replace required"
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-lg text-gray-700">
+                        <CheckCircle2 className="text-success shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="relative">
+                  {/* Decorative gradient backdrop */}
+                  <div
+                    aria-hidden
+                    className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-2xl opacity-70 rounded-full"
+                  />
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
+                    <img
+                      src={employerImage}
+                      alt="HR leader reviewing performance data on a laptop"
+                      className="w-full h-[420px] sm:h-[480px] object-cover block"
+                      loading="lazy"
+                    />
                   </div>
-                  <div className="relative mt-8">
-                    {/* Decorative gradient backdrop */}
-                    <div className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/20 via-success/10 to-warning/10 blur-2xl opacity-70 rounded-full" />
 
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-                      {/* Browser-style window chrome */}
-                      <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-                        <span className="w-3 h-3 rounded-full bg-red-400" />
-                        <span className="w-3 h-3 rounded-full bg-yellow-400" />
-                        <span className="w-3 h-3 rounded-full bg-green-400" />
-                        <div className="ml-3 flex-1 max-w-xs">
-                          <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">
-                            provenpath.fyi/candidates/jordan-lee/scorecard
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Screenshot itself */}
-                      <div className="bg-white p-3 sm:p-4">
-                        <img
-                          src={`${import.meta.env.BASE_URL}interview-scorecard.png`}
-                          alt="Verified interview scorecard for a Product Marketing Manager candidate, showing skill ratings and a Strong Yes hire recommendation"
-                          className="w-full h-auto block rounded-md"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Floating "Strong Yes" badge */}
-                    <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-success text-white text-sm font-semibold shadow-lg shadow-success/30 ring-4 ring-white">
-                      <CheckCircle2 size={16} />
-                      <span>Strong Yes · 4.5/5</span>
-                    </div>
-
-                    {/* Floating "AI insights" badge */}
-                    <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 px-3 py-2 rounded-xl bg-white text-gray-900 text-xs font-semibold shadow-lg border border-gray-100">
-                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                      <span>15 skills scored · AI verified</span>
-                    </div>
+                  {/* Floating badge — top-right */}
+                  <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
+                    <Building2 size={16} />
+                    <span>Built for HR teams</span>
                   </div>
                 </div>
               </div>
 
-              {/* For Employees — secondary, on the right */}
-              <div className="relative">
-                <div className="sticky top-24">
-                  <div className="mb-8">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                      <Users className="text-warning" />
-                      For Your Employees
-                    </h3>
-                    <ul className="space-y-4">
-                      {[
-                        "Personalized AI development plans tied to real performance data",
-                        "A verified record of growth that follows them across roles",
-                        "Clear visibility into the path to promotion",
-                        "Faster, lighter-weight reviews instead of annual paperwork"
-                      ].map((item, i) => (
-                        <li key={i} className="flex items-start gap-3 text-lg text-gray-700">
-                          <CheckCircle2 className="text-success shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="mt-6 text-sm text-gray-500 leading-relaxed">
-                      Higher employee engagement means better data for you—and a stronger employer brand when great people talk about your performance process.
-                    </p>
+              {/* Row 2 — For Your Employees (image left, text right) */}
+              <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                <div className="relative order-last lg:order-first">
+                  {/* Decorative gradient backdrop */}
+                  <div
+                    aria-hidden
+                    className="absolute -inset-4 -z-10 bg-gradient-to-tr from-warning/25 via-primary/15 to-success/20 blur-2xl opacity-70 rounded-full"
+                  />
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
+                    <img
+                      src={employeeImage}
+                      alt="Employee walking through a modern office, reviewing notes"
+                      className="w-full h-[420px] sm:h-[480px] object-cover block"
+                      loading="lazy"
+                    />
                   </div>
-                  <div className="relative mt-8">
-                    {/* Decorative gradient backdrop */}
-                    <div className="absolute -inset-4 -z-10 bg-gradient-to-tr from-warning/20 via-primary/10 to-success/15 blur-2xl opacity-70 rounded-full" />
 
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-                      {/* Browser-style window chrome */}
-                      <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-                        <span className="w-3 h-3 rounded-full bg-red-400" />
-                        <span className="w-3 h-3 rounded-full bg-yellow-400" />
-                        <span className="w-3 h-3 rounded-full bg-green-400" />
-                        <div className="ml-3 flex-1 max-w-xs">
-                          <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">
-                            provenpath.fyi/me/development-plan
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Screenshot itself */}
-                      <div className="bg-white p-3 sm:p-4">
-                        <img
-                          src={`${import.meta.env.BASE_URL}dev-plan.png`}
-                          alt="Personalized AI development plan with prioritized focus areas, next steps, and recommended resources"
-                          className="w-full h-auto block rounded-md"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Floating "AI generated" badge — top-right */}
-                    <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-warning text-white text-sm font-semibold shadow-lg shadow-warning/30 ring-4 ring-white">
-                      <Brain size={16} />
-                      <span>AI-generated for you</span>
-                    </div>
-
-                    {/* Floating focus area chip — bottom-left */}
-                    <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-gray-100">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary">
-                        <CheckCircle2 size={18} />
-                      </div>
-                      <div className="leading-tight">
-                        <div className="text-sm font-bold text-gray-900">4 focus areas</div>
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wide">Tied to your reviews</div>
-                      </div>
-                    </div>
+                  {/* Floating badge — bottom-left */}
+                  <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 px-3 py-2 rounded-xl bg-warning text-white text-sm font-semibold shadow-lg shadow-warning/30 ring-4 ring-white">
+                    <Users size={16} />
+                    <span>Loved by employees</span>
                   </div>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <Users className="text-warning" />
+                    For Your Employees
+                  </h3>
+                  <ul className="space-y-4">
+                    {[
+                      "Personalized AI development plans tied to real performance data",
+                      "A verified record of growth that follows them across roles",
+                      "Clear visibility into the path to promotion",
+                      "Faster, lighter-weight reviews instead of annual paperwork"
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-lg text-gray-700">
+                        <CheckCircle2 className="text-success shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-6 text-sm text-gray-500 leading-relaxed">
+                    Higher employee engagement means better data for you—and a stronger employer brand when great people talk about your performance process.
+                  </p>
                 </div>
               </div>
             </div>
