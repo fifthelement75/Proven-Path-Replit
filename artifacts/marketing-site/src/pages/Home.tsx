@@ -73,11 +73,11 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="relative"
               >
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-gray-100 bg-gray-50">
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-gray-100 bg-white">
                   <img 
-                    src={`${import.meta.env.BASE_URL}hero-illustration.png`} 
-                    alt="Talent intelligence dashboard for HR teams" 
-                    className="w-full h-full object-cover"
+                    src={`${import.meta.env.BASE_URL}hero-dashboard.png`} 
+                    alt="Proven Path performance dashboard showing competency averages, department scores, and score breakdown" 
+                    className="w-full h-full object-contain"
                   />
                 </div>
                 {/* Decorative background blur */}
