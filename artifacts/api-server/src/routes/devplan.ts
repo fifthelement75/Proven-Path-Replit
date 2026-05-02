@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, devPlansTable, devPlanSkillsTable, employeesTable, reviewsTable, feedbackTable } from "@workspace/db";
+import { db, devPlansTable, devPlanSkillsTable, employeesTable, reviewsTable, feedbackTable, peerReviewsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { GetDevPlanParams, GenerateDevPlanParams, MarkSkillCompleteParams, MarkSkillCompleteBody } from "@workspace/api-zod";
@@ -70,8 +70,11 @@ router.post("/employees/:employeeId/dev-plan/generate", requireAuth, async (req,
     return;
   }
 
-  const reviews = await db.select().from(reviewsTable).where(eq(reviewsTable.employeeId, employeeId));
-  const feedback = await db.select().from(feedbackTable).where(eq(feedbackTable.employeeId, employeeId));
+  const [reviews, feedback, peerReviews] = await Promise.all([
+    db.select().from(reviewsTable).where(eq(reviewsTable.employeeId, employeeId)),
+    db.select().from(feedbackTable).where(eq(feedbackTable.employeeId, employeeId)),
+    db.select().from(peerReviewsTable).where(eq(peerReviewsTable.employeeId, employeeId)),
+  ]);
 
   const prompt = `You are a career development expert. Generate a personalized development plan for the following employee.
 
@@ -89,6 +92,22 @@ ${reviews.map(r => `- Type: ${r.reviewType}, Period: ${r.period}
 
 Feedback Log (${feedback.length} entries):
 ${feedback.map(f => `- ${f.meetingType} on ${f.meetingDate}: What Went Well: ${f.whatWentWell || '-'} | Areas to Improve: ${f.areasToImprove || '-'} | Action Items: ${f.actionItems || '-'}`).join('\n')}
+
+Peer Reviews (${peerReviews.length} submitted):
+${peerReviews.length === 0 ? 'No peer reviews submitted yet.' : peerReviews.map((pr, i) => `Peer Review ${i + 1}:
+  Soft Skill Scores (scale varies by question):
+  - Personal Planning & Organization: ${pr.personalPlanningScore ?? 'N/A'}${pr.personalPlanningComment ? ` — "${pr.personalPlanningComment}"` : ''}
+  - Track Planning & Prioritization: ${pr.trackPlanningScore ?? 'N/A'}${pr.trackPlanningComment ? ` — "${pr.trackPlanningComment}"` : ''}
+  - Solution-Driven Thinking: ${pr.solutionDrivenScore ?? 'N/A'}${pr.solutionDrivenComment ? ` — "${pr.solutionDrivenComment}"` : ''}
+  - Team Leadership: ${pr.teamLeadershipScore ?? 'N/A'}${pr.teamLeadershipComment ? ` — "${pr.teamLeadershipComment}"` : ''}
+  - Persuasion & Influence: ${pr.persuasionScore ?? 'N/A'}${pr.persuasionComment ? ` — "${pr.persuasionComment}"` : ''}
+  - Cross-Functional Collaboration: ${pr.crossFunctionalScore ?? 'N/A'}${pr.crossFunctionalComment ? ` — "${pr.crossFunctionalComment}"` : ''}
+  - Business Alignment: ${pr.businessAlignmentScore ?? 'N/A'}${pr.businessAlignmentComment ? ` — "${pr.businessAlignmentComment}"` : ''}
+  - Customer-Centric Mindset: ${pr.customerCentricScore ?? 'N/A'}${pr.customerCentricComment ? ` — "${pr.customerCentricComment}"` : ''}
+  - Data-Informed Decision Making: ${pr.dataInformedScore ?? 'N/A'}${pr.dataInformedComment ? ` — "${pr.dataInformedComment}"` : ''}
+  Peer Strengths: ${pr.strengths || 'None noted'}
+  Peer Areas to Improve: ${pr.areasToImprove || 'None noted'}
+  Promotion Recommendation: ${pr.promotionRecommendation ?? 'Not specified'}`).join('\n\n')}
 
 Respond with valid JSON in exactly this format (no markdown, no code blocks):
 {
