@@ -15,6 +15,13 @@ import {
   FileBadge,
   Activity,
   ArrowRight,
+  ClipboardCheck,
+  LayoutGrid,
+  Sparkles,
+  Route,
+  BadgeCheck,
+  Rocket,
+  Fingerprint,
 } from "lucide-react";
 
 export default function Home() {
@@ -401,25 +408,28 @@ export default function Home() {
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { title: "Interview Scoring", desc: "Standardized rubrics and structured candidate assessments from day one" },
-                { title: "360° Reviews", desc: "Self, peer, and manager evaluations consolidated in one place" },
-                { title: "Skill Matrix", desc: "Track hard and soft skills against your career levels and ladders" },
-                { title: "AI Development Plans", desc: "Personalized recommendations grounded in each employee's data" },
-                { title: "Career Timelines", desc: "Visual progression from junior IC to leadership across your org" },
-                { title: "Verified References", desc: "Convert internal feedback into portable, audit-ready references" },
-                { title: "Promotion Readiness", desc: "AI flags which employees are ready for the next level—and why" },
-                { title: "Identity Verification", desc: "Secure background checks via Clear.me integration" },
-              ].map((feature, i) => (
-                <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start gap-4 hover:border-primary/30 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary">
-                    <CheckCircle2 size={20} />
+                { icon: ClipboardCheck, title: "Interview Scoring", desc: "Standardized rubrics and structured candidate assessments from day one" },
+                { icon: Users, title: "360° Reviews", desc: "Self, peer, and manager evaluations consolidated in one place" },
+                { icon: LayoutGrid, title: "Skill Matrix", desc: "Track hard and soft skills against your career levels and ladders" },
+                { icon: Sparkles, title: "AI Development Plans", desc: "Personalized recommendations grounded in each employee's data" },
+                { icon: Route, title: "Career Timelines", desc: "Visual progression from junior IC to leadership across your org" },
+                { icon: BadgeCheck, title: "Verified References", desc: "Convert internal feedback into portable, audit-ready references" },
+                { icon: Rocket, title: "Promotion Readiness", desc: "AI flags which employees are ready for the next level—and why" },
+                { icon: Fingerprint, title: "Identity Verification", desc: "Secure background checks via Clear.me integration" },
+              ].map((feature, i) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start gap-4 hover:border-primary/30 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+                      <Icon size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-1">{feature.title}</h4>
+                      <p className="text-sm text-gray-600">{feature.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">{feature.title}</h4>
-                    <p className="text-sm text-gray-600">{feature.desc}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Container>
         </section>
