@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Container } from "@/components/ui/Container";
+import logoUrl from "@assets/Screenshot_2026-05-02_at_7.51.36_PM_1777765970550.png";
 
 export function Footer() {
   return (
@@ -7,13 +8,8 @@ export function Footer() {
       <Container>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-12">
           <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl">
-                P
-              </div>
-              <span className="font-semibold text-lg tracking-tight text-gray-900">
-                Proven Path
-              </span>
+            <Link href="/" className="flex items-center mb-4" aria-label="ProvenPath home">
+              <img src={logoUrl} alt="ProvenPath" className="h-8 w-auto" />
             </Link>
             <p className="text-sm text-gray-500 mb-6">
               Performance intelligence for modern HR teams
