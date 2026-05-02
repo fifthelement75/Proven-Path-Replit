@@ -167,7 +167,7 @@ export function Layout({ children }: LayoutProps) {
   const navItems = isAdmin ? adminNavItems : employeeNavItems;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#f5f8ff]">
       <header className="border-b bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-8">
