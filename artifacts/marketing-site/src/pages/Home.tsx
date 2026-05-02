@@ -73,15 +73,48 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="relative"
               >
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-gray-100 bg-white">
-                  <img 
-                    src={`${import.meta.env.BASE_URL}hero-dashboard.png`} 
-                    alt="Proven Path performance dashboard showing competency averages, department scores, and score breakdown" 
-                    className="w-full h-full object-contain"
-                  />
+                {/* Decorative gradient halo */}
+                <div className="absolute -inset-6 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-3xl opacity-70 rounded-full" />
+
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
+                  {/* Browser-style window chrome */}
+                  <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
+                    <span className="w-3 h-3 rounded-full bg-red-400" />
+                    <span className="w-3 h-3 rounded-full bg-yellow-400" />
+                    <span className="w-3 h-3 rounded-full bg-green-400" />
+                    <div className="ml-3 flex-1 max-w-xs">
+                      <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">
+                        provenpath.fyi/dashboard
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dashboard screenshot */}
+                  <div className="bg-white p-3 sm:p-4">
+                    <img
+                      src={`${import.meta.env.BASE_URL}hero-dashboard.png`}
+                      alt="Proven Path performance dashboard showing competency averages, department scores, and score breakdown"
+                      className="w-full h-auto block rounded-md"
+                    />
+                  </div>
                 </div>
-                {/* Decorative background blur */}
-                <div className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/20 to-success/20 blur-3xl opacity-50 rounded-full" />
+
+                {/* Floating "Live data" badge — top-right */}
+                <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                  <span>Live performance data</span>
+                </div>
+
+                {/* Floating "Avg Score" badge — bottom-left */}
+                <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-gray-100">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-success/10 text-success">
+                    <TrendingUp size={18} />
+                  </div>
+                  <div className="leading-tight">
+                    <div className="text-base font-bold text-gray-900">3.3<span className="text-gray-400 text-xs font-medium">/5 avg</span></div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wide">Across 3 teams</div>
+                  </div>
+                </div>
               </motion.div>
             </div>
           </Container>
