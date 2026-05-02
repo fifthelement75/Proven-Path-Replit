@@ -425,33 +425,53 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100">
-                <div className="space-y-6">
-                  {/* Fake UI illustration */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-32 h-4 bg-gray-200 rounded-full" />
-                      <div className="w-16 h-4 bg-success/20 rounded-full" />
+              <div className="relative">
+                {/* Gradient halo */}
+                <div
+                  aria-hidden
+                  className="absolute -inset-4 -z-10 blur-2xl opacity-60 bg-gradient-to-br from-primary/30 via-success/20 to-warning/20 rounded-[2rem]"
+                />
+
+                {/* Browser-window card */}
+                <div className="relative bg-white rounded-2xl shadow-xl ring-1 ring-gray-200 overflow-hidden">
+                  {/* Browser chrome */}
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gray-50/80">
+                    <div className="flex gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
                     </div>
-                    <div className="space-y-2">
-                      <div className="w-full h-2 bg-gray-100 rounded-full" />
-                      <div className="w-5/6 h-2 bg-gray-100 rounded-full" />
-                      <div className="w-4/6 h-2 bg-gray-100 rounded-full" />
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gray-200" />
-                      <div>
-                        <div className="w-24 h-4 bg-gray-200 rounded-full mb-2" />
-                        <div className="w-32 h-3 bg-gray-100 rounded-full" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="w-full h-2 bg-gray-100 rounded-full" />
-                      <div className="w-4/6 h-2 bg-gray-100 rounded-full" />
+                    <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-white border border-gray-200 text-[11px] font-mono text-gray-500 truncate">
+                      provenpath.fyi/employees/sarah-chen
                     </div>
                   </div>
+
+                  {/* Screenshot */}
+                  <div className="p-3 sm:p-4 bg-white">
+                    <img
+                      src={`${import.meta.env.BASE_URL}competency-overview.png`}
+                      alt="Competency radar and score breakdown for an employee"
+                      className="w-full h-auto rounded-lg"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+
+                {/* Floating badge — top right */}
+                <div className="hidden sm:flex absolute -top-3 -right-3 items-center gap-2 bg-primary text-white text-xs font-semibold px-3 py-2 rounded-full shadow-lg">
+                  <Activity size={14} />
+                  Live competency view
+                </div>
+
+                {/* Stat chip — bottom left */}
+                <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 bg-white border border-gray-200 text-gray-700 text-xs font-medium px-3 py-2 rounded-xl shadow-md">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success">
+                    <TrendingUp size={14} />
+                  </span>
+                  <span>
+                    <span className="font-semibold text-gray-900">5 skills tracked</span>
+                    <span className="text-gray-500"> · Updated daily</span>
+                  </span>
                 </div>
               </div>
             </div>
