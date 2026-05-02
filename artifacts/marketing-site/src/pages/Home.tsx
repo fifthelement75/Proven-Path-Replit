@@ -351,7 +351,7 @@ export default function Home() {
         </section>
 
         {/* BEST FIT CUSTOMER SECTION */}
-        <section className="relative py-24 text-white overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#0b1221]">
+        <section className="relative py-24 text-white overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#243044] to-[#1e2a3d]">
           {/* Dot grid pattern */}
           <div
             aria-hidden
