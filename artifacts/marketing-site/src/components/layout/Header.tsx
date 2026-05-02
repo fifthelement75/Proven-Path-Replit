@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/button";
+import logoUrl from "@assets/Professional_logo_design_for__ProvenPath__career_platform._Con_1777760215322.png";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -32,13 +33,12 @@ export function Header() {
       <Container>
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl group-hover:scale-105 transition-transform">
-                P
-              </div>
-              <span className="font-semibold text-lg tracking-tight text-gray-900">
-                Proven Path
-              </span>
+            <Link href="/" className="flex items-center group" aria-label="ProvenPath home">
+              <img
+                src={logoUrl}
+                alt="ProvenPath"
+                className="h-8 w-auto group-hover:scale-105 transition-transform"
+              />
             </Link>
           </div>
 
