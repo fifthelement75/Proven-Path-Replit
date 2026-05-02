@@ -11,6 +11,29 @@ interface ConnectorsResponse {
   items?: ResendConnectionSettings[];
 }
 
+const RESEND_DEFAULT_SENDER = "ProvenPath <onboarding@resend.dev>";
+
+const RESEND_VERIFIED_DOMAINS = new Set([
+  "resend.dev",
+]);
+
+function pickFromAddress(connectorFromEmail: string | undefined): string {
+  const envOverride = process.env.RESEND_FROM_EMAIL?.trim();
+  if (envOverride) return envOverride;
+
+  const candidate = connectorFromEmail?.trim();
+  if (candidate) {
+    const match = candidate.match(/<([^>]+)>|([^\s<>]+@[^\s<>]+)/);
+    const addr = (match?.[1] || match?.[2] || candidate).toLowerCase();
+    const domain = addr.split("@")[1];
+    if (domain && RESEND_VERIFIED_DOMAINS.has(domain)) {
+      return candidate;
+    }
+  }
+
+  return RESEND_DEFAULT_SENDER;
+}
+
 async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
@@ -46,7 +69,7 @@ async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> 
 
   return {
     apiKey: conn.settings.api_key,
-    fromEmail: conn.settings.from_email,
+    fromEmail: pickFromAddress(conn.settings.from_email),
   };
 }
 
@@ -115,7 +138,7 @@ export async function sendPeerReviewEmail({
   const text = `${plainGreeting}\n\nYou've been asked to provide a peer review for ${employeeName}.\n\nYour feedback is confidential and helps support their career development. Please complete the short review form here:\n\n${reviewLink}${expiryText}`;
 
   const result = await client.emails.send({
-    from: fromEmail || "ProvenPath <noreply@provenpath.app>",
+    from: fromEmail,
     to: peerEmail,
     subject: `Peer Review Request for ${employeeName}`,
     html,
@@ -123,7 +146,15 @@ export async function sendPeerReviewEmail({
   });
 
   if (result.error) {
-    throw new Error(`Resend error: ${result.error.message}`);
+    const msg = result.error.message || "";
+    if (/domain is not verified/i.test(msg)) {
+      throw new Error(
+        "Email could not be sent because the configured sender domain is not verified with Resend. " +
+          "Verify a domain at https://resend.com/domains and set RESEND_FROM_EMAIL to an address on it, " +
+          "or share the link manually below."
+      );
+    }
+    throw new Error(`Resend error: ${msg}`);
   }
 }
 
