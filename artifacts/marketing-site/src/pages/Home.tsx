@@ -30,7 +30,6 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
-      
       <main className="flex-1 pt-16">
         {/* HERO SECTION */}
         <section className="relative overflow-hidden pt-20 pb-32 lg:pt-32 lg:pb-40">
@@ -468,9 +467,7 @@ export default function Home() {
                       <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                       <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
                     </div>
-                    <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-white border border-gray-200 text-[11px] font-mono text-gray-500 truncate">
-                      provenpath.fyi/employees/sarah-chen
-                    </div>
+                    <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-white border border-gray-200 text-[11px] font-mono text-gray-500 truncate">provenpath.app/employees/sarah-chen</div>
                   </div>
 
                   {/* Screenshot */}
@@ -577,7 +574,6 @@ export default function Home() {
           </Container>
         </section>
       </main>
-      
       <Footer />
     </div>
   );
