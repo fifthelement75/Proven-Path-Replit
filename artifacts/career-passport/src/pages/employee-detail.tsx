@@ -251,11 +251,11 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md w-[calc(100vw-2rem)]">
+        <DialogHeader className="min-w-0">
           <DialogTitle>Request Peer Reviews</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 mt-2">
+        <div className="space-y-4 mt-2 min-w-0">
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
             Peer reviews collect <strong>soft skills feedback</strong> from colleagues. Each peer will be emailed a private link to a confidential form.
           </div>
