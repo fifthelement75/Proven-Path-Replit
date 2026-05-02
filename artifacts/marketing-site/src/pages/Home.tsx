@@ -49,9 +49,10 @@ export default function Home() {
                 </motion.div>
                 <motion.h1 
                   variants={fadeIn}
-                  className="text-5xl sm:text-6xl font-bold tracking-tight text-gray-900 leading-[1.1] mb-6"
+                  className="text-5xl sm:text-6xl font-bold tracking-tight leading-[1.1] mb-6"
                 >
-                  Performance Intelligence That Powers Better Hiring, Retention & Growth
+                  <span className="text-gray-900">Performance Intelligence That Powers </span>
+                  <span className="animated-gradient-text">Better Hiring, Retention &amp; Growth</span>
                 </motion.h1>
                 <motion.p 
                   variants={fadeIn}
