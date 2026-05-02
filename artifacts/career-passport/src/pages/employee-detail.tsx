@@ -198,7 +198,7 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
   const [emails, setEmails] = useState("");
   const [expiresIn, setExpiresIn] = useState("30");
   const [error, setError] = useState("");
-  const [created, setCreated] = useState<{ peerEmail: string; token: string }[]>([]);
+  const [created, setCreated] = useState<{ peerEmail: string; token: string; emailSent: boolean; emailError?: string }[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
 
   const { mutate, isPending } = useMutation({
@@ -217,7 +217,12 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
       return res.json();
     },
     onSuccess: (data) => {
-      setCreated(data.map((r: { peerEmail: string; token: string }) => ({ peerEmail: r.peerEmail, token: r.token })));
+      setCreated(data.map((r: { peerEmail: string; token: string; emailSent: boolean; emailError?: string }) => ({
+        peerEmail: r.peerEmail,
+        token: r.token,
+        emailSent: r.emailSent,
+        emailError: r.emailError,
+      })));
       queryClient.invalidateQueries({ queryKey: ["peerReviewRequests", employeeId] });
       setError("");
     },
@@ -243,7 +248,7 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
-            Peer reviews collect <strong>soft skills feedback</strong> from colleagues. Each peer receives a private link to a confidential form.
+            Peer reviews collect <strong>soft skills feedback</strong> from colleagues. Each peer will be emailed a private link to a confidential form.
           </div>
 
           {!created.length ? (
@@ -276,20 +281,31 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
               <DialogFooter>
                 <Button variant="outline" onClick={onClose}>Cancel</Button>
                 <Button onClick={() => mutate()} disabled={isPending}>
-                  {isPending ? "Sending..." : "Generate links"}
+                  {isPending ? "Sending..." : "Send invitations"}
                 </Button>
               </DialogFooter>
             </>
           ) : (
             <>
-              <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded border border-green-200">
-                ✓ {created.length} peer review link{created.length > 1 ? "s" : ""} created. Share each link with the reviewer.
-              </p>
+              {created.every(r => r.emailSent) ? (
+                <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded border border-green-200">
+                  Invitation email{created.length > 1 ? "s" : ""} sent to {created.length} peer{created.length > 1 ? "s" : ""}. Copy links below as a backup.
+                </p>
+              ) : (
+                <p className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded border border-amber-200">
+                  {created.length} request{created.length > 1 ? "s" : ""} created. Some emails could not be sent — please share the links below manually.
+                </p>
+              )}
               <div className="space-y-2">
                 {created.map(r => (
                   <div key={r.token} className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{r.peerEmail}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-medium truncate">{r.peerEmail}</p>
+                        {r.emailSent
+                          ? <span className="text-xs text-green-600 shrink-0">Email sent</span>
+                          : <span className="text-xs text-amber-600 shrink-0">Email failed</span>}
+                      </div>
                       <p className="text-xs text-muted-foreground truncate font-mono">{getLink(r.token)}</p>
                     </div>
                     <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" onClick={() => copyLink(r.token)}>

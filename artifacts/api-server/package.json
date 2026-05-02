@@ -20,7 +20,8 @@
     "express": "^5",
     "jsonwebtoken": "^9.0.2",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "resend": "4.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

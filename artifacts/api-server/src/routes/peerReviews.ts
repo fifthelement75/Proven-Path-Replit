@@ -3,6 +3,8 @@ import { db, peerReviewRequestsTable, peerReviewsTable, notificationsTable, empl
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import crypto from "crypto";
+import { sendPeerReviewEmail, getPeerReviewLink } from "../lib/email";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -58,7 +60,23 @@ router.post("/employees/:id/peer-review-requests", requireAuth, async (req, res)
     ? new Date(Date.now() + Number(expiresInDays) * 24 * 60 * 60 * 1000)
     : null;
 
-  const created = [];
+  interface PeerReviewRequestResponse {
+    id: number;
+    employeeId: number;
+    companyId: number;
+    requestedByUserId: string;
+    peerEmail: string;
+    peerName: string | null;
+    token: string;
+    status: string;
+    expiresAt: string | null;
+    createdAt: string;
+    emailSent: boolean;
+    emailError?: string;
+  }
+
+  const created: PeerReviewRequestResponse[] = [];
+
   for (let i = 0; i < peerEmails.length; i++) {
     const peerEmail = String(peerEmails[i]).trim().toLowerCase();
     if (!peerEmail) continue;
@@ -73,7 +91,39 @@ router.post("/employees/:id/peer-review-requests", requireAuth, async (req, res)
       status: "pending",
       expiresAt,
     }).returning();
-    created.push({ ...req2, expiresAt: req2.expiresAt?.toISOString() ?? null, createdAt: req2.createdAt.toISOString() });
+
+    let emailSent = false;
+    let emailError: string | undefined;
+    try {
+      const reviewLink = getPeerReviewLink(token);
+      await sendPeerReviewEmail({
+        peerEmail,
+        peerName: peerNames?.[i] || null,
+        employeeName: empCheck[0].name,
+        reviewLink,
+        expiresAt,
+      });
+      emailSent = true;
+    } catch (err) {
+      emailError = err instanceof Error ? err.message : String(err);
+      logger.error({ err, peerEmail }, "Failed to send peer review email");
+    }
+
+    const entry: PeerReviewRequestResponse = {
+      id: req2.id,
+      employeeId: req2.employeeId,
+      companyId: req2.companyId,
+      requestedByUserId: req2.requestedByUserId,
+      peerEmail: req2.peerEmail,
+      peerName: req2.peerName,
+      token: req2.token,
+      status: req2.status,
+      expiresAt: req2.expiresAt?.toISOString() ?? null,
+      createdAt: req2.createdAt.toISOString(),
+      emailSent,
+    };
+    if (emailError) entry.emailError = emailError;
+    created.push(entry);
   }
 
   res.status(201).json(created);

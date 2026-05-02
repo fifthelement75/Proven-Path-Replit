@@ -20,7 +20,16 @@ runButton = "Project"
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
+integrations = ["resend:1.0.0"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+APP_PUBLIC_URL = "https://220e4db0-58b9-458c-9428-0f4942d241bb-00-3n7dytrbhvbth-0cfvm8ha.picard.replit.dev"
