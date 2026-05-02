@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "97Cqfw3KFIG3mYzG6kNAY"
+uri = "file://artifacts/marketing-site/public/hero-illustration.png"
+type = "image"
+title = "Abstract career progression timeline"
+
+[[generated]]
+id = "_p5xhjskHRPJU9kSEQOJW"
+uri = "file://artifacts/marketing-site/public/ai-dev-plan.png"
+type = "image"
+title = "AI Development Plan Abstract"
+
+[[generated]]
+id = "mFNOtsX6LbyEt7eTaCtI5"
+uri = "file://artifacts/marketing-site/public/portable-record.png"
+type = "image"
+title = "Portable Career Record Abstract"
