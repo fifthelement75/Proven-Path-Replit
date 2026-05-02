@@ -92,9 +92,7 @@ export default function Home() {
                     <span className="w-3 h-3 rounded-full bg-yellow-400" />
                     <span className="w-3 h-3 rounded-full bg-green-400" />
                     <div className="ml-3 flex-1 max-w-xs">
-                      <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">
-                        provenpath.fyi/dashboard
-                      </div>
+                      <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">provenpath.app/dashboard</div>
                     </div>
                   </div>
 
