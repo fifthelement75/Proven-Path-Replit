@@ -317,9 +317,37 @@ export default function Home() {
         </section>
 
         {/* BEST FIT CUSTOMER SECTION */}
-        <section className="py-24 bg-gray-900 text-white">
-          <Container>
+        <section className="relative py-24 text-white overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#0b1221]">
+          {/* Dot grid pattern */}
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-[0.18] [background-image:radial-gradient(rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:22px_22px]"
+          />
+
+          {/* Soft radial glows */}
+          <div
+            aria-hidden
+            className="absolute -top-40 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/30 blur-[120px]"
+          />
+          <div
+            aria-hidden
+            className="absolute -bottom-40 -right-32 w-[28rem] h-[28rem] rounded-full bg-success/25 blur-[120px]"
+          />
+          <div
+            aria-hidden
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] rounded-full bg-warning/10 blur-[140px]"
+          />
+
+          {/* Top + bottom edge fades for smooth section blending */}
+          <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+          <Container className="relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-16">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-medium text-white/80 mb-5 backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                Who we're built for
+              </span>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Built For Forward-Thinking Companies
               </h2>
@@ -347,7 +375,10 @@ export default function Home() {
                   desc: "Engineering, design, and product teams that care about transparent growth paths and want a performance system their people will actually adopt."
                 }
               ].map((profile, i) => (
-                <div key={i} className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <div
+                  key={i}
+                  className="relative bg-white/[0.04] backdrop-blur-sm p-6 rounded-xl border border-white/10 hover:border-primary/40 hover:bg-white/[0.06] transition-colors"
+                >
                   <h3 className="text-xl font-semibold mb-3">{profile.title}</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">{profile.desc}</p>
                 </div>
