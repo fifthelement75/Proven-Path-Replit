@@ -545,7 +545,7 @@ export default function Home() {
         </section>
 
         {/* CTA SECTION */}
-        <section className="py-24 bg-primary relative overflow-hidden">
+        <section className="py-24 relative overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
           {/* Decorative circles */}
           <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 rounded-full border-4 border-white/10" />
           <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-96 h-96 rounded-full border-4 border-white/10" />
