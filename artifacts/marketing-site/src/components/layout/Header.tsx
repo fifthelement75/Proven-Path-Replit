@@ -37,7 +37,7 @@ export function Header() {
               <img
                 src={logoUrl}
                 alt="ProvenPath"
-                className="h-8 w-auto group-hover:scale-105 transition-transform"
+                className="h-11 w-auto group-hover:scale-105 transition-transform"
               />
             </Link>
           </div>
