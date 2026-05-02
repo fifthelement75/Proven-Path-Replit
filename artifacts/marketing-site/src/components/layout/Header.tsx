@@ -63,12 +63,12 @@ export function Header() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link
-              href="/signup"
+            <a
+              href="/register"
               className="text-sm font-medium text-gray-600 hover:text-gray-900"
             >
-              Log in
-            </Link>
+              Sign Up
+            </a>
             <Link href="/contact">
               <Button>Book a Demo</Button>
             </Link>
@@ -100,12 +100,12 @@ export function Header() {
             Pricing
           </Link>
           <div className="h-px bg-gray-200 my-2" />
-          <Link
-            href="/signup"
+          <a
+            href="/register"
             className="text-base font-medium text-gray-900 p-2 hover:bg-gray-50 rounded-md"
           >
-            Log in
-          </Link>
+            Sign Up
+          </a>
           <Link href="/contact" className="w-full">
             <Button className="w-full">Book a Demo</Button>
           </Link>
