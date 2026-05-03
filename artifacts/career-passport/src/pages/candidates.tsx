@@ -181,7 +181,7 @@ export default function CandidatesPage() {
             <button
               key={s.value}
               onClick={() => setStatusFilter(statusFilter === s.value ? "all" : s.value)}
-              className={`p-3 rounded-lg border text-left transition-all hover:shadow-sm ${statusFilter === s.value ? "ring-2 ring-primary" : ""}`}
+              className="p-3 rounded-lg border text-left transition-all hover:shadow-sm bg-[#ffffffff]"
             >
               <div className="text-2xl font-bold">{s.count}</div>
               <div className={`text-xs font-medium mt-1 px-1.5 py-0.5 rounded inline-block ${s.color}`}>{s.label}</div>
@@ -263,7 +263,6 @@ export default function CandidatesPage() {
           </div>
         )}
       </div>
-
       <AddCandidateDialog open={addOpen} onClose={() => setAddOpen(false)} />
     </Layout>
   );
