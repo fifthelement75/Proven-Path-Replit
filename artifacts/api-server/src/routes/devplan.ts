@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, devPlansTable, devPlanSkillsTable, employeesTable, reviewsTable, feedbackTable, peerReviewsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { requireActivePlan } from "../middlewares/requireActivePlan";
 import { GetDevPlanParams, GenerateDevPlanParams, MarkSkillCompleteParams, MarkSkillCompleteBody } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { logger } from "../lib/logger";
@@ -54,7 +55,7 @@ router.get("/employees/:employeeId/dev-plan", requireAuth, async (req, res): Pro
   res.json(result);
 });
 
-router.post("/employees/:employeeId/dev-plan/generate", requireAuth, async (req, res): Promise<void> => {
+router.post("/employees/:employeeId/dev-plan/generate", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = GenerateDevPlanParams.safeParse(req.params);
   if (!params.success) {

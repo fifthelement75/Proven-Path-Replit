@@ -16,6 +16,7 @@ import PeerReviewPage from "@/pages/peer-review";
 import SelfReflectionPage from "@/pages/self-reflection";
 import CandidatesPage from "@/pages/candidates";
 import CandidateDetailPage from "@/pages/candidate-detail";
+import BillingPage from "@/pages/billing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/employees/me" component={() => <PrivateRoute component={MyProfileRedirect} />} />
       <Route path="/employees/:id" component={() => <PrivateRoute component={EmployeeDetailPage} />} />
       <Route path="/settings" component={() => <AdminRoute component={SettingsPage} />} />
+      <Route path="/billing" component={() => <AdminRoute component={BillingPage} />} />
       <Route path="/candidates" component={() => <AdminRoute component={CandidatesPage} />} />
       <Route path="/candidates/:id" component={() => <AdminRoute component={CandidateDetailPage} />} />
       <Route path="/share/:token" component={SharePage} />

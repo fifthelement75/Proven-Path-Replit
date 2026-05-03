@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProfileDialog } from "@/components/profile-dialog";
-import { LogOut, Settings, FileText, Shield } from "lucide-react";
+import { WelcomeTrialDialog } from "@/components/welcome-trial-dialog";
+import { LogOut, Settings, FileText, Shield, CreditCard } from "lucide-react";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
@@ -153,6 +154,20 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const queryClient = useQueryClient();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [welcomeTrial, setWelcomeTrial] = useState<{ trialEndsAt: string | null } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("pp_welcome_trial");
+      if (raw) {
+        sessionStorage.removeItem("pp_welcome_trial");
+        const parsed = JSON.parse(raw) as { trialEndsAt?: string | null };
+        setWelcomeTrial({ trialEndsAt: parsed.trialEndsAt ?? null });
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const isAdmin = user?.role === "admin";
 
@@ -257,6 +272,14 @@ export function Layout({ children }: LayoutProps) {
                     <Settings className="h-4 w-4 mr-2" />
                     Profile settings
                   </DropdownMenuItem>
+                  {user?.role === "admin" && (
+                    <DropdownMenuItem asChild data-testid="menu-billing">
+                      <Link href="/billing">
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Billing & subscription
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <a href="/marketing/terms" target="_blank" rel="noopener noreferrer">
@@ -289,6 +312,13 @@ export function Layout({ children }: LayoutProps) {
         {children}
       </main>
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <WelcomeTrialDialog
+        open={welcomeTrial !== null}
+        trialEndsAt={welcomeTrial?.trialEndsAt ?? null}
+        onOpenChange={(open) => {
+          if (!open) setWelcomeTrial(null);
+        }}
+      />
     </div>
   );
 }

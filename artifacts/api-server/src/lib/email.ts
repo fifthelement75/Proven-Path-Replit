@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { readFileSync, existsSync } from "node:fs";
+import path from "node:path";
 import { logger } from "./logger";
 
 interface ResendConnectionSettings {
@@ -347,5 +349,135 @@ export async function sendSelfReflectionEmail({
       );
     }
     throw new Error(`Resend error: ${msg}`);
+  }
+}
+
+const LOGO_FILENAME = "ProvenPath_Logo_1777766610872.png";
+
+function loadLogoBase64(): string | null {
+  const candidates = [
+    path.resolve(process.cwd(), "..", "..", "attached_assets", LOGO_FILENAME),
+    path.resolve(process.cwd(), "attached_assets", LOGO_FILENAME),
+    path.resolve("/home/runner/workspace/attached_assets", LOGO_FILENAME),
+  ];
+  for (const p of candidates) {
+    try {
+      if (existsSync(p)) {
+        const buf = readFileSync(p);
+        return buf.toString("base64");
+      }
+    } catch {
+      // continue
+    }
+  }
+  return null;
+}
+
+function marketingFooterHtml(): string {
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;background:#f9fafb;border-top:1px solid #e5e7eb;">
+    <tr><td style="padding:24px 32px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#6b7280;line-height:1.6;vertical-align:top;width:60%;">
+            <div style="font-weight:600;color:#111827;margin-bottom:6px;">Proven Path</div>
+            Performance intelligence for modern HR teams.
+          </td>
+          <td style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#6b7280;line-height:1.6;vertical-align:top;text-align:right;">
+            <a href="https://provenpath.app/marketing/" style="color:#2563eb;text-decoration:none;margin-right:12px;">Product</a>
+            <a href="https://provenpath.app/marketing/pricing" style="color:#2563eb;text-decoration:none;margin-right:12px;">Pricing</a>
+            <a href="https://provenpath.app/marketing/contact" style="color:#2563eb;text-decoration:none;">Contact</a>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding-top:16px;border-top:1px solid #e5e7eb;font-family:Inter,Arial,sans-serif;font-size:12px;color:#9ca3af;">
+            © 2026 Proven Path. All rights reserved. &nbsp;·&nbsp;
+            <a href="mailto:info@provenpath.app" style="color:#9ca3af;">info@provenpath.app</a>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>`;
+}
+
+export async function sendTrialReminderEmail({
+  toEmail,
+  companyName,
+  trialEndsAt,
+}: {
+  toEmail: string;
+  companyName: string;
+  trialEndsAt: Date;
+}): Promise<void> {
+  const { apiKey, fromEmail } = await getCredentials();
+  const client = new Resend(apiKey);
+
+  const safeCompany = escapeHtml(companyName);
+  const endDate = trialEndsAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  const billingUrl = `https://${(process.env.REPLIT_DOMAINS || "provenpath.app").split(",")[0]}/billing`;
+  const logoBase64 = loadLogoBase64();
+  const logoHtml = logoBase64
+    ? `<img src="cid:provenpath-logo" alt="Proven Path" height="44" style="display:block;height:44px;width:auto;" />`
+    : `<div style="font-family:Inter,Arial,sans-serif;font-size:22px;font-weight:700;color:#2563eb;">Proven Path</div>`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:Inter,Arial,sans-serif;color:#111827;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;">
+    <tr><td style="padding:32px 32px 0;">${logoHtml}</td></tr>
+    <tr><td style="padding:24px 32px 0;">
+      <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#111827;">Your Proven Path trial ends tomorrow</h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+        Hi there,
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+        This is a friendly reminder that <strong>${safeCompany}</strong>'s 7-day free trial of Proven Path ends on
+        <strong>${escapeHtml(endDate)}</strong>. To keep access to features beyond the free tier — including AI development plans,
+        candidate scoring, peer reviews, and self-reflections — please subscribe before your trial ends.
+      </p>
+      <p style="margin:24px 0;text-align:center;">
+        <a href="${billingUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;font-size:15px;">
+          Subscribe now
+        </a>
+      </p>
+      <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Or copy this link into your browser:</p>
+      <p style="margin:0 0 16px;font-size:12px;color:#6b7280;word-break:break-all;">${billingUrl}</p>
+      <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#374151;">
+        After your trial ends, your data stays safe — you'll just need an active subscription to use Pro features again.
+      </p>
+      <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#374151;">
+        Questions? Just reply to this email.
+      </p>
+    </td></tr>
+    <tr><td>${marketingFooterHtml()}</td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Hi,\n\nThis is a friendly reminder that ${companyName}'s 7-day free trial of Proven Path ends on ${endDate}.\n\nTo keep access to Pro features, subscribe here:\n${billingUrl}\n\nQuestions? Just reply to this email.\n\n— The Proven Path team`;
+
+  const result = await client.emails.send({
+    from: fromEmail,
+    to: toEmail,
+    subject: `Your Proven Path trial ends tomorrow`,
+    html,
+    text,
+    ...(logoBase64
+      ? {
+          attachments: [
+            {
+              filename: "provenpath-logo.png",
+              content: logoBase64,
+              content_id: "provenpath-logo",
+            } as any,
+          ],
+        }
+      : {}),
+  });
+
+  if (result.error) {
+    throw new Error(`Resend error: ${result.error.message || "unknown"}`);
   }
 }

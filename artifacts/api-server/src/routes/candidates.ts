@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, candidateProfilesTable, interviewAssessmentsTable, employeesTable, reviewsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { requireActivePlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
@@ -28,7 +29,7 @@ router.get("/candidates", requireAuth, async (req, res): Promise<void> => {
   res.json(withAssessmentCounts);
 });
 
-router.post("/candidates", requireAuth, async (req, res): Promise<void> => {
+router.post("/candidates", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -114,7 +115,7 @@ router.delete("/candidates/:id", requireAuth, async (req, res): Promise<void> =>
   res.sendStatus(204);
 });
 
-router.post("/candidates/:id/assessments", requireAuth, async (req, res): Promise<void> => {
+router.post("/candidates/:id/assessments", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
   const { companyId, userId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 

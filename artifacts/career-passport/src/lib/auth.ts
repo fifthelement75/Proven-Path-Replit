@@ -14,6 +14,16 @@ export interface User {
   department?: string | null;
 }
 
+export interface SubscriptionStatus {
+  plan: string;
+  subscriptionStatus: string | null;
+  trialEndsAt: string | null;
+  trialActive: boolean;
+  trialDaysRemaining: number;
+  hasActiveAccess: boolean;
+  subscriptionActive: boolean;
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }

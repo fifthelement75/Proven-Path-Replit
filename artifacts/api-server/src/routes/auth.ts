@@ -22,11 +22,17 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const [company] = await db.insert(companiesTable).values({ name: companyName, email, passwordHash }).returning();
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const [company] = await db
+    .insert(companiesTable)
+    .values({ name: companyName, email, passwordHash, plan: "trial", trialEndsAt })
+    .returning();
 
   const token = signToken({ companyId: company.id, userId: company.id, email: company.email, role: "admin", employeeId: null });
   res.status(201).json({
     token,
+    trialJustStarted: true,
+    trialEndsAt: company.trialEndsAt,
     user: { id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin", employeeId: null }
   });
 });

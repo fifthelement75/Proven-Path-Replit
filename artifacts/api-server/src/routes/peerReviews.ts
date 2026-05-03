@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, peerReviewRequestsTable, peerReviewsTable, notificationsTable, employeesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { requireActivePlan } from "../middlewares/requireActivePlan";
 import crypto from "crypto";
 import { sendPeerReviewEmail, getPeerReviewLink } from "../lib/email";
 import { logger } from "../lib/logger";
@@ -40,7 +41,7 @@ router.get("/employees/:id/peer-review-requests", requireAuth, async (req, res):
   res.json(result);
 });
 
-router.post("/employees/:id/peer-review-requests", requireAuth, async (req, res): Promise<void> => {
+router.post("/employees/:id/peer-review-requests", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
   const { companyId, userId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   if (isNaN(employeeId)) { res.status(400).json({ error: "Invalid employee id" }); return; }

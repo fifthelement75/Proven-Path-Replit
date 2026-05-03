@@ -12,6 +12,7 @@ import selfReflectionRouter from "./selfReflection";
 import notificationsRouter from "./notifications";
 import candidatesRouter from "./candidates";
 import contactRouter from "./contact";
+import stripeRouter from "./stripe";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(selfReflectionRouter);
 router.use(notificationsRouter);
 router.use(candidatesRouter);
 router.use(contactRouter);
+router.use(stripeRouter);
 
 export default router;

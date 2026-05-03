@@ -19,7 +19,8 @@ export default function Pricing() {
         "Career timeline view"
       ],
       cta: "Get Started Free",
-      link: "/signup",
+      link: "/register",
+      external: true,
       popular: false
     },
     {
@@ -35,8 +36,9 @@ export default function Pricing() {
         "Career coaching insights",
         "Priority support"
       ],
-      cta: "Start Free Trial",
-      link: "/signup",
+      cta: "Start 7-day Free Trial",
+      link: "/register?plan=pro",
+      external: true,
       popular: false
     },
     {
@@ -85,7 +87,7 @@ export default function Pricing() {
     },
     {
       q: "Is there a free trial?",
-      a: "Yes, 14-day free trial on Professional plan"
+      a: "Yes — every new account gets a 7-day free trial of the Professional plan with no credit card required."
     },
     {
       q: "What payment methods do you accept?",
@@ -169,14 +171,25 @@ export default function Pricing() {
                   </ul>
                 </div>
                 
-                <Link href={tier.link} className="w-full">
-                  <Button 
-                    className="w-full h-12" 
-                    variant={tier.popular ? "default" : "outline"}
-                  >
-                    {tier.cta}
-                  </Button>
-                </Link>
+                {tier.external ? (
+                  <a href={tier.link} className="w-full">
+                    <Button
+                      className="w-full h-12"
+                      variant={tier.popular ? "default" : "outline"}
+                    >
+                      {tier.cta}
+                    </Button>
+                  </a>
+                ) : (
+                  <Link href={tier.link} className="w-full">
+                    <Button
+                      className="w-full h-12"
+                      variant={tier.popular ? "default" : "outline"}
+                    >
+                      {tier.cta}
+                    </Button>
+                  </Link>
+                )}
               </div>
             ))}
           </div>
