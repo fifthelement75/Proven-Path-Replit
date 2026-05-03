@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import logoUrl from "@assets/ProvenPath_Logo_1777768672978.png";
 
 interface LayoutProps {
   children: ReactNode;
@@ -172,7 +173,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href={isAdmin ? "/dashboard" : (myProfile ? `/employees/${myProfile.id}` : "/dashboard")}>
-              <span className="font-bold text-lg tracking-tight text-primary">Career Passport</span>
+              <img src={logoUrl} alt="ProvenPath" className="h-8 w-auto cursor-pointer" />
             </Link>
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map(item => (
