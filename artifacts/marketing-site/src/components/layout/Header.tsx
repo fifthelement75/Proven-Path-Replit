@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/button";
-import logoUrl from "@assets/Screenshot_2026-05-02_at_7.51.36_PM_1777765970550.png";
+import logoUrl from "@assets/ProvenPath_Logo_1777766610872.png";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);

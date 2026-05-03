@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Container } from "@/components/ui/Container";
-import logoUrl from "@assets/Screenshot_2026-05-02_at_7.51.36_PM_1777765970550.png";
+import logoUrl from "@assets/ProvenPath_Logo_1777766610872.png";
 
 export function Footer() {
   return (
