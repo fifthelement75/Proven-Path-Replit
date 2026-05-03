@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg-0: #07091a;
+  --color-bg-1: #0b1020;
+  --color-bg-2: #131a36;
+  --color-bg-3: #1e1b4b;
+
+  --color-indigo: #6366f1;
+  --color-indigo-bright: #818cf8;
+  --color-cyan: #22d3ee;
+  --color-cyan-bright: #67e8f9;
+  --color-gold: #fbbf24;
+  --color-rose: #fb7185;
+
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-text-dim: #64748b;
+  --color-line: rgba(241, 245, 249, 0.08);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+@theme inline {
+  --color-bg-0: var(--color-bg-0);
+  --color-bg-1: var(--color-bg-1);
+  --color-bg-2: var(--color-bg-2);
+  --color-bg-3: var(--color-bg-3);
+  --color-indigo: var(--color-indigo);
+  --color-indigo-bright: var(--color-indigo-bright);
+  --color-cyan: var(--color-cyan);
+  --color-cyan-bright: var(--color-cyan-bright);
+  --color-gold: var(--color-gold);
+  --color-rose: var(--color-rose);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-dim: var(--color-text-dim);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+html, body, #root {
+  background-color: var(--color-bg-0);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+.noise {
+  background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
