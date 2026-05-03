@@ -1,4 +1,4 @@
-const base = import.meta.env.BASE_URL;
+import devPlanImage from "@assets/Screenshot_2026-05-02_at_2.22.08_PM_1777786013250.png";
 
 export default function AIDevPlans() {
   return (
@@ -54,7 +54,7 @@ export default function AIDevPlans() {
           <div className="absolute inset-[8%] rounded-[2vw] bg-gradient-to-br from-[#fbbf24]/20 to-primary/30 blur-3xl" />
           <div className="relative w-full rounded-[1.4vw] overflow-hidden border border-white/10 shadow-[0_30px_80px_-30px_rgba(251,191,36,0.4)] bg-surface">
             <img
-              src={`${base}ai-dev-plan.png`}
+              src={devPlanImage}
               crossOrigin="anonymous"
               alt="AI-generated development plan"
               className="w-full h-auto block"
