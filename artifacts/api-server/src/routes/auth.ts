@@ -106,7 +106,16 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    res.json({ id: company.id, email: company.email, companyId: company.id, companyName: company.name, role: "admin", employeeId: null });
+    res.json({
+      id: company.id,
+      email: company.email,
+      companyId: company.id,
+      companyName: company.name,
+      role: "admin",
+      employeeId: null,
+      name: company.name,
+      profilePhotoUrl: company.profilePhotoUrl ?? null,
+    });
     return;
   }
 
@@ -130,6 +139,98 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       companyName: companyName || "",
       role: emp.userRole,
       employeeId: emp.id,
+      name: emp.name,
+      profilePhotoUrl: emp.profilePhotoUrl ?? null,
+      jobRole: emp.role,
+      department: emp.department,
+    });
+    return;
+  }
+
+  res.status(401).json({ error: "Unauthorized" });
+});
+
+router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
+  const auth = req.auth!;
+  const body = (req.body ?? {}) as {
+    name?: unknown;
+    profilePhotoUrl?: unknown;
+    jobRole?: unknown;
+    department?: unknown;
+  };
+
+  const name = typeof body.name === "string" ? body.name.trim() : undefined;
+  const profilePhotoUrl =
+    body.profilePhotoUrl === null
+      ? null
+      : typeof body.profilePhotoUrl === "string"
+      ? body.profilePhotoUrl
+      : undefined;
+  const jobRole = typeof body.jobRole === "string" ? body.jobRole.trim() : undefined;
+  const department = typeof body.department === "string" ? body.department.trim() : undefined;
+
+  if (typeof profilePhotoUrl === "string" && profilePhotoUrl.length > 2_000_000) {
+    res.status(413).json({ error: "Profile photo too large (max ~1.5MB)" });
+    return;
+  }
+  if (name !== undefined && name.length === 0) {
+    res.status(400).json({ error: "Name cannot be empty" });
+    return;
+  }
+
+  if (auth.role === "admin") {
+    const updates: Partial<typeof companiesTable.$inferInsert> = {};
+    if (name !== undefined) updates.name = name;
+    if (profilePhotoUrl !== undefined) updates.profilePhotoUrl = profilePhotoUrl;
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "No fields to update" });
+      return;
+    }
+    const [company] = await db
+      .update(companiesTable)
+      .set(updates)
+      .where(eq(companiesTable.id, auth.companyId))
+      .returning();
+    res.json({
+      id: company.id,
+      email: company.email,
+      companyId: company.id,
+      companyName: company.name,
+      role: "admin",
+      employeeId: null,
+      name: company.name,
+      profilePhotoUrl: company.profilePhotoUrl ?? null,
+    });
+    return;
+  }
+
+  if (auth.employeeId) {
+    const updates: Partial<typeof employeesTable.$inferInsert> = {};
+    if (name !== undefined) updates.name = name;
+    if (profilePhotoUrl !== undefined) updates.profilePhotoUrl = profilePhotoUrl;
+    if (jobRole !== undefined && jobRole.length > 0) updates.role = jobRole;
+    if (department !== undefined && department.length > 0) updates.department = department;
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "No fields to update" });
+      return;
+    }
+    const [emp] = await db
+      .update(employeesTable)
+      .set(updates)
+      .where(and(eq(employeesTable.id, auth.employeeId), eq(employeesTable.companyId, auth.companyId)))
+      .returning();
+    const [company] = await db.select().from(companiesTable).where(eq(companiesTable.id, emp.companyId)).limit(1);
+    res.json({
+      id: emp.id,
+      email: emp.email,
+      companyId: emp.companyId,
+      companyName: company?.name || "",
+      role: emp.userRole,
+      employeeId: emp.id,
+      name: emp.name,
+      profilePhotoUrl: emp.profilePhotoUrl ?? null,
+      jobRole: emp.role,
+      department: emp.department,
     });
     return;
   }

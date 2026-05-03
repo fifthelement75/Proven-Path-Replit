@@ -8,6 +8,10 @@ export interface User {
   companyName: string;
   role: string;
   employeeId?: number | null;
+  name?: string | null;
+  profilePhotoUrl?: string | null;
+  jobRole?: string | null;
+  department?: string | null;
 }
 
 export function getToken(): string | null {

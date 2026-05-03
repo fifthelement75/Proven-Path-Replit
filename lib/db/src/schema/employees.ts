@@ -15,6 +15,7 @@ export const employeesTable = pgTable("employees", {
   managerId: integer("manager_id").references((): AnyPgColumn => employeesTable.id, { onDelete: "set null" }),
   passwordHash: text("password_hash"),
   userRole: text("user_role").notNull().default("employee"),
+  profilePhotoUrl: text("profile_photo_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

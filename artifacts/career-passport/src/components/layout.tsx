@@ -2,10 +2,28 @@ import { type ReactNode, useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ProfileDialog } from "@/components/profile-dialog";
+import { LogOut, Settings, FileText, Shield } from "lucide-react";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import logoUrl from "@assets/ProvenPath_Logo_1777768672978.png";
+
+function getInitials(name?: string | null, email?: string | null): string {
+  const source = (name || email || "?").trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+}
 
 interface LayoutProps {
   children: ReactNode;
@@ -134,6 +152,7 @@ export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuthContext();
   const [location] = useLocation();
   const queryClient = useQueryClient();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const isAdmin = user?.role === "admin";
 
@@ -205,15 +224,71 @@ export function Layout({ children }: LayoutProps) {
             <span className="text-sm text-muted-foreground hidden sm:block">
               {isAdmin ? user?.companyName : user?.email}
             </span>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-              Sign out
-            </Button>
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    aria-label="Open account menu"
+                    data-testid="button-account-menu"
+                  >
+                    <Avatar className="h-9 w-9 border border-border hover:opacity-90 transition-opacity">
+                      {user.profilePhotoUrl ? (
+                        <AvatarImage src={user.profilePhotoUrl} alt={user.name || user.email} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                        {getInitials(user.name || (isAdmin ? user.companyName : null), user.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium truncate">
+                        {user.name || (isAdmin ? user.companyName : user.email)}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setProfileOpen(true)} data-testid="menu-profile-settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Profile settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="/marketing/terms" target="_blank" rel="noopener noreferrer">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Terms of Service
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="/marketing/privacy" target="_blank" rel="noopener noreferrer">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Privacy Policy
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={handleLogout}
+                    className="text-destructive focus:text-destructive"
+                    data-testid="menu-sign-out"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </header>
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         {children}
       </main>
+      <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </div>
   );
 }
