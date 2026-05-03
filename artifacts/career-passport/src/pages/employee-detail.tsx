@@ -135,6 +135,7 @@ const MEETING_TYPES = [
 const REVIEW_TYPES: { value: string; label: string }[] = [
   { value: "manager", label: "Manager review" },
   { value: "self", label: "Self-reflection (request from employee)" },
+  { value: "peer", label: "Peer review (request from colleagues)" },
 ];
 
 const REVIEW_TYPE_LABEL: Record<string, string> = {
@@ -357,10 +358,31 @@ function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeNam
   const [reflectionResult, setReflectionResult] = useState<{ emailSent: boolean; emailError?: string; reflectionLink?: string } | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Peer-review request state
+  const [peerEmails, setPeerEmails] = useState("");
+  const [peerExpiresIn, setPeerExpiresIn] = useState("30");
+  const [peerError, setPeerError] = useState("");
+  const [peerCreated, setPeerCreated] = useState<{ peerEmail: string; token: string; emailSent: boolean; emailError?: string }[]>([]);
+  const [peerCopied, setPeerCopied] = useState<string | null>(null);
+
+  function getPeerLink(token: string) {
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+    return `${window.location.origin}${base}/peer-review/${token}`;
+  }
+
+  function copyPeerLink(token: string) {
+    navigator.clipboard.writeText(getPeerLink(token));
+    setPeerCopied(token);
+    setTimeout(() => setPeerCopied(null), 2000);
+  }
+
   function handleClose() {
     setError("");
     setReflectionError("");
     setReflectionResult(null);
+    setPeerError("");
+    setPeerCreated([]);
+    setPeerEmails("");
     onClose();
   }
 
@@ -420,16 +442,49 @@ function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeNam
     onError: (err: Error) => setReflectionError(err.message),
   });
 
+  const { mutate: sendPeerRequests, isPending: sendingPeer } = useMutation({
+    mutationFn: async () => {
+      const list = peerEmails.split(/[\n,;]+/).map(e => e.trim()).filter(Boolean);
+      if (!list.length) throw new Error("Enter at least one peer email");
+      const res = await fetch(getApiUrl(`/employees/${employeeId}/peer-review-requests`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          peerEmails: list,
+          expiresInDays: peerExpiresIn === "never" ? null : Number(peerExpiresIn),
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setPeerCreated(data.map((r: { peerEmail: string; token: string; emailSent: boolean; emailError?: string }) => ({
+        peerEmail: r.peerEmail,
+        token: r.token,
+        emailSent: r.emailSent,
+        emailError: r.emailError,
+      })));
+      queryClient.invalidateQueries({ queryKey: ["peerReviewRequests", employeeId] });
+      setPeerError("");
+    },
+    onError: (err: Error) => setPeerError(err.message),
+  });
+
+  const dialogTitle =
+    reviewType === "self" ? "Request Self-Reflection"
+    : reviewType === "peer" ? "Request Peer Reviews"
+    : "Add Performance Review";
+
   return (
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{reviewType === "self" ? "Request Self-Reflection" : "Add Performance Review"}</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-1.5 mt-2">
           <Label>Review type</Label>
-          <Select value={reviewType} onValueChange={v => { setReviewType(v); setError(""); setReflectionError(""); setReflectionResult(null); }}>
+          <Select value={reviewType} onValueChange={v => { setReviewType(v); setError(""); setReflectionError(""); setReflectionResult(null); setPeerError(""); setPeerCreated([]); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {REVIEW_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
@@ -437,7 +492,82 @@ function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeNam
           </Select>
         </div>
 
-        {reviewType === "self" ? (
+        {reviewType === "peer" ? (
+          peerCreated.length ? (
+            <div className="mt-4 space-y-3">
+              {peerCreated.every(r => r.emailSent) ? (
+                <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded border border-green-200">
+                  Invitation email{peerCreated.length > 1 ? "s" : ""} sent to {peerCreated.length} peer{peerCreated.length > 1 ? "s" : ""}. Copy links below as a backup.
+                </p>
+              ) : (
+                <p className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded border border-amber-200">
+                  {peerCreated.length} request{peerCreated.length > 1 ? "s" : ""} created. Some emails could not be sent — please share the links below manually.
+                </p>
+              )}
+              <div className="space-y-2">
+                {peerCreated.map(r => (
+                  <div key={r.token} className="rounded-lg border bg-muted/30 p-3 space-y-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <p className="text-sm font-medium truncate min-w-0 flex-1">{r.peerEmail}</p>
+                      {r.emailSent
+                        ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 shrink-0 font-medium">Email sent</span>
+                        : <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shrink-0 font-medium">Email failed</span>}
+                    </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex-1 min-w-0 px-2.5 py-1.5 rounded border bg-background text-xs font-mono text-muted-foreground truncate">
+                        {getPeerLink(r.token)}
+                      </div>
+                      <Button size="sm" type="button" variant="outline" className="h-8 text-xs shrink-0" onClick={() => copyPeerLink(r.token)}>
+                        {peerCopied === r.token ? "Copied!" : "Copy link"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button onClick={handleClose}>Done</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <form
+              onSubmit={e => { e.preventDefault(); setPeerError(""); sendPeerRequests(); }}
+              className="space-y-4 mt-4"
+            >
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+                Peer reviews collect <strong>soft skills feedback</strong> from colleagues. Each peer will be emailed a private link to a confidential form.
+              </div>
+              <p className="text-sm text-muted-foreground">Requesting peer reviews for <strong>{employeeName}</strong></p>
+              {peerError && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{peerError}</p>}
+              <div className="space-y-1.5">
+                <Label>Peer emails</Label>
+                <Textarea
+                  placeholder={"Enter emails separated by commas or new lines:\nalice@company.com\nbob@company.com"}
+                  value={peerEmails}
+                  onChange={e => setPeerEmails(e.target.value)}
+                  rows={4}
+                  className="text-sm font-mono"
+                />
+                <p className="text-xs text-muted-foreground">Enter one email per line, or separate with commas</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Link expires in</Label>
+                <Select value={peerExpiresIn} onValueChange={setPeerExpiresIn}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="never">Never expires</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+                <Button type="submit" disabled={sendingPeer}>{sendingPeer ? "Sending..." : "Send invitations"}</Button>
+              </DialogFooter>
+            </form>
+          )
+        ) : reviewType === "self" ? (
           reflectionResult ? (
             <div className="mt-4 space-y-3">
               <div className="p-3 rounded border bg-green-50 border-green-200 text-sm text-green-900">
