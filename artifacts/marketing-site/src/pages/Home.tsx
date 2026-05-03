@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/button";
 import { fadeIn, staggerContainer } from "@/lib/animations";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import employerImage from "@assets/christina-wocintechchat-com-m-fjza4oBV8ic-unsplash_1777758998149.jpg";
 import employeeImage from "@assets/daria-pimkina-tYaccl19A3Q-unsplash_1777758998150.jpg";
 import differentiationImage from "@assets/the-jopwell-collection-4WTb4tR45JQ-unsplash_1777761038392.jpg";
@@ -28,6 +29,14 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  useDocumentMeta({
+    title: "Proven Path — Performance Intelligence for Modern HR Teams",
+    description:
+      "AI-powered performance intelligence for HR teams. Run structured interviews, 360° reviews, and skill assessments with verified data that powers better hiring, retention, and growth.",
+    ogImage: "opengraph.jpg",
+    canonicalPath: "/",
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />

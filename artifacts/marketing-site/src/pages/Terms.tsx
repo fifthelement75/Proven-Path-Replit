@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/ui/Container";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 type Section = {
   id: string;
@@ -913,6 +914,14 @@ function renderBlock(block: Block, idx: number) {
 }
 
 export default function Terms() {
+  useDocumentMeta({
+    title: "Terms of Service — Proven Path",
+    description:
+      "Read the Proven Path terms of service. Understand the rules and agreements that govern your use of our HR performance intelligence platform.",
+    ogImage: "opengraph.jpg",
+    canonicalPath: "/terms",
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />

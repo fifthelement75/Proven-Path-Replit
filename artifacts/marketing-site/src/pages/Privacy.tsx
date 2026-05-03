@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/ui/Container";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 type Section = {
   id: string;
@@ -610,6 +611,14 @@ function renderBlock(block: Block, idx: number) {
 }
 
 export default function Privacy() {
+  useDocumentMeta({
+    title: "Privacy Policy — Proven Path",
+    description:
+      "Read the Proven Path privacy policy. Learn how we collect, use, and protect your data on our HR performance intelligence platform.",
+    ogImage: "opengraph.jpg",
+    canonicalPath: "/privacy",
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />

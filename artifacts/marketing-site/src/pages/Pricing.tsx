@@ -4,8 +4,17 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Pricing() {
+  useDocumentMeta({
+    title: "Pricing — Proven Path | Performance Management for Growing Teams",
+    description:
+      "Simple, transparent pricing for HR teams of every size. Start with a 7-day free trial of Proven Path Pro at $9.99/month — no credit card required.",
+    ogImage: "opengraph.jpg",
+    canonicalPath: "/pricing",
+  });
+
   const tiers = [
     {
       name: "Free",

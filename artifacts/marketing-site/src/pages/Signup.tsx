@@ -1,8 +1,17 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Signup() {
+  useDocumentMeta({
+    title: "Sign Up — Proven Path | Start Your 7-Day Free Trial",
+    description:
+      "Create your Proven Path account and start a 7-day free trial. Modern performance intelligence for HR teams — no credit card required.",
+    ogImage: "opengraph.jpg",
+    canonicalPath: "/signup",
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <div className="p-6">

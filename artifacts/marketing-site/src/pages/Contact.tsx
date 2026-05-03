@@ -7,10 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, AlertCircle } from "lucide-react";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
 export default function Contact() {
+  useDocumentMeta({
+    title: "Book a Demo — Proven Path | Talk to Our HR Performance Experts",
+    description:
+      "See how Proven Path helps your HR team make data-driven hiring, promotion, and retention decisions. Book a personalized demo with our team today.",
+    ogImage: "opengraph.jpg",
+    canonicalPath: "/contact",
+  });
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
