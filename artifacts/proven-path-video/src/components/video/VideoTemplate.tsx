@@ -10,13 +10,13 @@ import { Scene7Walkthrough } from './video_scenes/Scene7Walkthrough';
 import { Scene6Closing } from './video_scenes/Scene6Closing';
 
 export const SCENE_DURATIONS = {
-  hook: 5400,
-  solution: 5200,
-  products: 5400,
-  devplan: 6200,
-  capabilities: 5400,
-  walkthrough: 8200,
-  closing: 5800,
+  hook: 6800,
+  solution: 7000,
+  products: 7200,
+  devplan: 7800,
+  capabilities: 7400,
+  walkthrough: 15400,
+  closing: 6800,
 };
 
 const SCENE_COMPONENTS: Record<string, React.ComponentType> = {
