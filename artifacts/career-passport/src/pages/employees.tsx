@@ -245,7 +245,7 @@ export default function EmployeesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border bg-[#fffffff5]">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
@@ -284,7 +284,6 @@ export default function EmployeesPage() {
           </div>
         )}
       </div>
-
       <AddEmployeeDialog open={addOpen} onClose={() => setAddOpen(false)} employees={employees} />
     </Layout>
   );
