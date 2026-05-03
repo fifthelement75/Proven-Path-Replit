@@ -33,7 +33,7 @@ export default function Home() {
       <Header />
       <main className="flex-1 pt-16">
         {/* HERO SECTION */}
-        <section className="relative overflow-hidden pt-20 pb-32 lg:pt-32 lg:pb-40">
+        <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 lg:pt-32 lg:pb-40">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
               <motion.div
@@ -51,7 +51,7 @@ export default function Home() {
                 </motion.div>
                 <motion.h1 
                   variants={fadeIn}
-                  className="text-5xl sm:text-6xl font-bold tracking-tight leading-[1.1] mb-6"
+                  className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-6"
                 >
                   <span className="text-gray-900">Performance Intelligence That Powers </span>
                   <span className="animated-gradient-text">Better Hiring, Retention &amp; Growth</span>
@@ -146,7 +146,7 @@ export default function Home() {
                   </div>
                   <div className="leading-tight">
                     <div className="text-base font-bold text-gray-900">3.3<span className="text-gray-400 text-xs font-medium">/5 avg</span></div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wide">Across 3 teams</div>
+                    <div className="text-[11px] text-gray-500 uppercase tracking-wide">Across 3 teams</div>
                   </div>
                 </div>
               </motion.div>
@@ -157,7 +157,7 @@ export default function Home() {
         {/* PLATFORM DIFFERENTIATION SECTION */}
         <section
           id="differentiation"
-          className="relative py-24 border-y border-gray-100 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50"
+          className="relative py-14 md:py-24 border-y border-gray-100 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50"
         >
           {/* Blue dot grid with radial mask */}
           <div
@@ -239,9 +239,9 @@ export default function Home() {
         </section>
 
         {/* VALUE PROPOSITION SECTION */}
-        <section className="py-24">
+        <section className="py-14 md:py-24">
           <Container>
-            <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 A Performance Platform Your Team Will Actually Use
               </h2>
@@ -350,7 +350,7 @@ export default function Home() {
         </section>
 
         {/* BEST FIT CUSTOMER SECTION */}
-        <section className="relative py-24 text-white overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
+        <section className="relative py-14 md:py-24 text-white overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
           {/* Dot grid pattern */}
           <div
             aria-hidden
@@ -421,9 +421,9 @@ export default function Home() {
         </section>
 
         {/* PRODUCT FEATURES SECTION */}
-        <section className="py-24 bg-gray-50">
+        <section className="py-14 md:py-24 bg-gray-50">
           <Container>
-            <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 Everything Your People Team Needs in One Platform
               </h2>
@@ -461,9 +461,9 @@ export default function Home() {
         </section>
 
         {/* HOW IT WORKS SECTION */}
-        <section className="py-24">
+        <section className="py-14 md:py-24">
           <Container>
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                   How It Works
@@ -508,7 +508,7 @@ export default function Home() {
                       <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                       <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
                     </div>
-                    <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-white border border-gray-200 text-[11px] font-mono text-gray-500 truncate">provenpath.app/employees/sarah-chen</div>
+                    <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-white border border-gray-200 text-xs font-mono text-gray-500 truncate">provenpath.app/employees/sarah-chen</div>
                   </div>
 
                   {/* Screenshot */}
@@ -544,9 +544,9 @@ export default function Home() {
         </section>
 
         {/* SOCIAL PROOF SECTION */}
-        <section className="py-24 bg-gray-50 border-y border-gray-100">
+        <section className="py-14 md:py-24 bg-gray-50 border-y border-gray-100">
           <Container>
-            <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 Trusted by HR Leaders and the Teams They Build
               </h2>
@@ -583,17 +583,17 @@ export default function Home() {
         </section>
 
         {/* CTA SECTION */}
-        <section className="py-24 relative overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
+        <section className="py-14 md:py-24 relative overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
           {/* Decorative circles */}
           <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 rounded-full border-4 border-white/10" />
           <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-96 h-96 rounded-full border-4 border-white/10" />
           
           <Container className="relative z-10">
             <div className="text-center max-w-3xl mx-auto">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
                 Modernize Your Performance Management Today
               </h2>
-              <p className="text-xl text-primary-foreground/90 mb-10">
+              <p className="text-lg sm:text-xl text-primary-foreground/90 mb-8 md:mb-10">
                 Join HR teams using Proven Path to hire smarter, develop faster, and retain longer.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

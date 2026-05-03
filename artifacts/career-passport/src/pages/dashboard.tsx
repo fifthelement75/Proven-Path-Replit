@@ -191,7 +191,7 @@ export default function DashboardPage() {
               <CardTitle className="text-base">Score Breakdown</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
                 <ScoreDisplay score={health.avgOverallScore} label="Overall" />
                 <ScoreDisplay score={health.avgTechnicalScore} label="Technical" />
                 <ScoreDisplay score={health.avgCommunicationScore} label="Communication" />

@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProfileDialog } from "@/components/profile-dialog";
 import { WelcomeTrialDialog } from "@/components/welcome-trial-dialog";
-import { LogOut, Settings, FileText, Shield, CreditCard } from "lucide-react";
+import { LogOut, Settings, FileText, Shield, CreditCard, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
@@ -201,11 +202,71 @@ export function Layout({ children }: LayoutProps) {
 
   const navItems = isAdmin ? adminNavItems : employeeNavItems;
 
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location]);
+
+  const allMobileNavItems = isAdmin && myProfile
+    ? [...adminNavItems, { href: `/employees/${myProfile.id}`, label: "My Profile" }]
+    : navItems;
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f8ff]">
-      <header className="border-b bg-card shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-8">
+      <header className="border-b bg-card shadow-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 md:gap-8 min-w-0">
+            {user && allMobileNavItems.length > 0 && (
+              <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+                <SheetTrigger asChild>
+                  <button
+                    type="button"
+                    className="md:hidden inline-flex items-center justify-center h-11 w-11 -ml-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label="Open navigation menu"
+                    data-testid="button-mobile-nav"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-72 p-0">
+                  <SheetHeader className="px-5 py-4 border-b text-left">
+                    <SheetTitle className="flex items-center">
+                      <img src={logoUrl} alt="ProvenPath" className="h-7 w-auto" />
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col p-3 gap-1">
+                    {allMobileNavItems.map(item => {
+                      const isActive = location === item.href || (item.href !== "/dashboard" && location.startsWith(item.href));
+                      return (
+                        <Link key={item.href} href={item.href}>
+                          <span
+                            onClick={() => setMobileNavOpen(false)}
+                            className={`block px-4 py-3 text-base rounded-md font-medium cursor-pointer ${
+                              isActive ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                    {user?.role === "admin" && (
+                      <Link href="/billing">
+                        <span
+                          onClick={() => setMobileNavOpen(false)}
+                          className={`block px-4 py-3 text-base rounded-md font-medium cursor-pointer ${
+                            location === "/billing" ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
+                          }`}
+                        >
+                          Billing & subscription
+                        </span>
+                      </Link>
+                    )}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            )}
             <Link href={isAdmin ? "/dashboard" : (myProfile ? `/employees/${myProfile.id}` : "/dashboard")}>
               <img src={logoUrl} alt="ProvenPath" className="h-8 w-auto cursor-pointer" />
             </Link>
@@ -236,7 +297,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
           <div className="flex items-center gap-2">
             {user && <NotificationBell userId={user.id} />}
-            <span className="text-sm text-muted-foreground hidden sm:block">
+            <span className="text-sm text-muted-foreground hidden lg:block max-w-[180px] truncate">
               {isAdmin ? user?.companyName : user?.email}
             </span>
             {user && (

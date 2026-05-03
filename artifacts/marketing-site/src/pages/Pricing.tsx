@@ -103,7 +103,7 @@ export default function Pricing() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
-      <main className="relative flex-1 pt-24 pb-24 overflow-hidden">
+      <main className="relative flex-1 pt-16 pb-14 md:pt-24 md:pb-24 overflow-hidden">
         {/* Subtle dot grid */}
         <div
           aria-hidden
