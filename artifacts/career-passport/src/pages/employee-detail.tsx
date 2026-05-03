@@ -684,8 +684,54 @@ function PeerResponseDetail({ review }: { review: PeerReview }) {
 }
 
 function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; employeeName: string }) {
+  const queryClient = useQueryClient();
   const [requestOpen, setRequestOpen] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
+  const [actionState, setActionState] = useState<Record<number, { kind: "nudged" | "error"; message: string } | undefined>>({});
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const NUDGE_MIN_DAYS = 3;
+
+  const { mutate: nudgeRequest } = useMutation({
+    mutationFn: async (requestId: number) => {
+      setBusyId(requestId);
+      const res = await fetch(getApiUrl(`/employees/${employeeId}/peer-review-requests/${requestId}/nudge`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to send reminder");
+      return { requestId, ...data };
+    },
+    onSuccess: ({ requestId }) => {
+      setActionState(s => ({ ...s, [requestId]: { kind: "nudged", message: "Reminder sent" } }));
+      setBusyId(null);
+    },
+    onError: (err: Error, requestId) => {
+      setActionState(s => ({ ...s, [requestId]: { kind: "error", message: err.message } }));
+      setBusyId(null);
+    },
+  });
+
+  const { mutate: deleteRequest } = useMutation({
+    mutationFn: async (requestId: number) => {
+      setBusyId(requestId);
+      const res = await fetch(getApiUrl(`/employees/${employeeId}/peer-review-requests/${requestId}`), {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to delete request");
+      return requestId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["peerReviewRequests", employeeId] });
+      setBusyId(null);
+    },
+    onError: (err: Error, requestId) => {
+      setActionState(s => ({ ...s, [requestId]: { kind: "error", message: err.message } }));
+      setBusyId(null);
+    },
+  });
 
   const { data: requests = [], isLoading: loadingRequests } = useQuery<PeerReviewRequest[]>({
     queryKey: ["peerReviewRequests", employeeId],
@@ -758,16 +804,26 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
               const response = reviewByRequestId.get(r.id);
               const isCompleted = r.status === "completed" && !!response;
               const isExpanded = expandedRequestId === r.id;
+              const isPending = r.status === "pending";
+              const isExpired = r.status === "expired";
+              const daysSinceRequest = Math.floor(
+                (Date.now() - new Date(r.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+              );
+              const canNudge = isPending && daysSinceRequest >= NUDGE_MIN_DAYS;
+              const canDelete = !isCompleted;
+              const showActions = canDelete || canNudge;
+              const status = actionState[r.id];
+              const isBusy = busyId === r.id;
               return (
                 <div
                   key={r.id}
                   className={`rounded-lg border bg-card transition-shadow ${isCompleted ? "cursor-pointer hover:shadow-sm" : ""}`}
                   onClick={() => isCompleted && setExpandedRequestId(isExpanded ? null : r.id)}
                 >
-                  <div className="flex items-center justify-between p-3">
-                    <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-3 p-3">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{r.peerEmail}</span>
+                        <span className="text-sm font-medium truncate">{r.peerEmail}</span>
                         {r.peerName && <span className="text-xs text-muted-foreground">({r.peerName})</span>}
                         {isCompleted && (
                           <span className="text-xs text-muted-foreground">{isExpanded ? "▲" : "▼"}</span>
@@ -777,15 +833,55 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
                         Requested {new Date(r.createdAt).toLocaleDateString()}
                         {r.expiresAt && ` · Expires ${new Date(r.expiresAt).toLocaleDateString()}`}
                         {response && ` · Submitted ${new Date(response.submittedAt).toLocaleDateString()}`}
+                        {isPending && !canNudge && ` · Nudge available in ${NUDGE_MIN_DAYS - daysSinceRequest} day${NUDGE_MIN_DAYS - daysSinceRequest === 1 ? "" : "s"}`}
                       </div>
+                      {status && (
+                        <p
+                          className={`text-xs mt-1 ${status.kind === "nudged" ? "text-green-600" : "text-destructive"}`}
+                        >
+                          {status.message}
+                        </p>
+                      )}
                     </div>
-                    <Badge className={
-                      r.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
-                      r.status === "expired" ? "bg-gray-100 text-gray-600" :
-                      "bg-yellow-100 text-yellow-800 border-yellow-200"
-                    }>
-                      {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                    </Badge>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {showActions && (
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          {canNudge && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              disabled={isBusy}
+                              onClick={() => nudgeRequest(r.id)}
+                            >
+                              {isBusy ? "Sending..." : "Nudge"}
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={isBusy}
+                              onClick={() => {
+                                if (window.confirm(`Delete the peer review invite for ${r.peerEmail}? This cannot be undone.`)) {
+                                  deleteRequest(r.id);
+                                }
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      <Badge className={
+                        r.status === "completed" ? "bg-green-100 text-green-800 border-green-200" :
+                        isExpired ? "bg-gray-100 text-gray-600" :
+                        "bg-yellow-100 text-yellow-800 border-yellow-200"
+                      }>
+                        {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                      </Badge>
+                    </div>
                   </div>
                   {isExpanded && response && (
                     <div className="px-3 pb-4">

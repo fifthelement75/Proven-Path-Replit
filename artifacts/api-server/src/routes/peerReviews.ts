@@ -129,6 +129,83 @@ router.post("/employees/:id/peer-review-requests", requireAuth, async (req, res)
   res.status(201).json(created);
 });
 
+router.delete("/employees/:id/peer-review-requests/:requestId", requireAuth, async (req, res): Promise<void> => {
+  const { companyId } = req.auth!;
+  const employeeId = parseInt(req.params.id);
+  const requestId = parseInt(req.params.requestId);
+  if (isNaN(employeeId) || isNaN(requestId)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [request] = await db.select().from(peerReviewRequestsTable)
+    .where(and(
+      eq(peerReviewRequestsTable.id, requestId),
+      eq(peerReviewRequestsTable.employeeId, employeeId),
+      eq(peerReviewRequestsTable.companyId, companyId),
+    ))
+    .limit(1);
+  if (!request) { res.status(404).json({ error: "Request not found" }); return; }
+
+  const existing = await db.select({ id: peerReviewsTable.id })
+    .from(peerReviewsTable)
+    .where(eq(peerReviewsTable.requestId, requestId))
+    .limit(1);
+  if (existing.length) {
+    res.status(409).json({ error: "Cannot delete a request that has already been completed" });
+    return;
+  }
+
+  await db.delete(peerReviewRequestsTable).where(eq(peerReviewRequestsTable.id, requestId));
+  res.json({ success: true });
+});
+
+router.post("/employees/:id/peer-review-requests/:requestId/nudge", requireAuth, async (req, res): Promise<void> => {
+  const { companyId } = req.auth!;
+  const employeeId = parseInt(req.params.id);
+  const requestId = parseInt(req.params.requestId);
+  if (isNaN(employeeId) || isNaN(requestId)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [request] = await db.select().from(peerReviewRequestsTable)
+    .where(and(
+      eq(peerReviewRequestsTable.id, requestId),
+      eq(peerReviewRequestsTable.employeeId, employeeId),
+      eq(peerReviewRequestsTable.companyId, companyId),
+    ))
+    .limit(1);
+  if (!request) { res.status(404).json({ error: "Request not found" }); return; }
+
+  if (request.expiresAt && request.expiresAt < new Date()) {
+    res.status(410).json({ error: "This request has expired — peers can no longer respond" });
+    return;
+  }
+
+  const existing = await db.select({ id: peerReviewsTable.id })
+    .from(peerReviewsTable)
+    .where(eq(peerReviewsTable.requestId, requestId))
+    .limit(1);
+  if (existing.length) {
+    res.status(409).json({ error: "This peer has already submitted their review" });
+    return;
+  }
+
+  const [emp] = await db.select({ name: employeesTable.name })
+    .from(employeesTable).where(eq(employeesTable.id, employeeId)).limit(1);
+
+  try {
+    const reviewLink = getPeerReviewLink(request.token);
+    await sendPeerReviewEmail({
+      peerEmail: request.peerEmail,
+      peerName: request.peerName,
+      employeeName: emp?.name ?? "your colleague",
+      reviewLink,
+      expiresAt: request.expiresAt,
+    });
+    res.json({ success: true, emailSent: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ err, peerEmail: request.peerEmail }, "Failed to send peer review nudge");
+    res.status(502).json({ error: msg, emailSent: false });
+  }
+});
+
 router.get("/peer-review/:token", async (req, res): Promise<void> => {
   const { token } = req.params;
   const [request] = await db.select().from(peerReviewRequestsTable).where(eq(peerReviewRequestsTable.token, token)).limit(1);
