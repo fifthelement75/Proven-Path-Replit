@@ -4,22 +4,25 @@
   --color-primary: var(--slide-primary);
   --color-accent: var(--slide-accent);
   --color-bg: var(--slide-bg);
+  --color-surface: var(--slide-surface);
   --color-text: var(--slide-text);
   --color-muted: var(--slide-muted);
+  --color-line: var(--slide-line);
   --font-display: var(--font-display-family);
   --font-body: var(--font-body-family);
 }
 
 :root {
-  /* Replace these with brand colors */
-  --slide-primary: #4f46e5;
-  --slide-accent: #06b6d4;
-  --slide-bg: #f8fafc;
-  --slide-text: #0f172a;
-  --slide-muted: #64748b;
-  --font-display-family: "Inter", system-ui, sans-serif;
-  --font-body-family: "Inter", system-ui, sans-serif;
-  color-scheme: light;
+  --slide-primary: #6366f1;
+  --slide-accent: #22d3ee;
+  --slide-bg: #0b1020;
+  --slide-surface: #131a36;
+  --slide-text: #f1f5f9;
+  --slide-muted: #94a3b8;
+  --slide-line: rgba(148, 163, 184, 0.18);
+  --font-display-family: "Space Grotesk", system-ui, sans-serif;
+  --font-body-family: "Manrope", system-ui, sans-serif;
+  color-scheme: dark;
 }
 
 html,
@@ -33,6 +36,7 @@ body,
 body {
   background: var(--slide-bg);
   color: var(--slide-text);
+  font-family: var(--font-body-family);
 }
 
 .slide {
@@ -46,3 +50,13 @@ body {
   user-select: none;
   -webkit-user-select: none;
 }
+
+.deck-bg {
+  background:
+    radial-gradient(60vw 60vw at 85% 10%, rgba(99, 102, 241, 0.22), transparent 60%),
+    radial-gradient(50vw 50vw at 10% 90%, rgba(34, 211, 238, 0.14), transparent 60%),
+    linear-gradient(135deg, #0b1020 0%, #131a36 55%, #1e1b4b 100%);
+}
+
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }

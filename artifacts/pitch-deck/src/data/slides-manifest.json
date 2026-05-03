@@ -1,1 +1,74 @@
-[]
+[
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131401",
+    "position": 1,
+    "filepath": "src/pages/slides/Title.tsx",
+    "title": "Performance Intelligence",
+    "description": "Title slide — Proven Path platform headline with dashboard preview.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131402",
+    "position": 2,
+    "filepath": "src/pages/slides/Problem.tsx",
+    "title": "HR Teams Are Flying Blind",
+    "description": "The problem: fragmented data and gut-feel decisions.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131403",
+    "position": 3,
+    "filepath": "src/pages/slides/Solution.tsx",
+    "title": "One Platform. Verified Intelligence.",
+    "description": "Proven Path unifies assessments, interviews, reviews, and scoring.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131404",
+    "position": 4,
+    "filepath": "src/pages/slides/TwoProducts.tsx",
+    "title": "Two Products. One Verified Record.",
+    "description": "Proven Path for employers, Career progression for individuals.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131405",
+    "position": 5,
+    "filepath": "src/pages/slides/AIDevPlans.tsx",
+    "title": "AI-Generated Development Plans",
+    "description": "Differentiator: personalized 30/60/90 plans built from real competency data.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131406",
+    "position": 6,
+    "filepath": "src/pages/slides/PortableRecord.tsx",
+    "title": "The Portable Career Record",
+    "description": "Differentiator: verified, employer-attested record unique to Career progression.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131407",
+    "position": 7,
+    "filepath": "src/pages/slides/Features.tsx",
+    "title": "Built for Modern HR",
+    "description": "Six core capabilities: AI insights, scoring, 360 reviews, promotion readiness, career ladders, references.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131408",
+    "position": 8,
+    "filepath": "src/pages/slides/Pricing.tsx",
+    "title": "Simple, Transparent Pricing",
+    "description": "Free, Pro $9.99/mo with 7-day trial, and custom Enterprise.",
+    "speakerNotes": ""
+  },
+  {
+    "id": "9b1d4e8f-1a2b-4c1d-8e3f-101112131409",
+    "position": 9,
+    "filepath": "src/pages/slides/Closing.tsx",
+    "title": "Hire Smarter. Develop Faster. Retain Longer.",
+    "description": "Closing slide with trial CTA.",
+    "speakerNotes": ""
+  }
+]
