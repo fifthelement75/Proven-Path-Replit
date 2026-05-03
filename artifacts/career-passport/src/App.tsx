@@ -13,6 +13,7 @@ import SharePage from "@/pages/share";
 import SettingsPage from "@/pages/settings";
 import MyProfileRedirect from "@/pages/my-profile";
 import PeerReviewPage from "@/pages/peer-review";
+import SelfReflectionPage from "@/pages/self-reflection";
 import CandidatesPage from "@/pages/candidates";
 import CandidateDetailPage from "@/pages/candidate-detail";
 
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/candidates/:id" component={() => <AdminRoute component={CandidateDetailPage} />} />
       <Route path="/share/:token" component={SharePage} />
       <Route path="/peer-review/:token" component={PeerReviewPage} />
+      <Route path="/self-reflection/:token" component={SelfReflectionPage} />
       <Route component={NotFound} />
     </Switch>
   );

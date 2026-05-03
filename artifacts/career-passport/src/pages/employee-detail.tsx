@@ -17,6 +17,7 @@ import { Alert } from "@/components/ui/alert";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { BEHAVIORAL_SKILL_CATEGORIES, BEHAVIORAL_SKILL_BY_KEY } from "@/lib/behavioral-skills";
 
 interface ReviewItem {
   id: number;
@@ -33,6 +34,7 @@ interface ReviewItem {
   areasToImprove: string | null;
   goals: string | null;
   recommendation: string | null;
+  behavioralScores: Record<string, number> | null;
   createdAt: string;
 }
 
@@ -108,20 +110,6 @@ interface PeerReview {
 
 type ExpiresIn = "7days" | "30days" | "never";
 
-interface ReviewFormData {
-  reviewType: string;
-  period: string;
-  technicalScore: number;
-  communicationScore: number;
-  problemSolvingScore: number;
-  teamworkScore: number;
-  leadershipScore: number;
-  strengths: string;
-  areasToImprove: string;
-  goals: string;
-  recommendation: string;
-}
-
 interface FeedbackFormData {
   meetingType: string;
   meetingDate: string;
@@ -144,7 +132,16 @@ const MEETING_TYPES = [
   { value: "other", label: "Other" },
 ];
 
-const REVIEW_TYPES = ["self", "peer", "manager"];
+const REVIEW_TYPES: { value: string; label: string }[] = [
+  { value: "manager", label: "Manager review" },
+  { value: "self", label: "Self-reflection (request from employee)" },
+];
+
+const REVIEW_TYPE_LABEL: Record<string, string> = {
+  self: "Self-reflection",
+  peer: "Peer",
+  manager: "Manager review",
+};
 
 const RECOMMENDATION_OPTIONS = [
   { value: "promotable", label: "Promotable" },
@@ -336,17 +333,53 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
   );
 }
 
-function AddReviewDialog({ open, onClose, employeeId }: { open: boolean; onClose: () => void; employeeId: number }) {
+function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeName }: { open: boolean; onClose: () => void; employeeId: number; employeeEmail: string; employeeName: string }) {
   const queryClient = useQueryClient();
+  const [reviewType, setReviewType] = useState<string>("manager");
+
+  // Manager-review form state
   const [form, setForm] = useState({
-    reviewType: "manager", period: new Date().toISOString().slice(0, 7),
+    period: new Date().toISOString().slice(0, 7),
     technicalScore: "3", communicationScore: "3", problemSolvingScore: "3", teamworkScore: "3", leadershipScore: "3",
     strengths: "", areasToImprove: "", goals: "", recommendation: "",
   });
+  const [behavioral, setBehavioral] = useState<Record<string, number>>({});
   const [error, setError] = useState("");
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (data: ReviewFormData) => {
+  // Self-reflection request state
+  const [reflectionForm, setReflectionForm] = useState({
+    employeeEmail: employeeEmail || "",
+    period: `${new Date().getFullYear()} Self-reflection`,
+    message: "",
+    expiresInDays: "14",
+  });
+  const [reflectionError, setReflectionError] = useState("");
+  const [reflectionResult, setReflectionResult] = useState<{ emailSent: boolean; emailError?: string; reflectionLink?: string } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  function handleClose() {
+    setError("");
+    setReflectionError("");
+    setReflectionResult(null);
+    onClose();
+  }
+
+  const { mutate: createReview, isPending: savingReview } = useMutation({
+    mutationFn: async () => {
+      const data = {
+        reviewType: "manager",
+        period: form.period,
+        technicalScore: parseInt(form.technicalScore),
+        communicationScore: parseInt(form.communicationScore),
+        problemSolvingScore: parseInt(form.problemSolvingScore),
+        teamworkScore: parseInt(form.teamworkScore),
+        leadershipScore: parseInt(form.leadershipScore),
+        strengths: form.strengths,
+        areasToImprove: form.areasToImprove,
+        goals: form.goals,
+        recommendation: form.recommendation,
+        behavioralScores: behavioral,
+      };
       const res = await fetch(getApiUrl(`/employees/${employeeId}/reviews`), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
@@ -359,101 +392,246 @@ function AddReviewDialog({ open, onClose, employeeId }: { open: boolean; onClose
       queryClient.invalidateQueries({ queryKey: ["reviews", employeeId] });
       queryClient.invalidateQueries({ queryKey: ["scoreHistory", employeeId] });
       queryClient.invalidateQueries({ queryKey: ["employee", employeeId] });
-      onClose();
-      setError("");
+      handleClose();
     },
     onError: (err: Error) => setError(err.message),
   });
 
+  const { mutate: sendReflectionRequest, isPending: sendingRequest } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(getApiUrl(`/employees/${employeeId}/self-reflection-requests`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          employeeEmail: reflectionForm.employeeEmail,
+          period: reflectionForm.period,
+          message: reflectionForm.message || null,
+          expiresInDays: parseInt(reflectionForm.expiresInDays) || 14,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to send request");
+      return json as { emailSent: boolean; emailError?: string; reflectionLink?: string };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["selfReflectionRequests", employeeId] });
+      setReflectionResult(data);
+    },
+    onError: (err: Error) => setReflectionError(err.message),
+  });
+
   return (
-    <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={v => !v && handleClose()}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Performance Review</DialogTitle>
+          <DialogTitle>{reviewType === "self" ? "Request Self-Reflection" : "Add Performance Review"}</DialogTitle>
         </DialogHeader>
-        <div className="text-xs text-muted-foreground bg-muted/40 px-3 py-2 rounded mt-1">
-          For <strong>self-assessment</strong> and <strong>manager reviews</strong> covering hard skills. For peer soft-skill feedback, use "Request Peer Reviews".
+
+        <div className="space-y-1.5 mt-2">
+          <Label>Review type</Label>
+          <Select value={reviewType} onValueChange={v => { setReviewType(v); setError(""); setReflectionError(""); setReflectionResult(null); }}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {REVIEW_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
-        <form onSubmit={e => { e.preventDefault(); mutate({ ...form, technicalScore: parseInt(form.technicalScore), communicationScore: parseInt(form.communicationScore), problemSolvingScore: parseInt(form.problemSolvingScore), teamworkScore: parseInt(form.teamworkScore), leadershipScore: parseInt(form.leadershipScore) }); }} className="space-y-4 mt-2">
-          {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Review type</Label>
-              <Select value={form.reviewType} onValueChange={v => setForm(f => ({ ...f, reviewType: v, recommendation: "" }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {REVIEW_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Period (YYYY-MM)</Label>
-              <Input value={form.period} onChange={e => setForm(f => ({ ...f, period: e.target.value }))} placeholder="2024-Q4" required />
-            </div>
-          </div>
 
-          {form.reviewType === "manager" && (
-            <div className="space-y-1.5">
-              <Label>Manager Recommendation</Label>
-              <Select value={form.recommendation} onValueChange={v => setForm(f => ({ ...f, recommendation: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select recommendation..." /></SelectTrigger>
-                <SelectContent>
-                  {RECOMMENDATION_OPTIONS.map(o => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Scores (1–5) — Hard skills</Label>
-            {[
-              ["technicalScore", "Technical"],
-              ["communicationScore", "Communication"],
-              ["problemSolvingScore", "Problem Solving"],
-              ["teamworkScore", "Teamwork"],
-              ["leadershipScore", "Leadership"],
-            ].map(([key, label]) => (
-              <div key={key} className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground w-32 shrink-0">{label}</span>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <button
-                      key={n}
+        {reviewType === "self" ? (
+          reflectionResult ? (
+            <div className="mt-4 space-y-3">
+              <div className="p-3 rounded border bg-green-50 border-green-200 text-sm text-green-900">
+                ✅ Self-reflection request created for <strong>{employeeName}</strong>.
+                {reflectionResult.emailSent
+                  ? " An email with the link has been sent."
+                  : " The email could not be sent — share the link manually below."}
+              </div>
+              {!reflectionResult.emailSent && reflectionResult.emailError && (
+                <p className="text-xs text-muted-foreground">Email error: {reflectionResult.emailError}</p>
+              )}
+              {reflectionResult.reflectionLink && (
+                <div className="space-y-1.5">
+                  <Label>Self-reflection link</Label>
+                  <div className="flex gap-2">
+                    <Input readOnly value={reflectionResult.reflectionLink} className="font-mono text-xs" onFocus={e => e.currentTarget.select()} />
+                    <Button
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, [key]: String(n) }))}
-                      className={`w-8 h-8 rounded text-sm font-medium border transition-colors ${
-                        form[key as keyof typeof form] === String(n)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border hover:border-primary/50 hover:bg-accent"
-                      }`}
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(reflectionResult.reflectionLink!);
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2000);
+                      }}
                     >
-                      {n}
-                    </button>
-                  ))}
+                      {linkCopied ? "Copied!" : "Copy"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Anyone with this link can submit the self-reflection — share it directly with the employee only.</p>
+                </div>
+              )}
+              <DialogFooter>
+                <Button onClick={handleClose}>Done</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <form
+              onSubmit={e => { e.preventDefault(); setReflectionError(""); sendReflectionRequest(); }}
+              className="space-y-4 mt-4"
+            >
+              <div className="text-xs text-muted-foreground bg-muted/40 px-3 py-2 rounded">
+                Sends <strong>{employeeName}</strong> an email with a private link to complete a self-reflection (hard skills + behavioral skills + reflections). Their answers feed directly into the AI development plan.
+              </div>
+              {reflectionError && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{reflectionError}</p>}
+              <div className="space-y-1.5">
+                <Label>Employee email</Label>
+                <Input
+                  type="email"
+                  value={reflectionForm.employeeEmail}
+                  onChange={e => setReflectionForm(f => ({ ...f, employeeEmail: e.target.value }))}
+                  placeholder="employee@company.com"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Period label</Label>
+                  <Input
+                    value={reflectionForm.period}
+                    onChange={e => setReflectionForm(f => ({ ...f, period: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Link expires in</Label>
+                  <Select value={reflectionForm.expiresInDays} onValueChange={v => setReflectionForm(f => ({ ...f, expiresInDays: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="14">14 days</SelectItem>
+                      <SelectItem value="30">30 days</SelectItem>
+                      <SelectItem value="60">60 days</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="space-y-1.5">
+                <Label>Optional message to {employeeName.split(" ")[0] || "the employee"}</Label>
+                <Textarea
+                  rows={3}
+                  value={reflectionForm.message}
+                  onChange={e => setReflectionForm(f => ({ ...f, message: e.target.value }))}
+                  placeholder="e.g. Take 10 minutes this week — I'd love your honest reflection ahead of our next 1:1."
+                />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+                <Button type="submit" disabled={sendingRequest}>{sendingRequest ? "Sending..." : "Send request"}</Button>
+              </DialogFooter>
+            </form>
+          )
+        ) : (
+          <form onSubmit={e => { e.preventDefault(); createReview(); }} className="space-y-4 mt-4">
+            {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Period (YYYY-MM)</Label>
+                <Input value={form.period} onChange={e => setForm(f => ({ ...f, period: e.target.value }))} placeholder="2024-Q4" required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Manager Recommendation</Label>
+                <Select value={form.recommendation} onValueChange={v => setForm(f => ({ ...f, recommendation: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent>
+                    {RECOMMENDATION_OPTIONS.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="space-y-1.5">
-            <Label>Strengths</Label>
-            <Textarea value={form.strengths} onChange={e => setForm(f => ({ ...f, strengths: e.target.value }))} rows={2} placeholder="What went well..." />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Areas to improve</Label>
-            <Textarea value={form.areasToImprove} onChange={e => setForm(f => ({ ...f, areasToImprove: e.target.value }))} rows={2} placeholder="Growth opportunities..." />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Goals</Label>
-            <Textarea value={form.goals} onChange={e => setForm(f => ({ ...f, goals: e.target.value }))} rows={2} placeholder="Goals for next period..." />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>{isPending ? "Saving..." : "Save review"}</Button>
-          </DialogFooter>
-        </form>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Hard skills (1–5)</Label>
+              {[
+                ["technicalScore", "Technical"],
+                ["communicationScore", "Communication"],
+                ["problemSolvingScore", "Problem Solving"],
+                ["teamworkScore", "Teamwork"],
+                ["leadershipScore", "Leadership"],
+              ].map(([key, label]) => (
+                <div key={key} className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground w-32 shrink-0">{label}</span>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, [key]: String(n) }))}
+                        className={`w-8 h-8 rounded text-sm font-medium border transition-colors ${
+                          form[key as keyof typeof form] === String(n)
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border hover:border-primary/50 hover:bg-accent"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">Behavioral skills (1–5)</Label>
+                <p className="text-xs text-muted-foreground">Optional — leave blank if you don't have a view yet.</p>
+              </div>
+              {BEHAVIORAL_SKILL_CATEGORIES.map(cat => (
+                <div key={cat.id} className="rounded border p-3 space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{cat.title}</div>
+                  {cat.skills.map(skill => (
+                    <div key={skill.key} className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground flex-1 min-w-0" title={skill.description}>{skill.label}</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setBehavioral(b => ({ ...b, [skill.key]: b[skill.key] === n ? 0 : n }))}
+                            className={`w-7 h-7 rounded text-xs font-medium border transition-colors ${
+                              behavioral[skill.key] === n
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border hover:border-primary/50 hover:bg-accent"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Strengths</Label>
+              <Textarea value={form.strengths} onChange={e => setForm(f => ({ ...f, strengths: e.target.value }))} rows={2} placeholder="What went well..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Areas to improve</Label>
+              <Textarea value={form.areasToImprove} onChange={e => setForm(f => ({ ...f, areasToImprove: e.target.value }))} rows={2} placeholder="Growth opportunities..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Goals</Label>
+              <Textarea value={form.goals} onChange={e => setForm(f => ({ ...f, goals: e.target.value }))} rows={2} placeholder="Goals for next period..." />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button type="submit" disabled={savingReview}>{savingReview ? "Saving..." : "Save review"}</Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -1505,7 +1683,7 @@ export default function EmployeeDetailPage() {
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="capitalize">{review.reviewType}</Badge>
+                      <Badge variant="outline">{REVIEW_TYPE_LABEL[review.reviewType] ?? review.reviewType}</Badge>
                       <span className="text-sm font-medium">{review.period}</span>
                       {review.recommendation && recommendationBadge(review.recommendation)}
                     </div>
@@ -1529,6 +1707,19 @@ export default function EmployeeDetailPage() {
                       )
                     ))}
                   </div>
+                  {review.behavioralScores && Object.keys(review.behavioralScores).length > 0 && (
+                    <div className="mb-3 rounded border bg-muted/30 p-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Behavioral skills (1–5)</p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                        {Object.entries(review.behavioralScores).map(([k, v]) => (
+                          <div key={k} className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground truncate">{BEHAVIORAL_SKILL_BY_KEY[k]?.label ?? k}</span>
+                            <span className="font-medium text-foreground tabular-nums shrink-0 ml-2">{v}/5</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {review.strengths && <p className="text-sm text-muted-foreground mb-1"><span className="font-medium text-foreground">Strengths: </span>{review.strengths}</p>}
                   {review.areasToImprove && <p className="text-sm text-muted-foreground mb-1"><span className="font-medium text-foreground">Areas to improve: </span>{review.areasToImprove}</p>}
                   {review.goals && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Goals: </span>{review.goals}</p>}
@@ -1574,7 +1765,7 @@ export default function EmployeeDetailPage() {
         </div>
       </div>
 
-      <AddReviewDialog open={reviewOpen} onClose={() => setReviewOpen(false)} employeeId={employeeId} />
+      <AddReviewDialog open={reviewOpen} onClose={() => setReviewOpen(false)} employeeId={employeeId} employeeEmail={employee.email ?? ""} employeeName={employee.name} />
       <AddFeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} employeeId={employeeId} />
       <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} employeeId={employeeId} />
       <RequestPeerReviewDialog open={peerOpen} onClose={() => setPeerOpen(false)} employeeId={employeeId} employeeName={employee.name} />

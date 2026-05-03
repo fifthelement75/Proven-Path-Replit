@@ -84,11 +84,16 @@ Department: ${emp.department}
 Level: ${emp.level}
 
 Performance Reviews (${reviews.length} total):
-${reviews.map(r => `- Type: ${r.reviewType}, Period: ${r.period}
-  Scores: Technical=${r.technicalScore}/5, Communication=${r.communicationScore}/5, ProblemSolving=${r.problemSolvingScore}/5, Teamwork=${r.teamworkScore}/5, Leadership=${r.leadershipScore}/5
+${reviews.map(r => {
+  const behavioralLine = r.behavioralScores && Object.keys(r.behavioralScores).length > 0
+    ? `\n  Behavioral Skills (1-5): ${Object.entries(r.behavioralScores).map(([k, v]) => `${k}=${v}`).join(', ')}`
+    : '';
+  return `- Type: ${r.reviewType === 'self' ? 'Self-reflection' : r.reviewType}, Period: ${r.period}
+  Hard Skill Scores: Technical=${r.technicalScore}/5, Communication=${r.communicationScore}/5, ProblemSolving=${r.problemSolvingScore}/5, Teamwork=${r.teamworkScore}/5, Leadership=${r.leadershipScore}/5${behavioralLine}
   Strengths: ${r.strengths || 'None noted'}
   Areas to Improve: ${r.areasToImprove || 'None noted'}
-  Goals: ${r.goals || 'None noted'}`).join('\n\n')}
+  Goals: ${r.goals || 'None noted'}`;
+}).join('\n\n')}
 
 Feedback Log (${feedback.length} entries):
 ${feedback.map(f => `- ${f.meetingType} on ${f.meetingDate}: What Went Well: ${f.whatWentWell || '-'} | Areas to Improve: ${f.areasToImprove || '-'} | Action Items: ${f.actionItems || '-'}`).join('\n')}

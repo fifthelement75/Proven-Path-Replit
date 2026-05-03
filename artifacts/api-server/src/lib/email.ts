@@ -258,3 +258,94 @@ export function getPeerReviewLink(token: string): string {
   }
   return `${base.replace(/\/$/, "")}/peer-review/${token}`;
 }
+
+export function getSelfReflectionLink(token: string): string {
+  const base =
+    process.env.APP_PUBLIC_URL ||
+    (process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : null);
+  if (!base) {
+    throw new Error(
+      "Cannot construct self-reflection link: set APP_PUBLIC_URL environment variable"
+    );
+  }
+  return `${base.replace(/\/$/, "")}/self-reflection/${token}`;
+}
+
+export async function sendSelfReflectionEmail({
+  employeeEmail,
+  employeeName,
+  managerName,
+  message,
+  reflectionLink,
+  expiresAt,
+}: {
+  employeeEmail: string;
+  employeeName: string;
+  managerName: string | null;
+  message: string | null;
+  reflectionLink: string;
+  expiresAt: Date | null;
+}): Promise<void> {
+  const { apiKey, fromEmail } = await getCredentials();
+  const client = new Resend(apiKey);
+
+  const safeEmployeeName = escapeHtml(employeeName);
+  const safeManagerName = escapeHtml(managerName || "Your manager");
+  const safeMessage = message ? escapeHtml(message).replace(/\n/g, "<br />") : "";
+  const safeLink = escapeHtml(reflectionLink);
+  const greeting = `Hi ${safeEmployeeName.split(" ")[0] || "there"},`;
+  const expiryNote = expiresAt
+    ? `<p style="margin:0 0 8px;color:#6b7280;font-size:13px;">This link expires on <strong>${escapeHtml(expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))}</strong>.</p>`
+    : "";
+  const messageBlock = safeMessage
+    ? `<div style="margin:16px 0;padding:12px 16px;background:#f3f4f6;border-left:3px solid #2563eb;border-radius:4px;color:#374151;font-size:14px;"><strong>${safeManagerName} says:</strong><br />${safeMessage}</div>`
+    : "";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#111827;">
+  <h2 style="margin:0 0 8px;font-size:20px;">Self-Reflection Request</h2>
+  <p style="margin:0 0 16px;color:#374151;">${greeting}</p>
+  <p style="margin:0 0 16px;color:#374151;">
+    ${safeManagerName} has invited you to complete a short self-reflection on Proven Path. Your responses help shape your development plan and your own career growth.
+  </p>
+  ${messageBlock}
+  <p style="margin:0 0 24px;color:#374151;">
+    Please click the button below to complete the form — it should take about 10 minutes.
+  </p>
+  <a href="${safeLink}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:15px;">
+    Complete Self-Reflection
+  </a>
+  <p style="margin:24px 0 4px;color:#6b7280;font-size:13px;">Or copy this link into your browser:</p>
+  <p style="margin:0 0 16px;font-size:12px;color:#6b7280;word-break:break-all;">${safeLink}</p>
+  ${expiryNote}
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+  <p style="margin:0;color:#9ca3af;font-size:12px;">You received this email because your manager invited you to complete a self-reflection. If you believe this was sent in error, you can safely ignore it.</p>
+</body>
+</html>`;
+
+  const text = `${greeting}\n\n${managerName || "Your manager"} has invited you to complete a self-reflection on Proven Path.\n\n${message ? `Note from your manager:\n${message}\n\n` : ""}Complete the form here:\n${reflectionLink}${expiresAt ? `\n\nThis link expires on ${expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.` : ""}`;
+
+  const result = await client.emails.send({
+    from: fromEmail,
+    to: employeeEmail,
+    subject: `Self-reflection request from ${managerName || "your manager"}`,
+    html,
+    text,
+  });
+
+  if (result.error) {
+    const msg = result.error.message || "";
+    if (/domain is not verified/i.test(msg)) {
+      throw new Error(
+        "Email could not be sent because the configured sender domain is not verified with Resend. " +
+          "Verify a domain at https://resend.com/domains and set RESEND_FROM_EMAIL to an address on it, " +
+          "or share the link manually below."
+      );
+    }
+    throw new Error(`Resend error: ${msg}`);
+  }
+}

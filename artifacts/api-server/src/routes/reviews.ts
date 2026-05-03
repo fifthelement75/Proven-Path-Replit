@@ -13,6 +13,25 @@ function computeOverall(scores: (number | null)[]): number | null {
   return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
 }
 
+const BEHAVIORAL_KEYS = new Set([
+  "personalPlanning", "trackLevelPlanning", "solutionDriven", "teamLeadership",
+  "persuasion", "creativeThinking", "flexibility",
+  "decisionMaking", "constraintManagement",
+  "verbalWritten", "focusedCommunication", "leadsGroupConversations", "interpersonal",
+]);
+
+function sanitizeBehavioral(input: unknown): Record<string, number> | null {
+  if (!input || typeof input !== "object") return null;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+    if (!BEHAVIORAL_KEYS.has(k)) continue;
+    const n = typeof v === "number" ? v : Number(v);
+    if (!Number.isFinite(n)) continue;
+    out[k] = Math.max(1, Math.min(5, Math.round(n)));
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 function formatReview(r: typeof reviewsTable.$inferSelect, reviewerName: string | null = null) {
   const overall = r.overallScore ?? computeOverall([r.technicalScore, r.communicationScore, r.problemSolvingScore, r.teamworkScore, r.leadershipScore]);
   return {
@@ -33,6 +52,7 @@ function formatReview(r: typeof reviewsTable.$inferSelect, reviewerName: string 
     areasToImprove: r.areasToImprove,
     goals: r.goals,
     recommendation: r.recommendation,
+    behavioralScores: r.behavioralScores ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
@@ -96,6 +116,7 @@ router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Pro
   const overallScore = computeOverall([technicalScore ?? null, communicationScore ?? null, problemSolvingScore ?? null, teamworkScore ?? null, leadershipScore ?? null]);
 
   const rawRec = typeof req.body.recommendation === "string" && VALID_RECOMMENDATIONS.includes(req.body.recommendation) ? req.body.recommendation : null;
+  const behavioralScores = sanitizeBehavioral(req.body.behavioralScores);
 
   const [review] = await db.insert(reviewsTable).values({
     ...body.data,
@@ -112,6 +133,7 @@ router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Pro
     areasToImprove: body.data.areasToImprove ?? null,
     goals: body.data.goals ?? null,
     recommendation: rawRec,
+    behavioralScores,
   }).returning();
   res.status(201).json(formatReview(review));
 });
@@ -167,10 +189,13 @@ router.patch("/employees/:employeeId/reviews/:reviewId", requireAuth, async (req
 
   const rawRec = typeof req.body.recommendation === "string" && VALID_RECOMMENDATIONS.includes(req.body.recommendation) ? req.body.recommendation : undefined;
   const recUpdate = rawRec !== undefined ? { recommendation: rawRec } : {};
+  const behavioralUpdate = req.body.behavioralScores !== undefined
+    ? { behavioralScores: sanitizeBehavioral(req.body.behavioralScores) }
+    : {};
 
   const merged = { ...existing, ...body.data };
   const overallScore = computeOverall([merged.technicalScore, merged.communicationScore, merged.problemSolvingScore, merged.teamworkScore, merged.leadershipScore]);
-  const [updated] = await db.update(reviewsTable).set({ ...body.data, overallScore, ...recUpdate }).where(eq(reviewsTable.id, reviewId)).returning();
+  const [updated] = await db.update(reviewsTable).set({ ...body.data, overallScore, ...recUpdate, ...behavioralUpdate }).where(eq(reviewsTable.id, reviewId)).returning();
   res.json(formatReview(updated));
 });
 

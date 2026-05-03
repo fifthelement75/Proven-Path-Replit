@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, real, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { employeesTable } from "./employees";
@@ -20,6 +20,7 @@ export const reviewsTable = pgTable("reviews", {
   areasToImprove: text("areas_to_improve"),
   goals: text("goals"),
   recommendation: text("recommendation"),
+  behavioralScores: jsonb("behavioral_scores").$type<Record<string, number>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
