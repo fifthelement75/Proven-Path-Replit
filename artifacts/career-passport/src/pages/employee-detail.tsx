@@ -1733,7 +1733,6 @@ export default function EmployeeDetailPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>Share profile</Button>
             <Button variant="outline" size="sm" onClick={() => setFeedbackOpen(true)}>Log feedback</Button>
-            <Button variant="outline" size="sm" onClick={() => setPeerOpen(true)}>Request peer reviews</Button>
             <Button size="sm" onClick={() => setReviewOpen(true)}>Add review</Button>
           </div>
         </div>
