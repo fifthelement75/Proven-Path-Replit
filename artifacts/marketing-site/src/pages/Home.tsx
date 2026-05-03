@@ -40,7 +40,7 @@ export default function Home() {
                 initial="hidden"
                 animate="visible"
                 variants={staggerContainer}
-                className="max-w-2xl order-2 lg:order-1"
+                className="max-w-2xl"
               >
                 <motion.div
                   variants={fadeIn}
@@ -62,6 +62,32 @@ export default function Home() {
                 >
                   Proven Path gives HR teams and people leaders a single source of truth for candidate assessments, performance reviews, and career development—so every hiring and promotion decision is backed by verified data.
                 </motion.p>
+
+                {/* Mobile-only dashboard preview — shown between subheadline and CTAs on small screens */}
+                <motion.div
+                  variants={fadeIn}
+                  className="relative lg:hidden mb-8"
+                >
+                  <div aria-hidden className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-2xl opacity-70 rounded-full" />
+                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-white">
+                    <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
+                      <span className="w-3 h-3 rounded-full bg-red-400" />
+                      <span className="w-3 h-3 rounded-full bg-yellow-400" />
+                      <span className="w-3 h-3 rounded-full bg-green-400" />
+                      <div className="ml-3 flex-1 max-w-xs">
+                        <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">provenpath.app/dashboard</div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-3">
+                      <img
+                        src={`${import.meta.env.BASE_URL}hero-dashboard.png`}
+                        alt="Proven Path performance dashboard"
+                        className="w-full h-auto block rounded-md"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+
                 <motion.div 
                   variants={fadeIn}
                   className="flex flex-col sm:flex-row gap-4"
@@ -81,7 +107,7 @@ export default function Home() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="relative order-1 lg:order-2"
+                className="relative hidden lg:block"
               >
                 {/* Decorative gradient halo */}
                 <div className="absolute -inset-6 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-3xl opacity-70 rounded-full" />
