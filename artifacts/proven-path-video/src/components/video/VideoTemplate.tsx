@@ -6,6 +6,7 @@ import { Scene2Solution } from './video_scenes/Scene2Solution';
 import { Scene3TwoProducts } from './video_scenes/Scene3TwoProducts';
 import { Scene4DevPlan } from './video_scenes/Scene4DevPlan';
 import { Scene5Capabilities } from './video_scenes/Scene5Capabilities';
+import { Scene7Walkthrough } from './video_scenes/Scene7Walkthrough';
 import { Scene6Closing } from './video_scenes/Scene6Closing';
 
 export const SCENE_DURATIONS = {
@@ -14,6 +15,7 @@ export const SCENE_DURATIONS = {
   products: 5400,
   devplan: 6200,
   capabilities: 5400,
+  walkthrough: 8200,
   closing: 5800,
 };
 
@@ -23,6 +25,7 @@ const SCENE_COMPONENTS: Record<string, React.ComponentType> = {
   products: Scene3TwoProducts,
   devplan: Scene4DevPlan,
   capabilities: Scene5Capabilities,
+  walkthrough: Scene7Walkthrough,
   closing: Scene6Closing,
 };
 
@@ -32,6 +35,7 @@ const ORB_POSITIONS = [
   { x: '35%', y: '70%', scale: 1.4, hue: 'rgba(129,140,248,0.5)' },
   { x: '70%', y: '60%', scale: 1.1, hue: 'rgba(34,211,238,0.4)' },
   { x: '25%', y: '40%', scale: 1.3, hue: 'rgba(251,191,36,0.25)' },
+  { x: '78%', y: '40%', scale: 1.4, hue: 'rgba(34,211,238,0.45)' },
   { x: '50%', y: '55%', scale: 1.5, hue: 'rgba(99,102,241,0.6)' },
 ];
 
@@ -41,6 +45,7 @@ const ORB2_POSITIONS = [
   { x: '70%', y: '25%' },
   { x: '15%', y: '30%' },
   { x: '60%', y: '20%' },
+  { x: '15%', y: '60%' },
   { x: '30%', y: '65%' },
 ];
 
@@ -130,24 +135,25 @@ export default function VideoTemplate({
       />
 
       <motion.div
-        className="absolute top-[3vh] left-[3vw] flex items-center gap-2 z-30"
-        animate={{ opacity: safeIndex >= 1 && safeIndex < 5 ? 1 : 0 }}
+        className="absolute top-[3vh] left-[3vw] flex items-center z-30"
+        animate={{ opacity: safeIndex >= 1 && safeIndex < 6 ? 1 : 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="w-7 h-7 rounded-md bg-white flex items-center justify-center">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="w-5 h-5 object-contain" />
-        </div>
-        <div className="font-display text-[0.95vw] font-semibold text-white/85 tracking-tight">
-          Proven Path
+        <div className="px-2.5 py-1.5 rounded-lg bg-white/95 backdrop-blur-sm">
+          <img
+            src={`${import.meta.env.BASE_URL}provenpath-logo.png`}
+            alt="Proven Path"
+            className="h-[3.2vh] w-auto object-contain"
+          />
         </div>
       </motion.div>
 
       <motion.div
         className="absolute top-[3vh] right-[3vw] font-mono text-[0.75vw] tracking-[0.3em] text-white/40 z-30"
-        animate={{ opacity: safeIndex < 5 ? 1 : 0 }}
+        animate={{ opacity: safeIndex < 6 ? 1 : 0 }}
         transition={{ duration: 0.4 }}
       >
-        0{Math.min(safeIndex + 1, 6)} / 06
+        0{Math.min(safeIndex + 1, 7)} / 07
       </motion.div>
 
       <div className="absolute inset-0 noise opacity-40 pointer-events-none mix-blend-overlay" />

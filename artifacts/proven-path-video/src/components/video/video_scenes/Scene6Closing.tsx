@@ -51,21 +51,22 @@ export function Scene6Closing() {
         ))}
 
         <motion.div
-          className="mt-[6vh] flex items-center justify-center gap-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={phase >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.6 }}
+          className="mt-[6vh] flex items-center justify-center"
+          initial={{ opacity: 0, y: 20, scale: 0.94 }}
+          animate={phase >= 2 ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.94 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 24 }}
         >
-          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-[0_10px_40px_-10px_rgba(34,211,238,0.6)]">
-            <img src={`${BASE}logo.png`} alt="Proven Path" className="w-9 h-9 object-contain" />
-          </div>
-          <div className="font-display text-[2.4vw] font-semibold text-white tracking-tight">
-            Proven Path
+          <div className="px-8 py-4 rounded-2xl bg-white shadow-[0_10px_60px_-10px_rgba(34,211,238,0.55)]">
+            <img
+              src={`${BASE}provenpath-logo.png`}
+              alt="Proven Path"
+              className="h-[7vh] w-auto object-contain"
+            />
           </div>
         </motion.div>
 
         <motion.div
-          className="mt-[2vh] font-mono text-[1.1vw] tracking-[0.3em] uppercase text-cyan-300/80"
+          className="mt-[3vh] font-mono text-[1.1vw] tracking-[0.3em] uppercase text-cyan-300/80"
           initial={{ opacity: 0, letterSpacing: '0.1em' }}
           animate={phase >= 3 ? { opacity: 1, letterSpacing: '0.3em' } : { opacity: 0, letterSpacing: '0.1em' }}
           transition={{ duration: 0.8 }}
