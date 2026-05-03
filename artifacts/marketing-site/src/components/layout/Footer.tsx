@@ -16,7 +16,7 @@ export function Footer() {
             </p>
             <div className="flex gap-4">
               <a
-                href="https://x.com/provenpath"
+                href="https://x.com/provenpathapp"
                 target="_blank"
                 rel="noreferrer"
                 className="text-gray-400 hover:text-primary transition-colors"
