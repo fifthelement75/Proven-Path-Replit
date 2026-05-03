@@ -122,6 +122,7 @@ export default function RegisterPage() {
           />
         </div>
 
+        <div className="flex flex-col">
         <Card className="w-full shadow-xl">
           <CardHeader className="text-center">
             <img src={logoUrl} alt="Proven Path" className="h-12 mx-auto mb-2" />
@@ -201,6 +202,7 @@ export default function RegisterPage() {
           </a>
           .
         </p>
+        </div>
       </div>
 
     </div>
