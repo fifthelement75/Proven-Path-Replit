@@ -9,6 +9,7 @@ import { Alert } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getApiUrl } from "@/lib/api";
 import logoUrl from "@assets/ProvenPath_Logo_1777766690823.png";
+import sideImage from "@assets/windows-hNiNxhUfCfQ-unsplash_1777767280797.jpg";
 
 export default function RegisterPage() {
   const { login } = useAuthContext();
@@ -72,7 +73,25 @@ export default function RegisterPage() {
         className="pointer-events-none absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-amber-200/25 blur-[100px]"
       />
 
-      <div className="relative z-10 w-full max-w-sm">
+      <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        {/* Image panel */}
+        <div className="hidden lg:block relative">
+          <div
+            aria-hidden
+            className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-indigo-400/20 to-amber-200/30 blur-2xl opacity-70 rounded-[2rem]"
+          />
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
+            <img
+              src={sideImage}
+              alt="Two colleagues collaborating around a laptop"
+              className="w-full h-[640px] object-cover block"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        {/* Form column */}
+        <div className="w-full max-w-sm mx-auto lg:mx-0">
         <div className="flex flex-col items-center text-center mb-8">
           <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-2" />
           <p className="text-sm text-muted-foreground mt-1">Performance management platform</p>
@@ -177,6 +196,7 @@ export default function RegisterPage() {
           </a>
           .
         </p>
+        </div>
       </div>
     </div>
   );
