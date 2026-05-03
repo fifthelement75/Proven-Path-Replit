@@ -682,33 +682,36 @@ function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeNam
 
             <div className="space-y-3">
               <Label className="text-sm font-medium">Hard skills (1–5)</Label>
-              {[
-                ["technicalScore", "Technical"],
-                ["communicationScore", "Communication"],
-                ["problemSolvingScore", "Problem Solving"],
-                ["teamworkScore", "Teamwork"],
-                ["leadershipScore", "Leadership"],
-              ].map(([key, label]) => (
-                <div key={key} className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground w-32 shrink-0">{label}</span>
-                  <div className="flex gap-1.5">
-                    {[1, 2, 3, 4, 5].map(n => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setForm(f => ({ ...f, [key]: String(n) }))}
-                        className={`w-8 h-8 rounded text-sm font-medium border transition-colors ${
-                          form[key as keyof typeof form] === String(n)
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "border-border hover:border-primary/50 hover:bg-accent"
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+              <div className="rounded border p-3 space-y-2">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core competencies</div>
+                {[
+                  ["technicalScore", "Technical"],
+                  ["communicationScore", "Communication"],
+                  ["problemSolvingScore", "Problem Solving"],
+                  ["teamworkScore", "Teamwork"],
+                  ["leadershipScore", "Leadership"],
+                ].map(([key, label]) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground flex-1 min-w-0">{label}</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, [key]: String(n) }))}
+                          className={`w-7 h-7 rounded text-xs font-medium border transition-colors ${
+                            form[key as keyof typeof form] === String(n)
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "border-border hover:border-primary/50 hover:bg-accent"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div className="space-y-3">
