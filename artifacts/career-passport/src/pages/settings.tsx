@@ -77,7 +77,7 @@ function ExportCard() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "career-passport-export.csv";
+      a.download = "proven-path-export.csv";
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -108,7 +108,7 @@ export default function SettingsPage() {
       <div className="space-y-6 max-w-2xl">
         <div>
           <h1 className="text-2xl font-bold">Integrations & Settings</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Connect Career Passport to your existing HR and talent tools.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Connect Proven Path to your existing HR and talent tools.</p>
         </div>
 
         <div>

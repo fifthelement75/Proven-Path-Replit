@@ -126,7 +126,7 @@ export default function SharePage() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <span className="font-bold text-primary">Career Passport</span>
+          <span className="font-bold text-primary">Proven Path</span>
           <Badge variant="secondary">Read-only profile</Badge>
         </div>
       </header>

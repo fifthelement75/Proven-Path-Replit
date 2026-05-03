@@ -40,7 +40,7 @@ const SECTIONS: Section[] = [
         kind: "ul",
         items: [
           '"Account" means your registered user account on the Platform',
-          '"Career Passport" means your portable, verified career performance record',
+          '"Proven Path" means your portable, verified career performance record',
           '"Content" means text, images, data, and other materials on the Platform',
           '"Employer" means an organization that subscribes to ProvenPath for its employees',
           '"User," "you," or "your" means the individual or entity using the Platform',
@@ -137,7 +137,7 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Basic Career Passport features",
+          "Basic Proven Path features",
           "Self-assessment tools",
           "Limited verified references (3)",
           "No payment required",
@@ -273,7 +273,7 @@ const SECTIONS: Section[] = [
         kind: "ul",
         items: [
           "Access and use the Platform for your personal or internal business purposes",
-          "Create and maintain your Career Passport",
+          "Create and maintain your Proven Path",
           "Use our AI-powered tools and features",
           "Export your data in standard formats",
         ],
@@ -316,8 +316,8 @@ const SECTIONS: Section[] = [
         items: [
           "Your employer may access your performance data during your employment",
           "Your employer's policies may apply in addition to these Terms",
-          "You retain ownership of your Career Passport upon termination of employment",
-          "Your employer cannot access your Career Passport after you leave without your permission",
+          "You retain ownership of your Proven Path upon termination of employment",
+          "Your employer cannot access your Proven Path after you leave without your permission",
         ],
       },
     ],
@@ -464,7 +464,7 @@ const SECTIONS: Section[] = [
     title: "9. Data Ownership and Portability",
     blocks: [
       { kind: "h3", text: "9.1 Your Data Ownership" },
-      { kind: "p", text: "You own your Career Passport data. This includes:" },
+      { kind: "p", text: "You own your Proven Path data. This includes:" },
       {
         kind: "ul",
         items: [
@@ -481,8 +481,8 @@ const SECTIONS: Section[] = [
         items: [
           "Your employer licenses access to your performance data during employment",
           "Your employer may retain historical performance data for their records",
-          "You retain full ownership and control of your Career Passport",
-          "Upon termination, your employer cannot access your Career Passport without your permission",
+          "You retain full ownership and control of your Proven Path",
+          "Upon termination, your employer cannot access your Proven Path without your permission",
         ],
       },
       { kind: "h3", text: "9.3 Data Portability" },
@@ -490,10 +490,10 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Export your Career Passport in standard formats (JSON, PDF)",
+          "Export your Proven Path in standard formats (JSON, PDF)",
           "Transfer your verified performance history to new employers",
           "Download all your personal data at any time",
-          "Share your Career Passport with prospective employers",
+          "Share your Proven Path with prospective employers",
         ],
       },
       { kind: "h3", text: "9.4 Data Deletion" },
@@ -774,7 +774,7 @@ const SECTIONS: Section[] = [
         items: [
           "Your subscription will be cancelled (no refunds for unused time)",
           "You will lose access to the Platform immediately",
-          "You may export your Career Passport before closing your account",
+          "You may export your Proven Path before closing your account",
           "We will retain your data according to our Privacy Policy and legal requirements",
         ],
       },

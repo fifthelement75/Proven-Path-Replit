@@ -123,7 +123,7 @@ const SECTIONS: Section[] = [
         kind: "ul",
         items: [
           "Provide, maintain, and improve our Platform",
-          "Create and manage your Career Passport",
+          "Create and manage your Proven Path",
           "Generate AI-powered development plans and career insights",
           "Facilitate performance reviews and feedback collection",
           "Track career progression and skill development",
@@ -172,7 +172,7 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Sharing your Career Passport with prospective employers",
+          "Sharing your Proven Path with prospective employers",
           "Providing verified references to third parties you designate",
           "Exporting your performance data to external systems",
         ],
@@ -184,7 +184,7 @@ const SECTIONS: Section[] = [
         items: [
           "Your employer can access performance reviews, skill assessments, and career progression data",
           "Aggregated, anonymized data may be shared for organizational analytics",
-          "Your employer cannot access your Career Passport after you leave the company unless you grant permission",
+          "Your employer cannot access your Proven Path after you leave the company unless you grant permission",
         ],
       },
       { kind: "h3", text: "4.3 Service Providers" },
@@ -230,7 +230,7 @@ const SECTIONS: Section[] = [
     title: "5. Data Ownership and Portability",
     blocks: [
       { kind: "h3", text: "5.1 Your Data Ownership" },
-      { kind: "p", text: "You own your Career Passport data. This includes:" },
+      { kind: "p", text: "You own your Proven Path data. This includes:" },
       {
         kind: "ul",
         items: [
@@ -246,7 +246,7 @@ const SECTIONS: Section[] = [
         kind: "ul",
         items: [
           "Your employer retains historical performance data for their records",
-          "You retain full ownership and control of your Career Passport",
+          "You retain full ownership and control of your Proven Path",
           "You can export and transfer your data to new employers",
         ],
       },
@@ -255,7 +255,7 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Export your Career Passport in standard formats (JSON, PDF)",
+          "Export your Proven Path in standard formats (JSON, PDF)",
           "Transfer your verified performance history to new employers",
           "Download all your personal data at any time",
           "Request deletion of your data (subject to legal retention requirements)",
@@ -349,7 +349,7 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Export your Career Passport in machine-readable formats",
+          "Export your Proven Path in machine-readable formats",
           "Transfer your data to other services",
         ],
       },

@@ -227,7 +227,7 @@ export default function PeerReviewPage() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-primary text-sm">Career Passport</span>
+            <span className="font-bold text-primary text-sm">Proven Path</span>
             <span className="text-muted-foreground text-sm">·</span>
             <Badge variant="outline" className="text-xs">Peer Review</Badge>
           </div>
