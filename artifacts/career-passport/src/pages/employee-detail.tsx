@@ -809,9 +809,10 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
               const daysSinceRequest = Math.floor(
                 (Date.now() - new Date(r.createdAt).getTime()) / (1000 * 60 * 60 * 24)
               );
-              const canNudge = isPending && daysSinceRequest >= NUDGE_MIN_DAYS;
+              const canNudge = isPending;
               const canDelete = !isCompleted;
               const showActions = canDelete || canNudge;
+              const nudgeRecommended = isPending && daysSinceRequest >= NUDGE_MIN_DAYS;
               const status = actionState[r.id];
               const isBusy = busyId === r.id;
               return (
@@ -833,7 +834,7 @@ function PeerReviewsTab({ employeeId, employeeName }: { employeeId: number; empl
                         Requested {new Date(r.createdAt).toLocaleDateString()}
                         {r.expiresAt && ` · Expires ${new Date(r.expiresAt).toLocaleDateString()}`}
                         {response && ` · Submitted ${new Date(response.submittedAt).toLocaleDateString()}`}
-                        {isPending && !canNudge && ` · Nudge available in ${NUDGE_MIN_DAYS - daysSinceRequest} day${NUDGE_MIN_DAYS - daysSinceRequest === 1 ? "" : "s"}`}
+                        {isPending && !nudgeRecommended && ` · Recommended to nudge after ${NUDGE_MIN_DAYS - daysSinceRequest} more day${NUDGE_MIN_DAYS - daysSinceRequest === 1 ? "" : "s"}`}
                       </div>
                       {status && (
                         <p
