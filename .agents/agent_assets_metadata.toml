@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "97Cqfw3KFIG3mYzG6kNAY"
@@ -18,3 +17,9 @@ id = "mFNOtsX6LbyEt7eTaCtI5"
 uri = "file://artifacts/marketing-site/public/portable-record.png"
 type = "image"
 title = "Portable Career Record Abstract"
+
+[[outputs]]
+id = "OTlYSWlFYWC3i4zgm0Y1H"
+uri = "file://attached_assets/banners/provenpath-banner.jpg"
+type = "image"
+title = "ProvenPath Product Banner (1600×900)"
