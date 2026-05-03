@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 import { getApiUrl } from "@/lib/api";
+import logoUrl from "@assets/ProvenPath_Logo_1777766690823.png";
 
 export default function RegisterPage() {
   const { login } = useAuthContext();
@@ -66,8 +67,8 @@ export default function RegisterPage() {
       />
 
       <div className="relative z-10 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-primary">Career Passport</h1>
+        <div className="flex flex-col items-center text-center mb-8">
+          <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-2" />
           <p className="text-sm text-muted-foreground mt-1">Performance management platform</p>
         </div>
         <Card className="shadow-xl border-gray-200/80 backdrop-blur-sm bg-white/90">
