@@ -681,7 +681,10 @@ function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeNam
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Hard skills (1–5)</Label>
+              <div>
+                <Label>Hard skills (1–5)</Label>
+                <p className="text-xs text-muted-foreground">Rate each competency from 1 (needs work) to 5 (exceptional).</p>
+              </div>
               <div className="rounded border p-3 space-y-2">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core competencies</div>
                 {[
@@ -716,7 +719,7 @@ function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeNam
 
             <div className="space-y-3">
               <div>
-                <Label className="text-sm font-medium">Behavioral skills (1–5)</Label>
+                <Label>Behavioral skills (1–5)</Label>
                 <p className="text-xs text-muted-foreground">Optional — leave blank if you don't have a view yet.</p>
               </div>
               {BEHAVIORAL_SKILL_CATEGORIES.map(cat => (
