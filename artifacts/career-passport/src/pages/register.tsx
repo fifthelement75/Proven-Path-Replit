@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getApiUrl } from "@/lib/api";
 import logoUrl from "@assets/ProvenPath_Logo_1777766690823.png";
 
@@ -14,12 +15,17 @@ export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!agreed) {
+      setError("Please accept the Terms of Service and Privacy Policy to continue");
+      return;
+    }
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
       return;
@@ -118,9 +124,41 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                 />
               </div>
+              <div className="flex items-start gap-2 pt-1">
+                <Checkbox
+                  id="terms"
+                  checked={agreed}
+                  onCheckedChange={(checked) => setAgreed(checked === true)}
+                  className="mt-0.5"
+                />
+                <Label
+                  htmlFor="terms"
+                  className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer"
+                >
+                  I agree to the{" "}
+                  <a
+                    href="/marketing/terms"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/marketing/privacy"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Privacy Policy
+                  </a>
+                  .
+                </Label>
+              </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !agreed}>
                 {loading ? "Creating account..." : "Create account"}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
