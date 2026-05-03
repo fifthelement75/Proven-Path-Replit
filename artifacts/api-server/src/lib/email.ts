@@ -12,10 +12,11 @@ interface ConnectorsResponse {
   items?: ResendConnectionSettings[];
 }
 
-const RESEND_DEFAULT_SENDER = "ProvenPath <onboarding@resend.dev>";
+const RESEND_DEFAULT_SENDER = "ProvenPath <info@provenpath.app>";
 
 const RESEND_VERIFIED_DOMAINS = new Set([
   "resend.dev",
+  "provenpath.app",
 ]);
 
 function pickFromAddress(connectorFromEmail: string | undefined): string {
