@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -27,6 +28,121 @@ import {
   Rocket,
   Fingerprint,
 } from "lucide-react";
+
+const CAROUSEL_SLIDES = [
+  {
+    url: "provenpath.app/dashboard",
+    src: "hero-dashboard.png",
+    alt: "Proven Path performance dashboard showing competency averages, department scores, and score breakdown",
+    badge: "Performance Dashboard",
+    caption: "Unified performance overview across your entire org",
+  },
+  {
+    url: "provenpath.app/candidates/jane-doe",
+    src: "feature-skill-matrix.png",
+    alt: "Interview scorecard showing categorised skill ratings for a Product Marketing Manager candidate",
+    badge: "Interview Scorecard",
+    caption: "Structured skill assessments from day one",
+  },
+  {
+    url: "provenpath.app/employees/review",
+    src: "feature-score-breakdown.png",
+    alt: "Score breakdown showing Technical, Communication, Problem Solving, Teamwork and Leadership bars",
+    badge: "Score Breakdown",
+    caption: "Multi-dimension performance scoring at a glance",
+  },
+];
+
+const SLIDE_DURATION = 3800;
+
+function HeroCarousel({ className }: { className?: string }) {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const base = import.meta.env.BASE_URL;
+  const slide = CAROUSEL_SLIDES[idx];
+
+  useEffect(() => {
+    if (paused) return;
+    const t = setTimeout(() => setIdx(i => (i + 1) % CAROUSEL_SLIDES.length), SLIDE_DURATION);
+    return () => clearTimeout(t);
+  }, [idx, paused]);
+
+  return (
+    <div
+      className={className}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Browser chrome */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
+        <span className="w-3 h-3 rounded-full bg-red-400" />
+        <span className="w-3 h-3 rounded-full bg-yellow-400" />
+        <span className="w-3 h-3 rounded-full bg-green-400" />
+        <div className="ml-3 flex-1 max-w-xs">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slide.url}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate"
+            >
+              {slide.url}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Slide image */}
+      <div className="relative overflow-hidden bg-white">
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={slide.src}
+            src={`${base}${slide.src}`}
+            alt={slide.alt}
+            className="w-full h-auto block"
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
+          />
+        </AnimatePresence>
+      </div>
+
+      {/* Dot indicators + caption */}
+      <div className="flex flex-col items-center gap-2 py-3 bg-white border-t border-gray-100">
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={slide.caption}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="text-[11px] text-gray-400 font-medium tracking-wide"
+          >
+            {slide.caption}
+          </motion.p>
+        </AnimatePresence>
+        <div className="flex items-center gap-1.5">
+          {CAROUSEL_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => { setIdx(i); setPaused(false); }}
+              className={`rounded-full transition-all duration-300 ${
+                i === idx
+                  ? "w-5 h-1.5 bg-primary"
+                  : "w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400"
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   useDocumentMeta({
@@ -72,29 +188,13 @@ export default function Home() {
                   Proven Path gives HR teams and people leaders a single source of truth for candidate assessments, performance reviews, and career development—so every hiring and promotion decision is backed by verified data.
                 </motion.p>
 
-                {/* Mobile-only dashboard preview — shown between subheadline and CTAs on small screens */}
+                {/* Mobile-only carousel — shown between subheadline and CTAs on small screens */}
                 <motion.div
                   variants={fadeIn}
                   className="relative lg:hidden mb-8"
                 >
                   <div aria-hidden className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-2xl opacity-70 rounded-full" />
-                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-white">
-                    <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-                      <span className="w-3 h-3 rounded-full bg-red-400" />
-                      <span className="w-3 h-3 rounded-full bg-yellow-400" />
-                      <span className="w-3 h-3 rounded-full bg-green-400" />
-                      <div className="ml-3 flex-1 max-w-xs">
-                        <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">provenpath.app/dashboard</div>
-                      </div>
-                    </div>
-                    <div className="bg-white p-3">
-                      <img
-                        src={`${import.meta.env.BASE_URL}hero-dashboard.png`}
-                        alt="Proven Path performance dashboard"
-                        className="w-full h-auto block rounded-md"
-                      />
-                    </div>
-                  </div>
+                  <HeroCarousel className="relative rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-white" />
                 </motion.div>
 
                 <motion.div 
@@ -121,26 +221,7 @@ export default function Home() {
                 {/* Decorative gradient halo */}
                 <div className="absolute -inset-6 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-3xl opacity-70 rounded-full" />
 
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-                  {/* Browser-style window chrome */}
-                  <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-                    <span className="w-3 h-3 rounded-full bg-red-400" />
-                    <span className="w-3 h-3 rounded-full bg-yellow-400" />
-                    <span className="w-3 h-3 rounded-full bg-green-400" />
-                    <div className="ml-3 flex-1 max-w-xs">
-                      <div className="px-3 py-1 rounded-md bg-white border border-gray-200 text-xs text-gray-500 truncate">provenpath.app/dashboard</div>
-                    </div>
-                  </div>
-
-                  {/* Dashboard screenshot */}
-                  <div className="bg-white p-3 sm:p-4">
-                    <img
-                      src={`${import.meta.env.BASE_URL}hero-dashboard.png`}
-                      alt="Proven Path performance dashboard showing competency averages, department scores, and score breakdown"
-                      className="w-full h-auto block rounded-md"
-                    />
-                  </div>
-                </div>
+                <HeroCarousel className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white" />
 
                 {/* Floating "Live data" badge — top-right */}
                 <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
