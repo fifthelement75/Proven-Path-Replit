@@ -81,7 +81,7 @@ const SLIDE_DURATION = 3800;
 
 type Slide = { url: string; src: string; alt: string; badge: string; caption: string };
 
-function FeatureCarousel({ slides, className, imageClass }: { slides: Slide[]; className?: string; imageClass?: string }) {
+function FeatureCarousel({ slides, className, imageClass, imageHeight = "h-[320px]" }: { slides: Slide[]; className?: string; imageClass?: string; imageHeight?: string }) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const base = import.meta.env.BASE_URL;
@@ -119,7 +119,7 @@ function FeatureCarousel({ slides, className, imageClass }: { slides: Slide[]; c
         </div>
       </div>
 
-      <div className="relative h-[320px] bg-white overflow-hidden">
+      <div className={`relative ${imageHeight} bg-white overflow-hidden`}>
         <AnimatePresence mode="wait">
           <motion.img
             key={slide.src}
@@ -598,7 +598,7 @@ export default function Home() {
                 <FeatureCarousel
                   slides={HOW_IT_WORKS_SLIDES}
                   className="relative bg-white rounded-2xl shadow-xl ring-1 ring-gray-200 overflow-hidden"
-                  imageClass="absolute inset-0 w-full h-full object-cover"
+                  imageHeight="h-[500px]"
                 />
 
                 <div className="hidden sm:flex absolute -top-3 -right-3 items-center gap-2 bg-primary text-white text-xs font-semibold px-3 py-2 rounded-full shadow-lg">
