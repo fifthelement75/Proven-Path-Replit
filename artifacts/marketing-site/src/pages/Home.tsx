@@ -73,7 +73,6 @@ function HeroCarousel({ className }: { className?: string }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Browser chrome */}
       <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
         <span className="w-3 h-3 rounded-full bg-red-400" />
         <span className="w-3 h-3 rounded-full bg-yellow-400" />
@@ -94,7 +93,6 @@ function HeroCarousel({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* Slide image — fixed height so container never resizes between slides */}
       <div className="relative h-[320px] bg-white overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.img
@@ -110,7 +108,6 @@ function HeroCarousel({ className }: { className?: string }) {
         </AnimatePresence>
       </div>
 
-      {/* Dot indicators + caption */}
       <div className="flex flex-col items-center gap-2 py-3 bg-white border-t border-gray-100">
         <AnimatePresence mode="wait">
           <motion.p
@@ -157,7 +154,6 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main className="flex-1 pt-16">
-        {/* HERO SECTION */}
         <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 lg:pt-32 lg:pb-40">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
@@ -188,7 +184,6 @@ export default function Home() {
                   Proven Path gives HR teams and people leaders a single source of truth for candidate assessments, performance reviews, and career development—so every hiring and promotion decision is backed by verified data.
                 </motion.p>
 
-                {/* Mobile-only carousel — shown between subheadline and CTAs on small screens */}
                 <motion.div
                   variants={fadeIn}
                   className="relative lg:hidden mb-8"
@@ -218,19 +213,16 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="relative hidden lg:block"
               >
-                {/* Decorative gradient halo */}
                 <div className="absolute -inset-6 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-3xl opacity-70 rounded-full" />
 
                 <HeroCarousel className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white" />
 
-                {/* Floating "Live data" badge — top-right */}
                 <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   <span>Live performance data</span>
                 </div>
 
-                {/* Floating "Avg Score" badge — bottom-left */}
-                <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-gray-100">
+                <div className="hidden sm:flex absolute -bottom-2 -left-4 items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-gray-100">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-success/10 text-success">
                     <TrendingUp size={18} />
                   </div>
@@ -279,7 +271,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Feature image */}
             <div className="relative max-w-5xl mx-auto mb-16">
               <div
                 aria-hidden
@@ -341,7 +332,6 @@ export default function Home() {
             </div>
             
             <div className="space-y-20 lg:space-y-28">
-              {/* Row 1 — For Employers (text left, image right) */}
               <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
@@ -366,7 +356,6 @@ export default function Home() {
                 </div>
 
                 <div className="relative">
-                  {/* Decorative gradient backdrop */}
                   <div
                     aria-hidden
                     className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-2xl opacity-70 rounded-full"
@@ -380,7 +369,6 @@ export default function Home() {
                     />
                   </div>
 
-                  {/* Floating badge — top-right */}
                   <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
                     <Building2 size={16} />
                     <span>Built for HR teams</span>
@@ -388,10 +376,8 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Row 2 — For Your Employees (image left, text right) */}
               <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                 <div className="relative order-last lg:order-first">
-                  {/* Decorative gradient backdrop */}
                   <div
                     aria-hidden
                     className="absolute -inset-4 -z-10 bg-gradient-to-tr from-warning/25 via-primary/15 to-success/20 blur-2xl opacity-70 rounded-full"
@@ -405,7 +391,6 @@ export default function Home() {
                     />
                   </div>
 
-                  {/* Floating badge — bottom-left */}
                   <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 px-3 py-2 rounded-xl bg-warning text-white text-sm font-semibold shadow-lg shadow-warning/30 ring-4 ring-white">
                     <Users size={16} />
                     <span>Loved by employees</span>
@@ -439,15 +424,11 @@ export default function Home() {
           </Container>
         </section>
 
-        {/* BEST FIT CUSTOMER SECTION */}
         <section className="relative py-14 md:py-24 text-white overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
-          {/* Dot grid pattern */}
           <div
             aria-hidden
             className="absolute inset-0 opacity-[0.18] [background-image:radial-gradient(rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:22px_22px]"
           />
-
-          {/* Soft radial glows */}
           <div
             aria-hidden
             className="absolute -top-40 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/30 blur-[120px]"
@@ -460,8 +441,6 @@ export default function Home() {
             aria-hidden
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] rounded-full bg-warning/10 blur-[140px]"
           />
-
-          {/* Top + bottom edge fades for smooth section blending */}
           <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
@@ -510,7 +489,6 @@ export default function Home() {
           </Container>
         </section>
 
-        {/* PRODUCT FEATURES SECTION */}
         <section className="py-14 md:py-24 bg-gray-50">
           <Container>
             <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
@@ -550,7 +528,6 @@ export default function Home() {
           </Container>
         </section>
 
-        {/* HOW IT WORKS SECTION */}
         <section className="py-14 md:py-24">
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -583,15 +560,12 @@ export default function Home() {
               </div>
               
               <div className="relative">
-                {/* Gradient halo */}
                 <div
                   aria-hidden
                   className="absolute -inset-4 -z-10 blur-2xl opacity-60 bg-gradient-to-br from-primary/30 via-success/20 to-warning/20 rounded-[2rem]"
                 />
 
-                {/* Browser-window card */}
                 <div className="relative bg-white rounded-2xl shadow-xl ring-1 ring-gray-200 overflow-hidden">
-                  {/* Browser chrome */}
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gray-50/80">
                     <div className="flex gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
@@ -601,7 +575,6 @@ export default function Home() {
                     <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-white border border-gray-200 text-xs font-mono text-gray-500 truncate">provenpath.app/employees/sarah-chen</div>
                   </div>
 
-                  {/* Screenshot */}
                   <div className="p-3 sm:p-4 bg-white">
                     <img
                       src={`${import.meta.env.BASE_URL}competency-overview.png`}
@@ -612,13 +585,11 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Floating badge — top right */}
                 <div className="hidden sm:flex absolute -top-3 -right-3 items-center gap-2 bg-primary text-white text-xs font-semibold px-3 py-2 rounded-full shadow-lg">
                   <Activity size={14} />
                   Live competency view
                 </div>
 
-                {/* Stat chip — bottom left */}
                 <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 bg-white border border-gray-200 text-gray-700 text-xs font-medium px-3 py-2 rounded-xl shadow-md">
                   <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success">
                     <TrendingUp size={14} />
@@ -633,7 +604,6 @@ export default function Home() {
           </Container>
         </section>
 
-        {/* SOCIAL PROOF SECTION */}
         <section className="py-14 md:py-24 bg-gray-50 border-y border-gray-100">
           <Container>
             <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
@@ -672,9 +642,7 @@ export default function Home() {
           </Container>
         </section>
 
-        {/* CTA SECTION */}
         <section className="py-14 md:py-24 relative overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
-          {/* Decorative circles */}
           <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 rounded-full border-4 border-white/10" />
           <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-96 h-96 rounded-full border-4 border-white/10" />
           
