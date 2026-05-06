@@ -77,7 +77,7 @@ export default function Pricing() {
       features: [
         "Everything in Team, plus:",
         "HRIS integrations (BambooHR, Workday, Gusto)",
-        "SSO & advanced security (SOC 2)",
+        "SSO & advanced security (built on SOC 2-compliant infrastructure)",
         "Dedicated account manager",
         "Custom workflows & permissions",
         "API access",
