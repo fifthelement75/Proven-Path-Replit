@@ -81,7 +81,7 @@ const SLIDE_DURATION = 3800;
 
 type Slide = { url: string; src: string; alt: string; badge: string; caption: string };
 
-function FeatureCarousel({ slides, className }: { slides: Slide[]; className?: string }) {
+function FeatureCarousel({ slides, className, imageClass }: { slides: Slide[]; className?: string; imageClass?: string }) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const base = import.meta.env.BASE_URL;
@@ -125,7 +125,7 @@ function FeatureCarousel({ slides, className }: { slides: Slide[]; className?: s
             key={slide.src}
             src={`${base}${slide.src}`}
             alt={slide.alt}
-            className="absolute inset-0 w-full h-full object-contain p-4"
+            className={imageClass ?? "absolute inset-0 w-full h-full object-contain p-4"}
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -24 }}
@@ -598,6 +598,7 @@ export default function Home() {
                 <FeatureCarousel
                   slides={HOW_IT_WORKS_SLIDES}
                   className="relative bg-white rounded-2xl shadow-xl ring-1 ring-gray-200 overflow-hidden"
+                  imageClass="absolute inset-0 w-full h-full object-cover"
                 />
 
                 <div className="hidden sm:flex absolute -top-3 -right-3 items-center gap-2 bg-primary text-white text-xs font-semibold px-3 py-2 rounded-full shadow-lg">
