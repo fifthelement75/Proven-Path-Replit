@@ -341,7 +341,7 @@ function AddReviewDialog({ open, onClose, employeeId, employeeEmail, employeeNam
   // Manager-review form state
   const [form, setForm] = useState({
     period: new Date().toISOString().slice(0, 7),
-    technicalScore: "3", communicationScore: "3", problemSolvingScore: "3", teamworkScore: "3", leadershipScore: "3",
+    technicalScore: "", communicationScore: "", problemSolvingScore: "", teamworkScore: "", leadershipScore: "",
     strengths: "", areasToImprove: "", goals: "", recommendation: "",
   });
   const [behavioral, setBehavioral] = useState<Record<string, number>>({});
