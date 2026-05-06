@@ -94,14 +94,14 @@ function HeroCarousel({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* Slide image */}
-      <div className="relative overflow-hidden bg-white">
+      {/* Slide image — fixed height so container never resizes between slides */}
+      <div className="relative h-[320px] bg-white overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.img
             key={slide.src}
             src={`${base}${slide.src}`}
             alt={slide.alt}
-            className="w-full h-auto block"
+            className="absolute inset-0 w-full h-full object-contain p-4"
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -24 }}
