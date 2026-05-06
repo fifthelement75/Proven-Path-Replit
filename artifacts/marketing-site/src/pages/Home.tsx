@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -88,6 +88,14 @@ function FeatureCarousel({ slides, className, imageClass, imageHeight = "h-[320p
   const slide = slides[idx];
 
   useEffect(() => {
+    slides.forEach(s => {
+      const img = new Image();
+      img.src = `${base}${s.src}`;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (paused) return;
     const t = setTimeout(() => setIdx(i => (i + 1) % slides.length), SLIDE_DURATION);
     return () => clearTimeout(t);
@@ -169,6 +177,17 @@ function FeatureCarousel({ slides, className, imageClass, imageHeight = "h-[320p
 
 function HeroCarousel({ className }: { className?: string }) {
   return <FeatureCarousel slides={CAROUSEL_SLIDES} className={className} />;
+}
+
+function Parallax({ children, strength = 30, className }: { children: React.ReactNode; strength?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], [-strength, strength]);
+  return (
+    <motion.div ref={ref} style={{ y }} className={["relative", className].filter(Boolean).join(" ")}>
+      {children}
+    </motion.div>
+  );
 }
 
 export default function Home() {
@@ -307,12 +326,14 @@ export default function Home() {
                 className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/20 via-indigo-400/15 to-warning/15 blur-2xl opacity-70 rounded-[2rem]"
               />
               <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-                <img
-                  src={differentiationImage}
-                  alt="Two colleagues smiling and collaborating around a laptop"
-                  className="w-full h-[260px] sm:h-[360px] lg:h-[420px] object-cover block"
-                  loading="lazy"
-                />
+                <Parallax strength={22}>
+                  <img
+                    src={differentiationImage}
+                    alt="Two colleagues smiling and collaborating around a laptop"
+                    className="w-full h-[260px] sm:h-[360px] lg:h-[420px] object-cover block"
+                    loading="eager"
+                  />
+                </Parallax>
               </div>
             </div>
 
@@ -391,12 +412,14 @@ export default function Home() {
                     className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-2xl opacity-70 rounded-full"
                   />
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-                    <img
-                      src={employerImage}
-                      alt="HR leader reviewing performance data on a laptop"
-                      className="w-full h-[420px] sm:h-[480px] object-cover block"
-                      loading="lazy"
-                    />
+                    <Parallax strength={18}>
+                      <img
+                        src={employerImage}
+                        alt="HR leader reviewing performance data on a laptop"
+                        className="w-full h-[420px] sm:h-[480px] object-cover block"
+                        loading="eager"
+                      />
+                    </Parallax>
                   </div>
 
                   <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
@@ -413,12 +436,14 @@ export default function Home() {
                     className="absolute -inset-4 -z-10 bg-gradient-to-tr from-warning/25 via-primary/15 to-success/20 blur-2xl opacity-70 rounded-full"
                   />
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-                    <img
-                      src={employeeImage}
-                      alt="Employee walking through a modern office, reviewing notes"
-                      className="w-full h-[420px] sm:h-[480px] object-cover block"
-                      loading="lazy"
-                    />
+                    <Parallax strength={18}>
+                      <img
+                        src={employeeImage}
+                        alt="Employee walking through a modern office, reviewing notes"
+                        className="w-full h-[420px] sm:h-[480px] object-cover block"
+                        loading="eager"
+                      />
+                    </Parallax>
                   </div>
 
                   <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 px-3 py-2 rounded-xl bg-warning text-white text-sm font-semibold shadow-lg shadow-warning/30 ring-4 ring-white">
@@ -589,7 +614,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="relative">
+              <Parallax strength={14} className="relative">
                 <div
                   aria-hidden
                   className="absolute -inset-4 -z-10 blur-2xl opacity-60 bg-gradient-to-br from-primary/30 via-success/20 to-warning/20 rounded-[2rem]"
@@ -615,7 +640,7 @@ export default function Home() {
                     <span className="text-gray-500"> · Interview → Review → Integrate</span>
                   </span>
                 </div>
-              </div>
+              </Parallax>
             </div>
           </Container>
         </section>
