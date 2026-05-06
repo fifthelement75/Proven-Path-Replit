@@ -343,13 +343,13 @@ export function Layout({ children }: LayoutProps) {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <a href="/marketing/terms" target="_blank" rel="noopener noreferrer">
+                    <a href="/terms" target="_blank" rel="noopener noreferrer">
                       <FileText className="h-4 w-4 mr-2" />
                       Terms of Service
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <a href="/marketing/privacy" target="_blank" rel="noopener noreferrer">
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer">
                       <Shield className="h-4 w-4 mr-2" />
                       Privacy Policy
                     </a>

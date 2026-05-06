@@ -152,7 +152,7 @@ export default function LoginPage() {
         </Card>
         <p className="text-sm text-muted-foreground text-center mt-6">
           Learn more about the product features{" "}
-          <a href="/marketing/" className="text-primary font-medium hover:underline">
+          <a href="/" className="text-primary font-medium hover:underline">
             here
           </a>
           .

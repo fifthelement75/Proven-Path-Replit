@@ -222,7 +222,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
 
         <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
           <a
-            href="/marketing/terms"
+            href="/terms"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-foreground hover:underline"
@@ -231,7 +231,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
           </a>
           <span aria-hidden>·</span>
           <a
-            href="/marketing/privacy"
+            href="/privacy"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-foreground hover:underline"

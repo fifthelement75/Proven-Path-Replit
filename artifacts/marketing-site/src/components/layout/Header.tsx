@@ -64,7 +64,7 @@ export function Header() {
 
           <div className="hidden md:flex items-center gap-4">
             <a
-              href="/register"
+              href="/app/register"
               className="text-sm font-medium text-gray-600 hover:text-gray-900"
             >
               Sign Up
@@ -109,7 +109,7 @@ export function Header() {
             </Link>
             <div className="h-px bg-gray-200 my-2" />
             <a
-              href="/register"
+              href="/app/register"
               className="text-base font-medium text-gray-900 px-3 py-3 hover:bg-gray-50 rounded-md"
             >
               Sign Up

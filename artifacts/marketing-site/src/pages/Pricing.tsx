@@ -28,7 +28,7 @@ export default function Pricing() {
         "Career timeline view"
       ],
       cta: "Get Started Free",
-      link: "/register",
+      link: "/app/register",
       external: true,
       popular: false
     },
@@ -46,7 +46,7 @@ export default function Pricing() {
         "Priority support"
       ],
       cta: "Start 7-day Free Trial",
-      link: "/register?plan=pro",
+      link: "/app/register?plan=pro",
       external: true,
       popular: false
     },

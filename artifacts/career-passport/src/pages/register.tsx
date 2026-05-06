@@ -171,11 +171,11 @@ export default function RegisterPage() {
                 <Checkbox id="terms" checked={agreed} onCheckedChange={(v) => setAgreed(!!v)} />
                 <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer">
                   I agree to the{" "}
-                  <a href="/marketing/terms" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">
+                  <a href="/terms" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">
                     Terms of Service
                   </a>{" "}
                   and{" "}
-                  <a href="/marketing/privacy" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">
+                  <a href="/privacy" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">
                     Privacy Policy
                   </a>
                   .
@@ -197,7 +197,7 @@ export default function RegisterPage() {
         </Card>
         <p className="text-sm text-muted-foreground text-center mt-6">
           Learn more about the product features{" "}
-          <a href="/marketing/" className="text-primary font-medium hover:underline">
+          <a href="/" className="text-primary font-medium hover:underline">
             here
           </a>
           .

@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/marketing/"
+previewPath = "/"
 title = "Proven Path"
 version = "1.0.0"
 id = "artifacts/marketing-site"
@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/marketing/" ]
+paths = [ "/" ]
 localPort = 21209
 
 [services.development]
@@ -28,4 +28,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "21209"
-BASE_PATH = "/marketing/"
+BASE_PATH = "/"
