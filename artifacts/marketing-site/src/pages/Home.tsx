@@ -53,19 +53,45 @@ const CAROUSEL_SLIDES = [
   },
 ];
 
+const HOW_IT_WORKS_SLIDES = [
+  {
+    url: "provenpath.app/candidates/interview",
+    src: "feature-interview-assessment.png",
+    alt: "Interview Assessment scorecard with skill categories and 1–5 ratings for a UX Designer candidate",
+    badge: "Interview Assessment",
+    caption: "Structured interview scoring from day one",
+  },
+  {
+    url: "provenpath.app/employees/review/new",
+    src: "feature-add-review.png",
+    alt: "Add Performance Review form showing hard skills and behavioral skill ratings",
+    badge: "Performance Review",
+    caption: "360° reviews across hard and behavioral skills",
+  },
+  {
+    url: "provenpath.app/settings/integrations",
+    src: "feature-integrations.png",
+    alt: "Integrations & Settings page showing HRIS, ATS, and Meeting Intelligence connectors",
+    badge: "Integrations & Settings",
+    caption: "Connect to your existing HR and talent tools",
+  },
+];
+
 const SLIDE_DURATION = 3800;
 
-function HeroCarousel({ className }: { className?: string }) {
+type Slide = { url: string; src: string; alt: string; badge: string; caption: string };
+
+function FeatureCarousel({ slides, className }: { slides: Slide[]; className?: string }) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const base = import.meta.env.BASE_URL;
-  const slide = CAROUSEL_SLIDES[idx];
+  const slide = slides[idx];
 
   useEffect(() => {
     if (paused) return;
-    const t = setTimeout(() => setIdx(i => (i + 1) % CAROUSEL_SLIDES.length), SLIDE_DURATION);
+    const t = setTimeout(() => setIdx(i => (i + 1) % slides.length), SLIDE_DURATION);
     return () => clearTimeout(t);
-  }, [idx, paused]);
+  }, [idx, paused, slides.length]);
 
   return (
     <div
@@ -122,7 +148,7 @@ function HeroCarousel({ className }: { className?: string }) {
           </motion.p>
         </AnimatePresence>
         <div className="flex items-center gap-1.5">
-          {CAROUSEL_SLIDES.map((_, i) => (
+          {slides.map((_, i) => (
             <button
               key={i}
               type="button"
@@ -139,6 +165,10 @@ function HeroCarousel({ className }: { className?: string }) {
       </div>
     </div>
   );
+}
+
+function HeroCarousel({ className }: { className?: string }) {
+  return <FeatureCarousel slides={CAROUSEL_SLIDES} className={className} />;
 }
 
 export default function Home() {
@@ -565,38 +595,23 @@ export default function Home() {
                   className="absolute -inset-4 -z-10 blur-2xl opacity-60 bg-gradient-to-br from-primary/30 via-success/20 to-warning/20 rounded-[2rem]"
                 />
 
-                <div className="relative bg-white rounded-2xl shadow-xl ring-1 ring-gray-200 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gray-50/80">
-                    <div className="flex gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                    </div>
-                    <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-white border border-gray-200 text-xs font-mono text-gray-500 truncate">provenpath.app/employees/sarah-chen</div>
-                  </div>
-
-                  <div className="p-3 sm:p-4 bg-white">
-                    <img
-                      src={`${import.meta.env.BASE_URL}competency-overview.png`}
-                      alt="Competency radar and score breakdown for an employee"
-                      className="w-full h-auto rounded-lg"
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
+                <FeatureCarousel
+                  slides={HOW_IT_WORKS_SLIDES}
+                  className="relative bg-white rounded-2xl shadow-xl ring-1 ring-gray-200 overflow-hidden"
+                />
 
                 <div className="hidden sm:flex absolute -top-3 -right-3 items-center gap-2 bg-primary text-white text-xs font-semibold px-3 py-2 rounded-full shadow-lg">
                   <Activity size={14} />
-                  Live competency view
+                  Live product tour
                 </div>
 
-                <div className="hidden sm:flex absolute -bottom-4 -left-4 items-center gap-2 bg-white border border-gray-200 text-gray-700 text-xs font-medium px-3 py-2 rounded-xl shadow-md">
+                <div className="hidden sm:flex absolute -bottom-8 -left-4 items-center gap-2 bg-white border border-gray-200 text-gray-700 text-xs font-medium px-3 py-2 rounded-xl shadow-md">
                   <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success">
                     <TrendingUp size={14} />
                   </span>
                   <span>
-                    <span className="font-semibold text-gray-900">5 skills tracked</span>
-                    <span className="text-gray-500"> · Updated daily</span>
+                    <span className="font-semibold text-gray-900">3 core workflows</span>
+                    <span className="text-gray-500"> · Interview → Review → Integrate</span>
                   </span>
                 </div>
               </div>
