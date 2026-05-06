@@ -614,7 +614,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <Parallax strength={14} className="relative">
+              <Parallax strength={14} className="relative max-w-[420px] mx-auto lg:mx-0 lg:ml-auto">
                 <div
                   aria-hidden
                   className="absolute -inset-4 -z-10 blur-2xl opacity-60 bg-gradient-to-br from-primary/30 via-success/20 to-warning/20 rounded-[2rem]"
