@@ -117,7 +117,7 @@ export default function RegisterPage() {
           <img
             src={sideImage}
             alt="Modern workspace"
-            className="relative w-full h-[560px] object-cover rounded-2xl shadow-xl"
+            className="relative w-full h-[560px] object-cover rounded-2xl shadow-xl mt-[0px] mb-[20px] pt-[0px] pb-[0px]"
           />
         </div>
 
