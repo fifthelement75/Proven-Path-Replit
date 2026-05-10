@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, companiesTable, employeesTable, reviewsTable, feedbackTable } from "@workspace/db";
-import { eq, avg, count, sql } from "drizzle-orm";
+import { db, companiesTable, employeesTable, reviewsTable, feedbackTable, devPlansTable, devPlanSkillsTable } from "@workspace/db";
+import { eq, count, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
@@ -176,6 +176,133 @@ router.get("/companies/me/activity", requireAuth, async (req, res): Promise<void
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 20);
 
   res.json(activities);
+});
+
+router.get("/companies/me/employee-summaries", requireAuth, async (req, res): Promise<void> => {
+  const { companyId } = req.auth!;
+
+  const employees = await db.select({
+    id: employeesTable.id,
+    name: employeesTable.name,
+    role: employeesTable.role,
+    department: employeesTable.department,
+    createdAt: employeesTable.createdAt,
+  }).from(employeesTable).where(eq(employeesTable.companyId, companyId));
+
+  if (employees.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  const employeeIds = employees.map(e => e.id);
+  const idsExpr = sql`ANY(ARRAY[${sql.join(employeeIds.map(id => sql`${id}`), sql`, `)}]::integer[])`;
+
+  const allReviews = await db.select({
+    id: reviewsTable.id,
+    employeeId: reviewsTable.employeeId,
+    reviewType: reviewsTable.reviewType,
+    period: reviewsTable.period,
+    overallScore: reviewsTable.overallScore,
+    createdAt: reviewsTable.createdAt,
+  }).from(reviewsTable)
+    .where(sql`${reviewsTable.employeeId} = ${idsExpr}`)
+    .orderBy(sql`${reviewsTable.createdAt} DESC`);
+
+  const allFeedback = await db.select({
+    id: feedbackTable.id,
+    employeeId: feedbackTable.employeeId,
+    meetingType: feedbackTable.meetingType,
+    meetingDate: feedbackTable.meetingDate,
+    createdAt: feedbackTable.createdAt,
+  }).from(feedbackTable)
+    .where(sql`${feedbackTable.employeeId} = ${idsExpr}`)
+    .orderBy(sql`${feedbackTable.createdAt} DESC`);
+
+  const allDevPlans = await db.select({
+    id: devPlansTable.id,
+    employeeId: devPlansTable.employeeId,
+    generatedAt: devPlansTable.generatedAt,
+  }).from(devPlansTable)
+    .where(sql`${devPlansTable.employeeId} = ${idsExpr}`);
+
+  const devPlanIds = allDevPlans.map(p => p.id);
+  let allSkills: { devPlanId: number; completed: boolean }[] = [];
+  if (devPlanIds.length > 0) {
+    allSkills = await db.select({
+      devPlanId: devPlanSkillsTable.devPlanId,
+      completed: devPlanSkillsTable.completed,
+    }).from(devPlanSkillsTable)
+      .where(sql`${devPlanSkillsTable.devPlanId} = ANY(ARRAY[${sql.join(devPlanIds.map(id => sql`${id}`), sql`, `)}]::integer[])`);
+  }
+
+  const reviewsByEmp: Record<number, typeof allReviews> = {};
+  for (const r of allReviews) {
+    if (!reviewsByEmp[r.employeeId]) reviewsByEmp[r.employeeId] = [];
+    reviewsByEmp[r.employeeId].push(r);
+  }
+
+  const feedbackByEmp: Record<number, typeof allFeedback> = {};
+  for (const f of allFeedback) {
+    if (!feedbackByEmp[f.employeeId]) feedbackByEmp[f.employeeId] = [];
+    feedbackByEmp[f.employeeId].push(f);
+  }
+
+  const devPlanByEmp: Record<number, { id: number; generatedAt: Date; skillsTotal: number; skillsCompleted: number }> = {};
+  for (const p of allDevPlans) {
+    const skills = allSkills.filter(s => s.devPlanId === p.id);
+    devPlanByEmp[p.employeeId] = {
+      id: p.id,
+      generatedAt: p.generatedAt,
+      skillsTotal: skills.length,
+      skillsCompleted: skills.filter(s => s.completed).length,
+    };
+  }
+
+  const MEETING_TYPE_LABELS: Record<string, string> = {
+    one_on_one: "1:1 Meeting",
+    performance_check_in: "Performance Check-in",
+    project_debrief: "Project Debrief",
+    career_conversation: "Career Conversation",
+    other: "Other",
+  };
+
+  const summaries = employees.map(emp => {
+    const reviews = reviewsByEmp[emp.id] ?? [];
+    const feedback = feedbackByEmp[emp.id] ?? [];
+    const devPlan = devPlanByEmp[emp.id] ?? null;
+
+    const lastReview = reviews[0] ?? null;
+    const lastFeedback = feedback[0] ?? null;
+
+    const lastActivityAt = [
+      lastReview?.createdAt,
+      lastFeedback?.createdAt,
+      devPlan?.generatedAt,
+      emp.createdAt,
+    ].filter(Boolean).map(d => new Date(d!).getTime()).sort((a, b) => b - a)[0];
+
+    return {
+      employeeId: emp.id,
+      name: emp.name,
+      role: emp.role,
+      department: emp.department,
+      reviewCount: reviews.length,
+      lastReviewType: lastReview ? lastReview.reviewType : null,
+      lastReviewPeriod: lastReview ? lastReview.period : null,
+      lastReviewScore: lastReview ? lastReview.overallScore : null,
+      lastReviewDate: lastReview ? lastReview.createdAt.toISOString() : null,
+      feedbackCount: feedback.length,
+      lastFeedbackType: lastFeedback ? MEETING_TYPE_LABELS[lastFeedback.meetingType] ?? lastFeedback.meetingType : null,
+      lastFeedbackDate: lastFeedback ? lastFeedback.meetingDate : null,
+      hasDevPlan: !!devPlan,
+      devPlanSkillsTotal: devPlan?.skillsTotal ?? 0,
+      devPlanSkillsCompleted: devPlan?.skillsCompleted ?? 0,
+      devPlanGeneratedAt: devPlan?.generatedAt.toISOString() ?? null,
+      lastActivityAt: new Date(lastActivityAt).toISOString(),
+    };
+  }).sort((a, b) => new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime());
+
+  res.json(summaries);
 });
 
 export default router;

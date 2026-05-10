@@ -16,7 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert } from "@/components/ui/alert";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BEHAVIORAL_SKILL_CATEGORIES, BEHAVIORAL_SKILL_BY_KEY } from "@/lib/behavioral-skills";
 
 interface ReviewItem {
@@ -1762,13 +1763,13 @@ export default function EmployeeDetailPage() {
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-base">Competency Radar</CardTitle></CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
+                    <ChartContainer config={{ score: { label: "Score", color: "hsl(221 83% 53%)" } }} className="h-[200px] w-full">
                       <RadarChart data={radarData}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                        <Radar dataKey="A" stroke="hsl(221 83% 53%)" fill="hsl(221 83% 53%)" fillOpacity={0.3} />
+                        <Radar dataKey="A" stroke="var(--color-score)" fill="var(--color-score)" fillOpacity={0.3} />
                       </RadarChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                   </CardContent>
                 </Card>
                 <Card>
@@ -1787,15 +1788,15 @@ export default function EmployeeDetailPage() {
                   <Card className="lg:col-span-2">
                     <CardHeader className="pb-2"><CardTitle className="text-base">Score History</CardTitle></CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={180}>
+                      <ChartContainer config={{ score: { label: "Score", color: "hsl(221 83% 53%)" } }} className="h-[180px] w-full">
                         <LineChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="period" tick={{ fontSize: 11 }} />
                           <YAxis domain={[0, 5]} tick={{ fontSize: 11 }} />
-                          <Tooltip formatter={(v: number) => v.toFixed(1)} />
-                          <Line type="monotone" dataKey="score" stroke="hsl(221 83% 53%)" strokeWidth={2} dot={{ r: 4 }} />
+                          <ChartTooltip content={<ChartTooltipContent formatter={(v: unknown) => (v as number).toFixed(1)} />} />
+                          <Line type="monotone" dataKey="score" stroke="var(--color-score)" strokeWidth={2} dot={{ r: 4 }} />
                         </LineChart>
-                      </ResponsiveContainer>
+                      </ChartContainer>
                     </CardContent>
                   </Card>
                 )}
