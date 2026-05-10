@@ -64,7 +64,7 @@ export default function LoginPage() {
       />
       <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         {/* Image panel */}
-        <div className="hidden lg:block relative">
+        <div className="hidden lg:block relative pb-[36px]">
           <div
             aria-hidden
             className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-indigo-400/20 to-amber-200/30 blur-2xl opacity-70 rounded-[2rem]"
