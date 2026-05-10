@@ -108,7 +108,6 @@ export default function RegisterPage() {
         aria-hidden
         className="pointer-events-none absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-amber-200/25 blur-[100px]"
       />
-
       <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         <div className="hidden lg:block relative">
           <div
@@ -125,7 +124,7 @@ export default function RegisterPage() {
         <div className="flex flex-col">
         <Card className="w-full shadow-xl border-t-[#0f172903] border-r-[#0f172903] border-b-[#0f172903] border-l-[#0f172903]">
           <CardHeader className="text-center">
-            <img src={logoUrl} alt="Proven Path" className="h-12 mx-auto mb-2" />
+            <img src={logoUrl} alt="Proven Path" className="h-12 mx-auto mb-[20px]" />
             <CardTitle className="text-2xl">Create your company account</CardTitle>
             <CardDescription>
               {planParam === "pro"
@@ -204,7 +203,6 @@ export default function RegisterPage() {
         </p>
         </div>
       </div>
-
     </div>
   );
 }
