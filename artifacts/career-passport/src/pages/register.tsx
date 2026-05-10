@@ -123,7 +123,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="flex flex-col">
-        <Card className="w-full shadow-xl">
+        <Card className="w-full shadow-xl border-t-[#0f172903] border-r-[#0f172903] border-b-[#0f172903] border-l-[#0f172903]">
           <CardHeader className="text-center">
             <img src={logoUrl} alt="Proven Path" className="h-12 mx-auto mb-2" />
             <CardTitle className="text-2xl">Create your company account</CardTitle>
