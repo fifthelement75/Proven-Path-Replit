@@ -84,7 +84,7 @@ export default function LoginPage() {
         <Card className="shadow-xl border-gray-200/80 backdrop-blur-sm bg-white/90">
           <CardHeader className="items-center text-center">
             <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-[40px]" />
-            <CardTitle>Sign in</CardTitle>
+            <CardTitle className="text-[18px] mb-[12px]">Sign in</CardTitle>
             <CardDescription>Enter your company credentials to continue</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
