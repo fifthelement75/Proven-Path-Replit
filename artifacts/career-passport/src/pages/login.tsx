@@ -81,7 +81,7 @@ export default function LoginPage() {
 
         {/* Form column */}
         <div className="w-full max-w-sm mx-auto lg:mx-0">
-        <Card className="shadow-xl border-gray-200/80 backdrop-blur-sm bg-white/90">
+        <Card className="shadow-xl border-gray-200/80 backdrop-blur-sm bg-white/90 pt-[40px] pb-[40px]">
           <CardHeader className="items-center text-center">
             <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-[40px]" />
             <CardTitle className="text-[18px] mb-[12px]">Sign in</CardTitle>
