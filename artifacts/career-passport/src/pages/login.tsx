@@ -83,12 +83,9 @@ export default function LoginPage() {
 
         {/* Form column */}
         <div className="w-full max-w-sm mx-auto lg:mx-0">
-        <div className="flex flex-col items-center text-center mb-8">
-          <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-2" />
-          <p className="text-sm text-muted-foreground mt-1">Performance management platform</p>
-        </div>
         <Card className="shadow-xl border-gray-200/80 backdrop-blur-sm bg-white/90">
-          <CardHeader>
+          <CardHeader className="items-center text-center">
+            <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-2" />
             <CardTitle>Sign in</CardTitle>
             <CardDescription>Enter your company credentials to continue</CardDescription>
           </CardHeader>
@@ -138,7 +135,7 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !email.trim() || !password}>
                 {loading ? "Signing in..." : "Sign in"}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
