@@ -136,7 +136,7 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" disabled={loading || !email.trim() || !password}>
                 {loading ? "Signing in..." : "Sign in"}
               </Button>
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-muted-foreground text-center pt-[10px] pb-[10px]">
                 Don't have an account?{" "}
                 <Link href="/register">
                   <span className="text-primary hover:underline cursor-pointer">Register</span>
