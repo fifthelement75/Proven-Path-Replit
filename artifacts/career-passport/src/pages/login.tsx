@@ -49,7 +49,6 @@ export default function LoginPage() {
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(37,99,235,0.18)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]"
       />
-
       {/* Soft radial color washes */}
       <div
         aria-hidden
@@ -63,7 +62,6 @@ export default function LoginPage() {
         aria-hidden
         className="pointer-events-none absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-amber-200/25 blur-[100px]"
       />
-
       <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         {/* Image panel */}
         <div className="hidden lg:block relative">
@@ -85,7 +83,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm mx-auto lg:mx-0">
         <Card className="shadow-xl border-gray-200/80 backdrop-blur-sm bg-white/90">
           <CardHeader className="items-center text-center">
-            <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-2" />
+            <img src={logoUrl} alt="ProvenPath" className="h-14 w-auto mb-[40px]" />
             <CardTitle>Sign in</CardTitle>
             <CardDescription>Enter your company credentials to continue</CardDescription>
           </CardHeader>
