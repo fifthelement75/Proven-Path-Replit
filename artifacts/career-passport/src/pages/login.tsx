@@ -73,7 +73,7 @@ export default function LoginPage() {
             <img
               src={sideImage}
               alt="Two colleagues collaborating around a laptop"
-              className="w-full h-[640px] object-cover block"
+              className="w-full h-[640px] object-cover block pt-[0px] pb-[0px] mt-[8px] mb-[0px]"
               loading="lazy"
             />
           </div>
