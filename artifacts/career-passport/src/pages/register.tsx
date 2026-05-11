@@ -124,7 +124,7 @@ export default function RegisterPage() {
         <div className="flex flex-col">
         <Card className="w-full shadow-xl border-t-[#0f172903] border-r-[#0f172903] border-b-[#0f172903] border-l-[#0f172903] pt-[0px] pb-[0px] mt-[6px] mb-[6px]">
           <CardHeader className="text-center">
-            <img src={logoUrl} alt="Proven Path" className="h-12 mx-auto mb-[20px]" />
+            <img src={logoUrl} alt="Proven Path" className="h-12 mx-auto pt-[0px] pb-[0px] mb-[28px]" />
             <CardTitle className="text-2xl">Create your company account</CardTitle>
             <CardDescription>
               {planParam === "pro"
