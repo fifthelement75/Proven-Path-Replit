@@ -69,7 +69,7 @@ export default function LoginPage() {
             aria-hidden
             className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/25 via-indigo-400/20 to-amber-200/30 blur-2xl opacity-70 rounded-[2rem]"
           />
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white mt-[0px] mb-[0px] pt-[6px] pb-[6px]">
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
             <img
               src={sideImage}
               alt="Two colleagues collaborating around a laptop"
