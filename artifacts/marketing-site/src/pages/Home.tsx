@@ -221,7 +221,7 @@ function HeroStack() {
         className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/candidates/jane-doe" />
-        <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className={cardImg} />
+        <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className="w-full h-auto object-contain block" />
       </motion.div>
 
       {/* Card 3 — bottom-right, slight CW, frontmost */}
