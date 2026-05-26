@@ -337,7 +337,7 @@ export default function Home() {
                   <span>Live performance data</span>
                 </div>
 
-                <div className="hidden sm:flex absolute -bottom-2 -left-4 items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-gray-100 mt-[-28px] mb-[-28px]">
+                <div className="hidden sm:flex absolute -bottom-2 -left-4 z-40 items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-gray-100 mt-[-28px] mb-[-28px]">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-success/10 text-success">
                     <TrendingUp size={18} />
                   </div>
