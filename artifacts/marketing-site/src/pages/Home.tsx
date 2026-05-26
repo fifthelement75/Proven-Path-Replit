@@ -197,49 +197,40 @@ function HeroStack() {
   const base = import.meta.env.BASE_URL;
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
 
-  const y0 = useTransform(scrollYProgress, [0, 1], [55, -55]);
-  const y1 = useTransform(scrollYProgress, [0, 1], [28, -28]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [10, -10]);
+  // Each card shifts at a different speed to create depth as you scroll
+  const y0 = useTransform(scrollYProgress, [0, 1], [70, -70]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [38, -38]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [14, -14]);
+
+  const cardImg = "w-full h-[185px] object-cover object-top block";
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: 480 }}>
-      {/* Back card — top-right, rotated CW */}
+    <div ref={containerRef} className="relative" style={{ height: 390 }}>
+      {/* Card 1 — top-left, rotated CW */}
       <motion.div
         style={{ y: y0 }}
-        className="absolute top-0 right-0 w-[78%] z-10 rotate-[5deg] origin-bottom-left rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        className="absolute top-0 left-0 w-[57%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/employees/review" />
-        <img
-          src={`${base}feature-score-breakdown.png`}
-          alt="Score breakdown"
-          className="w-full h-[210px] object-cover object-top block"
-        />
+        <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className={cardImg} />
       </motion.div>
 
-      {/* Mid card — center, slight CCW rotation */}
+      {/* Card 2 — center, very slight CCW rotation */}
       <motion.div
         style={{ y: y1 }}
-        className="absolute top-[88px] left-[6%] w-[80%] z-20 -rotate-[2deg] origin-bottom-right rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        className="absolute top-[60px] left-[21.5%] w-[57%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/candidates/jane-doe" />
-        <img
-          src={`${base}feature-skill-matrix.png`}
-          alt="Skill matrix"
-          className="w-full h-[210px] object-cover object-top block"
-        />
+        <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className={cardImg} />
       </motion.div>
 
-      {/* Front card — bottom-left, no rotation */}
+      {/* Card 3 — bottom-right, slight CW, frontmost */}
       <motion.div
         style={{ y: y2 }}
-        className="absolute bottom-0 left-[2%] w-[82%] z-30 rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+        className="absolute top-[120px] left-[43%] w-[57%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/dashboard" />
-        <img
-          src={`${base}hero-dashboard.png`}
-          alt="Performance dashboard"
-          className="w-full h-[230px] object-cover object-top block"
-        />
+        <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className={cardImg} />
       </motion.div>
     </div>
   );
@@ -265,17 +256,40 @@ export default function Home() {
     canonicalPath: "/",
   });
 
+  const { scrollY } = useScroll();
+  const blob1Y = useTransform(scrollY, [0, 900], [0, -100]);
+  const blob2Y = useTransform(scrollY, [0, 900], [0, -60]);
+  const blob3Y = useTransform(scrollY, [0, 900], [0, -140]);
+  const heroContentY = useTransform(scrollY, [0, 600], [0, -30]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main className="flex-1 pt-16">
-        <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 lg:pt-32 lg:pb-40">
+        <section className="relative pt-12 pb-16 sm:pt-20 sm:pb-24 lg:pt-32 lg:pb-40 overflow-hidden">
+          {/* Page-level parallax background blobs */}
+          <motion.div
+            aria-hidden
+            style={{ y: blob1Y }}
+            className="pointer-events-none absolute -top-32 -left-32 w-[36rem] h-[36rem] rounded-full bg-primary/20 blur-[140px]"
+          />
+          <motion.div
+            aria-hidden
+            style={{ y: blob2Y }}
+            className="pointer-events-none absolute top-20 right-0 w-[28rem] h-[28rem] rounded-full bg-indigo-400/15 blur-[120px]"
+          />
+          <motion.div
+            aria-hidden
+            style={{ y: blob3Y }}
+            className="pointer-events-none absolute -bottom-20 left-1/3 w-[24rem] h-[24rem] rounded-full bg-warning/10 blur-[100px]"
+          />
           <Container>
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
               <motion.div
                 initial="hidden"
                 animate="visible"
                 variants={staggerContainer}
+                style={{ y: heroContentY }}
                 className="max-w-2xl"
               >
                 <motion.div
