@@ -212,7 +212,7 @@ function HeroStack() {
         className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/employees/review" />
-        <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className={cardImg} />
+        <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className="w-full h-auto object-contain block" />
       </motion.div>
 
       {/* Card 2 — center, very slight CCW rotation */}
