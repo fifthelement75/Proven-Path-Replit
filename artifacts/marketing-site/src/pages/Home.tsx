@@ -396,14 +396,12 @@ export default function Home() {
                 className="absolute -inset-4 -z-10 bg-gradient-to-tr from-primary/20 via-indigo-400/15 to-warning/15 blur-2xl opacity-70 rounded-[2rem]"
               />
               <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-                <Parallax strength={22}>
-                  <img
-                    src={differentiationImage}
-                    alt="Two colleagues smiling and collaborating around a laptop"
-                    className="w-full h-[260px] sm:h-[360px] lg:h-[420px] object-cover block"
-                    loading="eager"
-                  />
-                </Parallax>
+                <img
+                  src={differentiationImage}
+                  alt="Two colleagues smiling and collaborating around a laptop"
+                  className="w-full h-[260px] sm:h-[360px] lg:h-[420px] object-cover block"
+                  loading="eager"
+                />
               </div>
             </div>
 
