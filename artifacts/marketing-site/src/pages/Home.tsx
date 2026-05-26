@@ -284,7 +284,7 @@ export default function Home() {
             className="pointer-events-none absolute -bottom-20 left-1/3 w-[24rem] h-[24rem] rounded-full bg-warning/10 blur-[100px]"
           />
           <Container>
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            <div className="grid lg:grid-cols-[2fr_3fr] gap-12 lg:gap-8 items-center">
               <motion.div
                 initial="hidden"
                 animate="visible"
@@ -301,14 +301,14 @@ export default function Home() {
                 </motion.div>
                 <motion.h1 
                   variants={fadeIn}
-                  className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-6"
+                  className="text-3xl sm:text-4xl md:text-[2.6rem] font-bold tracking-tight leading-[1.15] mb-5"
                 >
                   <span className="text-gray-900">Performance Intelligence That Powers </span>
                   <span className="animated-gradient-text">Better Hiring, Retention &amp; Growth</span>
                 </motion.h1>
                 <motion.p 
                   variants={fadeIn}
-                  className="text-xl text-gray-600 mb-8 leading-relaxed"
+                  className="text-base text-gray-600 mb-8 leading-relaxed"
                 >
                   Proven Path gives HR teams and people leaders a single source of truth for candidate assessments, performance reviews, and career development—so every hiring and promotion decision is backed by verified data.
                 </motion.p>
