@@ -236,6 +236,47 @@ function HeroStack() {
   );
 }
 
+function HowItWorksStack() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const base = import.meta.env.BASE_URL;
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+
+  const y0 = useTransform(scrollYProgress, [0, 1], [70, -70]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [38, -38]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [14, -14]);
+
+  return (
+    <div ref={containerRef} className="relative" style={{ height: 560 }}>
+      {/* Card 1 — top-left, rotated CW */}
+      <motion.div
+        style={{ y: y0 }}
+        className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
+      >
+        <BrowserChrome url="provenpath.app/candidates/interview" />
+        <img src={`${base}feature-interview-assessment.png`} alt="Interview Assessment" className="w-full h-auto object-contain block" />
+      </motion.div>
+
+      {/* Card 2 — center, very slight CCW rotation */}
+      <motion.div
+        style={{ y: y1 }}
+        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+      >
+        <BrowserChrome url="provenpath.app/employees/review/new" />
+        <img src={`${base}feature-add-review.png`} alt="Performance Review" className="w-full h-auto object-contain block" />
+      </motion.div>
+
+      {/* Card 3 — bottom-right, slight CW, frontmost */}
+      <motion.div
+        style={{ y: y2 }}
+        className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+      >
+        <BrowserChrome url="provenpath.app/settings/integrations" />
+        <img src={`${base}feature-integrations.png`} alt="Integrations & Settings" className="w-full h-auto object-contain block" />
+      </motion.div>
+    </div>
+  );
+}
+
 function Parallax({ children, strength = 30, className }: { children: React.ReactNode; strength?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -682,33 +723,17 @@ export default function Home() {
                 </div>
               </div>
               
-              <Parallax strength={14} className="relative">
+              <div className="relative">
                 <div
                   aria-hidden
-                  className="absolute -inset-4 -z-10 blur-2xl opacity-60 bg-gradient-to-br from-primary/30 via-success/20 to-warning/20 rounded-[2rem]"
+                  className="absolute -inset-6 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-3xl opacity-70 rounded-full"
                 />
-
-                <FeatureCarousel
-                  slides={HOW_IT_WORKS_SLIDES}
-                  className="relative bg-white rounded-2xl shadow-xl ring-1 ring-gray-200 overflow-hidden"
-                  imageHeight="h-[500px]"
-                />
-
-                <div className="hidden sm:flex absolute -top-3 -right-3 items-center gap-2 bg-primary text-white text-xs font-semibold px-3 py-2 rounded-full shadow-lg">
-                  <Activity size={14} />
-                  Live product tour
+                <HowItWorksStack />
+                <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
+                  <Activity size={16} />
+                  <span>Live product tour</span>
                 </div>
-
-                <div className="hidden sm:flex absolute -bottom-8 -left-4 items-center gap-2 bg-white border border-gray-200 text-gray-700 text-xs font-medium px-3 py-2 rounded-xl shadow-md">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success">
-                    <TrendingUp size={14} />
-                  </span>
-                  <span>
-                    <span className="font-semibold text-gray-900">3 core workflows</span>
-                    <span className="text-gray-500"> · Interview → Review → Integrate</span>
-                  </span>
-                </div>
-              </Parallax>
+              </div>
             </div>
           </Container>
         </section>
