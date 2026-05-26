@@ -202,14 +202,14 @@ function HeroStack() {
   const y1 = useTransform(scrollYProgress, [0, 1], [38, -38]);
   const y2 = useTransform(scrollYProgress, [0, 1], [14, -14]);
 
-  const cardImg = "w-full h-[185px] object-cover object-top block";
+  const cardImg = "w-full h-[220px] object-cover object-top block";
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: 390 }}>
+    <div ref={containerRef} className="relative" style={{ height: 480 }}>
       {/* Card 1 — top-left, rotated CW */}
       <motion.div
         style={{ y: y0 }}
-        className="absolute top-0 left-0 w-[57%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
+        className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/employees/review" />
         <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className={cardImg} />
@@ -218,7 +218,7 @@ function HeroStack() {
       {/* Card 2 — center, very slight CCW rotation */}
       <motion.div
         style={{ y: y1 }}
-        className="absolute top-[60px] left-[21.5%] w-[57%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        className="absolute top-[80px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/candidates/jane-doe" />
         <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className={cardImg} />
@@ -227,7 +227,7 @@ function HeroStack() {
       {/* Card 3 — bottom-right, slight CW, frontmost */}
       <motion.div
         style={{ y: y2 }}
-        className="absolute top-[120px] left-[43%] w-[57%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+        className="absolute top-[160px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/dashboard" />
         <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className={cardImg} />
