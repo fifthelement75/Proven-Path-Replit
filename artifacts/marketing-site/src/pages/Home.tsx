@@ -201,12 +201,17 @@ function HeroStack() {
   const y1 = useTransform(scrollYProgress, [0, 1], [28, -28]);
   const y2 = useTransform(scrollYProgress, [0, 1], [10, -10]);
 
+  // Cycle z-index so each card takes the front in turn as the user scrolls
+  const z0 = useTransform(scrollYProgress, [0, 0.33, 0.34, 0.66, 0.67, 1], [10, 10, 30, 30, 20, 20]);
+  const z1 = useTransform(scrollYProgress, [0, 0.33, 0.34, 0.66, 0.67, 1], [20, 20, 10, 10, 30, 30]);
+  const z2 = useTransform(scrollYProgress, [0, 0.33, 0.34, 0.66, 0.67, 1], [30, 30, 20, 20, 10, 10]);
+
   return (
     <div ref={containerRef} className="relative" style={{ height: 480 }}>
       {/* Back card — top-right, rotated CW */}
       <motion.div
-        style={{ y: y0 }}
-        className="absolute top-0 right-0 w-[78%] z-10 rotate-[5deg] origin-bottom-left rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        style={{ y: y0, zIndex: z0 }}
+        className="absolute top-0 right-0 w-[78%] rotate-[5deg] origin-bottom-left rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/employees/review" />
         <img
@@ -218,8 +223,8 @@ function HeroStack() {
 
       {/* Mid card — center, slight CCW rotation */}
       <motion.div
-        style={{ y: y1 }}
-        className="absolute top-[88px] left-[6%] w-[80%] z-20 -rotate-[2deg] origin-bottom-right rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        style={{ y: y1, zIndex: z1 }}
+        className="absolute top-[88px] left-[6%] w-[80%] -rotate-[2deg] origin-bottom-right rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/candidates/jane-doe" />
         <img
@@ -231,8 +236,8 @@ function HeroStack() {
 
       {/* Front card — bottom-left, no rotation */}
       <motion.div
-        style={{ y: y2 }}
-        className="absolute bottom-0 left-[2%] w-[82%] z-30 rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+        style={{ y: y2, zIndex: z2 }}
+        className="absolute bottom-0 left-[2%] w-[82%] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/dashboard" />
         <img
