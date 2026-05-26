@@ -723,7 +723,7 @@ export default function Home() {
                   className="absolute -inset-6 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-3xl opacity-70 rounded-full"
                 />
                 <HowItWorksStack />
-                <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
+                <div className="hidden sm:flex absolute -top-4 -right-4 z-40 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
                   <Activity size={16} />
                   <span>Live product tour</span>
                 </div>
