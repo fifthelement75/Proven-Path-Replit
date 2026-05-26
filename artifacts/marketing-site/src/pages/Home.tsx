@@ -193,35 +193,80 @@ function BrowserChrome({ url }: { url: string }) {
 }
 
 function HeroStack() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const base = import.meta.env.BASE_URL;
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+
+  // Each card shifts at a different speed to create depth as you scroll
+  const y0 = useTransform(scrollYProgress, [0, 1], [70, -70]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [38, -38]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [14, -14]);
+
+  const cardImg = "w-full h-[220px] object-cover object-top block";
+
   return (
-    <div className="flex gap-4 items-start">
-      <div className="flex-1 rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white">
+    <div ref={containerRef} className="relative" style={{ height: 560 }}>
+      {/* Card 1 — top-left, rotated CW */}
+      <motion.div
+        style={{ y: y0 }}
+        className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
+      >
         <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className="w-full h-auto object-contain block" />
-      </div>
-      <div className="flex-1 rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white">
+      </motion.div>
+
+      {/* Card 2 — center, very slight CCW rotation */}
+      <motion.div
+        style={{ y: y1 }}
+        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+      >
         <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className="w-full h-auto object-contain block" />
-      </div>
-      <div className="flex-1 rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
-        <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className="w-full h-auto object-contain block" />
-      </div>
+      </motion.div>
+
+      {/* Card 3 — bottom-right, slight CW, frontmost */}
+      <motion.div
+        style={{ y: y2 }}
+        className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+      >
+        <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className={cardImg} />
+      </motion.div>
     </div>
   );
 }
 
 function HowItWorksStack() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const base = import.meta.env.BASE_URL;
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+
+  const y0 = useTransform(scrollYProgress, [0, 1], [70, -70]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [38, -38]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [14, -14]);
+
   return (
-    <div className="flex gap-4 items-start">
-      <div className="flex-1 rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white">
+    <div ref={containerRef} className="relative" style={{ height: 560 }}>
+      {/* Card 1 — top-left, rotated CW */}
+      <motion.div
+        style={{ y: y0 }}
+        className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
+      >
         <img src={`${base}feature-interview-assessment.png`} alt="Interview Assessment" className="w-full h-auto object-contain block" />
-      </div>
-      <div className="flex-1 rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white">
+      </motion.div>
+
+      {/* Card 2 — center, very slight CCW rotation */}
+      <motion.div
+        style={{ y: y1 }}
+        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+      >
         <img src={`${base}feature-add-review.png`} alt="Performance Review" className="w-full h-auto object-contain block" />
-      </div>
-      <div className="flex-1 rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
+      </motion.div>
+
+      {/* Card 3 — bottom-right, slight CW, frontmost */}
+      <motion.div
+        style={{ y: y2 }}
+        className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+      >
         <img src={`${base}feature-integrations.png`} alt="Integrations & Settings" className="w-full h-auto object-contain block" />
-      </div>
+      </motion.div>
     </div>
   );
 }
