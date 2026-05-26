@@ -301,7 +301,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main className="flex-1 pt-16">
-        <section className="relative pt-12 sm:pt-20 sm:pb-24 lg:pt-32 lg:pb-40 overflow-hidden pb-[60px]">
+        <section className="relative pt-12 sm:pt-20 sm:pb-24 lg:pt-32 lg:pb-40 overflow-hidden pb-[80px]">
           {/* Page-level parallax background blobs */}
           <motion.div
             aria-hidden
