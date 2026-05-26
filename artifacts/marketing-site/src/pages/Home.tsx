@@ -1,5 +1,5 @@
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -28,6 +28,27 @@ import {
   Rocket,
   Fingerprint,
 } from "lucide-react";
+
+function useMouseParallax() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 60, damping: 20, mass: 0.8 });
+  const springY = useSpring(mouseY, { stiffness: 60, damping: 20, mass: 0.8 });
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    const nx = (e.clientX / window.innerWidth - 0.5) * 2;
+    const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+    mouseX.set(nx);
+    mouseY.set(ny);
+  }, [mouseX, mouseY]);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    return () => window.removeEventListener("mousemove", onMouseMove);
+  }, [onMouseMove]);
+
+  return { springX, springY };
+}
 
 const CAROUSEL_SLIDES = [
   {
@@ -196,35 +217,44 @@ function HeroStack() {
   const containerRef = useRef<HTMLDivElement>(null);
   const base = import.meta.env.BASE_URL;
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+  const { springX, springY } = useMouseParallax();
 
-  // Each card shifts at a different speed to create depth as you scroll
-  const y0 = useTransform(scrollYProgress, [0, 1], [70, -70]);
-  const y1 = useTransform(scrollYProgress, [0, 1], [38, -38]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [14, -14]);
+  // Stronger differentiation: background card moves 4× more than foreground
+  const y0 = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [50, -50]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [16, -16]);
+
+  // Mouse X offsets — backmost card drifts most, front drifts least
+  const mx0 = useTransform(springX, [-1, 1], [-28, 28]);
+  const my0 = useTransform(springY, [-1, 1], [-14, 14]);
+  const mx1 = useTransform(springX, [-1, 1], [-16, 16]);
+  const my1 = useTransform(springY, [-1, 1], [-8, 8]);
+  const mx2 = useTransform(springX, [-1, 1], [-7, 7]);
+  const my2 = useTransform(springY, [-1, 1], [-4, 4]);
 
   const cardImg = "w-full h-[220px] object-cover object-top block";
 
   return (
     <div ref={containerRef} className="relative" style={{ height: 560 }}>
-      {/* Card 1 — top-right, rotated CCW, backmost */}
+      {/* Layer 1 — top-right, backmost, most movement */}
       <motion.div
-        style={{ y: y0 }}
+        style={{ y: y0, x: mx0, translateY: my0 }}
         className="absolute top-0 left-[37%] w-[63%] z-10 -rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
         <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 2 — center, very slight CW rotation */}
+      {/* Layer 2 — center, mid-depth */}
       <motion.div
-        style={{ y: y1 }}
+        style={{ y: y1, x: mx1, translateY: my1 }}
         className="absolute top-[110px] left-[18.5%] w-[63%] z-20 rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 3 — bottom-left, slight CCW, frontmost */}
+      {/* Layer 3 — bottom-left, frontmost, least movement */}
       <motion.div
-        style={{ y: y2 }}
+        style={{ y: y2, x: mx2, translateY: my2 }}
         className="absolute top-[220px] left-0 w-[63%] z-30 -rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className={cardImg} />
@@ -237,32 +267,40 @@ function HowItWorksStack() {
   const containerRef = useRef<HTMLDivElement>(null);
   const base = import.meta.env.BASE_URL;
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+  const { springX, springY } = useMouseParallax();
 
-  const y0 = useTransform(scrollYProgress, [0, 1], [70, -70]);
-  const y1 = useTransform(scrollYProgress, [0, 1], [38, -38]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [14, -14]);
+  const y0 = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [50, -50]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [16, -16]);
+
+  const mx0 = useTransform(springX, [-1, 1], [-26, 26]);
+  const my0 = useTransform(springY, [-1, 1], [-12, 12]);
+  const mx1 = useTransform(springX, [-1, 1], [-14, 14]);
+  const my1 = useTransform(springY, [-1, 1], [-7, 7]);
+  const mx2 = useTransform(springX, [-1, 1], [-6, 6]);
+  const my2 = useTransform(springY, [-1, 1], [-3, 3]);
 
   return (
     <div ref={containerRef} className="relative" style={{ height: 560 }}>
-      {/* Card 1 — top-right, rotated CCW, backmost */}
+      {/* Layer 1 — backmost, moves most */}
       <motion.div
-        style={{ y: y0 }}
+        style={{ y: y0, x: mx0, translateY: my0 }}
         className="absolute top-0 left-[37%] w-[63%] z-10 -rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
         <img src={`${base}feature-interview-assessment.png`} alt="Interview Assessment" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 2 — center, very slight CW rotation */}
+      {/* Layer 2 — mid-depth */}
       <motion.div
-        style={{ y: y1 }}
+        style={{ y: y1, x: mx1, translateY: my1 }}
         className="absolute top-[110px] left-[18.5%] w-[63%] z-20 rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <img src={`${base}feature-add-review.png`} alt="Performance Review" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 3 — bottom-left, slight CCW, frontmost */}
+      {/* Layer 3 — frontmost, barely moves */}
       <motion.div
-        style={{ y: y2 }}
+        style={{ y: y2, x: mx2, translateY: my2 }}
         className="absolute top-[220px] left-0 w-[63%] z-30 -rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <img src={`${base}feature-integrations.png`} alt="Integrations & Settings" className="w-full h-auto object-contain block" />
@@ -282,6 +320,46 @@ function Parallax({ children, strength = 30, className }: { children: React.Reac
   );
 }
 
+function DiffBlobs() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const { springX } = useMouseParallax();
+  const y1 = useTransform(scrollYProgress, [0, 1], [40, -80]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [70, -120]);
+  const y3 = useTransform(scrollYProgress, [0, 1], [20, -50]);
+  const x1 = useTransform(springX, [-1, 1], [-14, 14]);
+  const x2 = useTransform(springX, [-1, 1], [10, -10]);
+  const x3 = useTransform(springX, [-1, 1], [-6, 6]);
+  return (
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-hidden">
+      <motion.div aria-hidden style={{ y: y1, x: x1 }} className="absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-[120px]" />
+      <motion.div aria-hidden style={{ y: y2, x: x2 }} className="absolute -bottom-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-indigo-400/20 blur-[120px]" />
+      <motion.div aria-hidden style={{ y: y3, x: x3 }} className="absolute top-1/2 right-1/3 -translate-y-1/2 w-[22rem] h-[22rem] rounded-full bg-warning/15 blur-[120px]" />
+    </div>
+  );
+}
+
+function DarkSectionBlobs() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const { springX, springY } = useMouseParallax();
+  const y1 = useTransform(scrollYProgress, [0, 1], [60, -60]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const y3 = useTransform(scrollYProgress, [0, 1], [30, -140]);
+  const x1 = useTransform(springX, [-1, 1], [-16, 16]);
+  const x2 = useTransform(springX, [-1, 1], [12, -12]);
+  const x3 = useTransform(springX, [-1, 1], [-20, 20]);
+  const yp1 = useTransform(springY, [-1, 1], [-8, 8]);
+  const yp2 = useTransform(springY, [-1, 1], [6, -6]);
+  return (
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-hidden">
+      <motion.div aria-hidden style={{ y: y1, x: x1, translateY: yp1 }} className="absolute -top-40 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/30 blur-[120px]" />
+      <motion.div aria-hidden style={{ y: y2, x: x2, translateY: yp2 }} className="absolute -bottom-40 -right-32 w-[28rem] h-[28rem] rounded-full bg-success/25 blur-[120px]" />
+      <motion.div aria-hidden style={{ y: y3, x: x3 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] rounded-full bg-warning/10 blur-[140px]" />
+    </div>
+  );
+}
+
 export default function Home() {
   useDocumentMeta({
     title: "Proven Path — Performance Intelligence for Modern HR Teams",
@@ -292,31 +370,90 @@ export default function Home() {
   });
 
   const { scrollY } = useScroll();
-  const blob1Y = useTransform(scrollY, [0, 900], [0, -100]);
-  const blob2Y = useTransform(scrollY, [0, 900], [0, -60]);
-  const blob3Y = useTransform(scrollY, [0, 900], [0, -140]);
+  const { springX, springY } = useMouseParallax();
+
+  // Layer 1 — deepest background, slowest (far back)
+  const blob1Y = useTransform(scrollY, [0, 900], [0, -60]);
+  const blob1X = useTransform(springX, [-1, 1], [-18, 18]);
+  const blob1Yp = useTransform(springY, [-1, 1], [-10, 10]);
+
+  // Layer 2 — secondary blob (mid-deep)
+  const blob2Y = useTransform(scrollY, [0, 900], [0, -100]);
+  const blob2X = useTransform(springX, [-1, 1], [12, -12]);
+  const blob2Yp = useTransform(springY, [-1, 1], [-7, 7]);
+
+  // Layer 3 — warm accent blob (mid)
+  const blob3Y = useTransform(scrollY, [0, 900], [0, -160]);
+  const blob3X = useTransform(springX, [-1, 1], [-8, 8]);
+  const blob3Yp = useTransform(springY, [-1, 1], [-12, 12]);
+
+  // Layer 4 — small orbiting accent (mid-front)
+  const blob4Y = useTransform(scrollY, [0, 900], [0, -220]);
+  const blob4X = useTransform(springX, [-1, 1], [24, -24]);
+
+  // Layer 5 — tiny foreground accent (fastest, closest to viewer)
+  const blob5Y = useTransform(scrollY, [0, 900], [0, -280]);
+  const blob5X = useTransform(springX, [-1, 1], [-30, 30]);
+
+  // Hero content (floating just above midpoint)
   const heroContentY = useTransform(scrollY, [0, 600], [0, -30]);
+  const heroContentX = useTransform(springX, [-1, 1], [-5, 5]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main className="flex-1 pt-16">
         <section className="relative pt-12 sm:pt-20 sm:pb-24 lg:pt-32 lg:pb-40 overflow-hidden pb-[80px]">
-          {/* Page-level parallax background blobs */}
+          {/* Layer 1 — deep background primary blob */}
           <motion.div
             aria-hidden
-            style={{ y: blob1Y }}
+            style={{ y: blob1Y, x: blob1X, translateY: blob1Yp }}
             className="pointer-events-none absolute -top-32 -left-32 w-[36rem] h-[36rem] rounded-full bg-primary/20 blur-[140px]"
           />
+          {/* Layer 2 — indigo blob, faster */}
           <motion.div
             aria-hidden
-            style={{ y: blob2Y }}
+            style={{ y: blob2Y, x: blob2X, translateY: blob2Yp }}
             className="pointer-events-none absolute top-20 right-0 w-[28rem] h-[28rem] rounded-full bg-indigo-400/15 blur-[120px]"
+          />
+          {/* Layer 3 — warm accent, faster still */}
+          <motion.div
+            aria-hidden
+            style={{ y: blob3Y, x: blob3X, translateY: blob3Yp }}
+            className="pointer-events-none absolute -bottom-20 left-1/3 w-[24rem] h-[24rem] rounded-full bg-warning/10 blur-[100px]"
+          />
+          {/* Layer 4 — small mid-ground accent orb */}
+          <motion.div
+            aria-hidden
+            style={{ y: blob4Y, x: blob4X }}
+            className="pointer-events-none absolute top-1/4 right-1/4 w-[14rem] h-[14rem] rounded-full bg-success/8 blur-[80px]"
+          />
+          {/* Layer 5 — tiny fast foreground sparkle */}
+          <motion.div
+            aria-hidden
+            style={{ y: blob5Y, x: blob5X }}
+            className="pointer-events-none absolute bottom-1/3 left-1/4 w-[8rem] h-[8rem] rounded-full bg-primary/12 blur-[50px]"
+          />
+          {/* Mid-ground floating geometric accents */}
+          <motion.div
+            aria-hidden
+            style={{ y: useTransform(scrollY, [0, 900], [0, -130]), x: useTransform(springX, [-1, 1], [-20, 20]) }}
+            className="pointer-events-none absolute top-16 right-[18%] w-3 h-3 rounded-full bg-primary/25"
           />
           <motion.div
             aria-hidden
-            style={{ y: blob3Y }}
-            className="pointer-events-none absolute -bottom-20 left-1/3 w-[24rem] h-[24rem] rounded-full bg-warning/10 blur-[100px]"
+            style={{ y: useTransform(scrollY, [0, 900], [0, -190]), x: useTransform(springX, [-1, 1], [14, -14]) }}
+            className="pointer-events-none absolute top-1/3 right-[8%] w-2 h-2 rounded-full bg-indigo-400/40"
+          />
+          <motion.div
+            aria-hidden
+            style={{ y: useTransform(scrollY, [0, 900], [0, -90]), x: useTransform(springX, [-1, 1], [-10, 10]) }}
+            className="pointer-events-none absolute bottom-1/4 left-[12%] w-2.5 h-2.5 rounded-full bg-warning/35"
+          />
+          <motion.div
+            aria-hidden
+            style={{ y: useTransform(scrollY, [0, 900], [0, -240]), x: useTransform(springX, [-1, 1], [18, -18]) }}
+            className="pointer-events-none absolute top-[55%] left-[6%] w-1.5 h-1.5 rounded-full bg-success/40"
           />
           <Container>
             <div className="grid lg:grid-cols-[2fr_3fr] gap-12 lg:gap-8 items-center">
@@ -324,7 +461,7 @@ export default function Home() {
                 initial="hidden"
                 animate="visible"
                 variants={staggerContainer}
-                style={{ y: heroContentY }}
+                style={{ y: heroContentY, x: heroContentX }}
                 className="max-w-2xl"
               >
                 <motion.div
@@ -401,19 +538,8 @@ export default function Home() {
             className="absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(37,99,235,0.18)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]"
           />
 
-          {/* Soft color washes */}
-          <div
-            aria-hidden
-            className="absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-[120px]"
-          />
-          <div
-            aria-hidden
-            className="absolute -bottom-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-indigo-400/20 blur-[120px]"
-          />
-          <div
-            aria-hidden
-            className="absolute top-1/2 right-1/3 -translate-y-1/2 w-[22rem] h-[22rem] rounded-full bg-warning/15 blur-[120px]"
-          />
+          {/* Parallax soft color washes — each blob moves at its own depth */}
+          <DiffBlobs />
 
           <Container className="relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-12">
@@ -587,18 +713,7 @@ export default function Home() {
             aria-hidden
             className="absolute inset-0 opacity-[0.18] [background-image:radial-gradient(rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:22px_22px]"
           />
-          <div
-            aria-hidden
-            className="absolute -top-40 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/30 blur-[120px]"
-          />
-          <div
-            aria-hidden
-            className="absolute -bottom-40 -right-32 w-[28rem] h-[28rem] rounded-full bg-success/25 blur-[120px]"
-          />
-          <div
-            aria-hidden
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] h-[36rem] rounded-full bg-warning/10 blur-[140px]"
-          />
+          <DarkSectionBlobs />
           <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
@@ -771,6 +886,7 @@ export default function Home() {
         </section>
 
         <section className="py-14 md:py-24 relative overflow-hidden bg-gradient-to-br from-[#1e293b] via-[#312e81] to-[#4c1d95]">
+          <DarkSectionBlobs />
           <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 rounded-full border-4 border-white/10" />
           <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-96 h-96 rounded-full border-4 border-white/10" />
           
