@@ -206,26 +206,26 @@ function HeroStack() {
 
   return (
     <div ref={containerRef} className="relative" style={{ height: 560 }}>
-      {/* Card 1 — top-left, rotated CW */}
+      {/* Card 1 — top-right, rotated CCW, backmost */}
       <motion.div
         style={{ y: y0 }}
-        className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
+        className="absolute top-0 left-[37%] w-[63%] z-10 -rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
         <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 2 — center, very slight CCW rotation */}
+      {/* Card 2 — center, very slight CW rotation */}
       <motion.div
         style={{ y: y1 }}
-        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 3 — bottom-right, slight CW, frontmost */}
+      {/* Card 3 — bottom-left, slight CCW, frontmost */}
       <motion.div
         style={{ y: y2 }}
-        className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+        className="absolute top-[220px] left-0 w-[63%] z-30 -rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className={cardImg} />
       </motion.div>
@@ -244,26 +244,26 @@ function HowItWorksStack() {
 
   return (
     <div ref={containerRef} className="relative" style={{ height: 560 }}>
-      {/* Card 1 — top-left, rotated CW */}
+      {/* Card 1 — top-right, rotated CCW, backmost */}
       <motion.div
         style={{ y: y0 }}
-        className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
+        className="absolute top-0 left-[37%] w-[63%] z-10 -rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
         <img src={`${base}feature-interview-assessment.png`} alt="Interview Assessment" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 2 — center, very slight CCW rotation */}
+      {/* Card 2 — center, very slight CW rotation */}
       <motion.div
         style={{ y: y1 }}
-        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <img src={`${base}feature-add-review.png`} alt="Performance Review" className="w-full h-auto object-contain block" />
       </motion.div>
 
-      {/* Card 3 — bottom-right, slight CW, frontmost */}
+      {/* Card 3 — bottom-left, slight CCW, frontmost */}
       <motion.div
         style={{ y: y2 }}
-        className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+        className="absolute top-[220px] left-0 w-[63%] z-30 -rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <img src={`${base}feature-integrations.png`} alt="Integrations & Settings" className="w-full h-auto object-contain block" />
       </motion.div>
