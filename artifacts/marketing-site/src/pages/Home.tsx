@@ -211,7 +211,6 @@ function HeroStack() {
         style={{ y: y0 }}
         className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
-        <BrowserChrome url="provenpath.app/employees/review" />
         <img src={`${base}feature-score-breakdown.png`} alt="Score breakdown" className="w-full h-auto object-contain block" />
       </motion.div>
 
@@ -220,7 +219,6 @@ function HeroStack() {
         style={{ y: y1 }}
         className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
-        <BrowserChrome url="provenpath.app/candidates/jane-doe" />
         <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className="w-full h-auto object-contain block" />
       </motion.div>
 
@@ -229,7 +227,6 @@ function HeroStack() {
         style={{ y: y2 }}
         className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
-        <BrowserChrome url="provenpath.app/dashboard" />
         <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className={cardImg} />
       </motion.div>
     </div>
@@ -252,7 +249,6 @@ function HowItWorksStack() {
         style={{ y: y0 }}
         className="absolute top-0 left-0 w-[63%] z-10 rotate-[4deg] origin-bottom rounded-xl overflow-hidden shadow-lg border border-gray-200 bg-white"
       >
-        <BrowserChrome url="provenpath.app/candidates/interview" />
         <img src={`${base}feature-interview-assessment.png`} alt="Interview Assessment" className="w-full h-auto object-contain block" />
       </motion.div>
 
@@ -261,7 +257,6 @@ function HowItWorksStack() {
         style={{ y: y1 }}
         className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
-        <BrowserChrome url="provenpath.app/employees/review/new" />
         <img src={`${base}feature-add-review.png`} alt="Performance Review" className="w-full h-auto object-contain block" />
       </motion.div>
 
@@ -270,7 +265,6 @@ function HowItWorksStack() {
         style={{ y: y2 }}
         className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
-        <BrowserChrome url="provenpath.app/settings/integrations" />
         <img src={`${base}feature-integrations.png`} alt="Integrations & Settings" className="w-full h-auto object-contain block" />
       </motion.div>
     </div>
