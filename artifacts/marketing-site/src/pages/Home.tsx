@@ -350,16 +350,6 @@ export default function Home() {
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   <span>Live performance data</span>
                 </div>
-
-                <div className="hidden sm:flex absolute -bottom-2 -left-4 z-40 items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-lg border border-gray-100 mt-[-28px] mb-[-28px]">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-success/10 text-success">
-                    <TrendingUp size={18} />
-                  </div>
-                  <div className="leading-tight">
-                    <div className="text-base font-bold text-gray-900">3.3<span className="text-gray-400 text-xs font-medium">/5 avg</span></div>
-                    <div className="text-[11px] text-gray-500 uppercase tracking-wide">Across 3 teams</div>
-                  </div>
-                </div>
               </motion.div>
             </div>
           </Container>
