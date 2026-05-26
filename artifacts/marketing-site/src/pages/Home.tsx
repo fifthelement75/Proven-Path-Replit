@@ -205,7 +205,7 @@ function HeroStack() {
   const cardImg = "w-full h-[220px] object-cover object-top block";
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: 480 }}>
+    <div ref={containerRef} className="relative" style={{ height: 560 }}>
       {/* Card 1 — top-left, rotated CW */}
       <motion.div
         style={{ y: y0 }}
@@ -218,7 +218,7 @@ function HeroStack() {
       {/* Card 2 — center, very slight CCW rotation */}
       <motion.div
         style={{ y: y1 }}
-        className="absolute top-[80px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+        className="absolute top-[110px] left-[18.5%] w-[63%] z-20 -rotate-[1deg] rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/candidates/jane-doe" />
         <img src={`${base}feature-skill-matrix.png`} alt="Skill matrix" className={cardImg} />
@@ -227,7 +227,7 @@ function HeroStack() {
       {/* Card 3 — bottom-right, slight CW, frontmost */}
       <motion.div
         style={{ y: y2 }}
-        className="absolute top-[160px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+        className="absolute top-[220px] left-[37%] w-[63%] z-30 rotate-[1.5deg] rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
       >
         <BrowserChrome url="provenpath.app/dashboard" />
         <img src={`${base}hero-dashboard.png`} alt="Performance dashboard" className={cardImg} />
