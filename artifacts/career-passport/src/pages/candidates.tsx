@@ -168,7 +168,7 @@ export default function CandidatesPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between" data-onboarding="candidates-header">
           <div>
             <h1 className="text-2xl font-bold">Interview Pipeline</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{candidates.length} candidate{candidates.length !== 1 ? "s" : ""} tracked</p>

@@ -106,7 +106,7 @@ export default function SettingsPage() {
   return (
     <Layout>
       <div className="space-y-6 max-w-2xl">
-        <div>
+        <div data-onboarding="settings-header">
           <h1 className="text-2xl font-bold">Integrations & Settings</h1>
           <p className="text-muted-foreground mt-1 text-sm">Connect Proven Path to your existing HR and talent tools.</p>
         </div>

@@ -192,12 +192,12 @@ export default function EmployeesPage() {
   return (
     <Layout>
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between" data-onboarding="employees-header">
           <div>
             <h1 className="text-2xl font-bold">Employees</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{employees.length} total</p>
           </div>
-          <Button onClick={() => setAddOpen(true)}>Add employee</Button>
+          <Button onClick={() => setAddOpen(true)} data-onboarding="add-employee-btn">Add employee</Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -245,7 +245,7 @@ export default function EmployeesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="overflow-x-auto rounded-lg border bg-[#fffffff5]">
+          <div className="overflow-x-auto rounded-lg border bg-[#fffffff5]" data-onboarding="employees-table">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">

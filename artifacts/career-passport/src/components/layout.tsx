@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProfileDialog } from "@/components/profile-dialog";
 import { WelcomeTrialDialog } from "@/components/welcome-trial-dialog";
-import { LogOut, Settings, FileText, Shield, CreditCard, Menu } from "lucide-react";
+import { LogOut, Settings, FileText, Shield, CreditCard, Menu, MapPin } from "lucide-react";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
@@ -156,6 +157,8 @@ export function Layout({ children }: LayoutProps) {
   const queryClient = useQueryClient();
   const [profileOpen, setProfileOpen] = useState(false);
   const [welcomeTrial, setWelcomeTrial] = useState<{ trialEndsAt: string | null } | null>(null);
+  const { state: tourState, startTour } = useOnboarding();
+  const autoStarted = useRef(false);
 
   useEffect(() => {
     try {
@@ -171,6 +174,14 @@ export function Layout({ children }: LayoutProps) {
   }, []);
 
   const isAdmin = user?.role === "admin";
+
+  useEffect(() => {
+    if (!autoStarted.current && isAdmin && !tourState.active && !tourState.dismissed) {
+      autoStarted.current = true;
+      const t = setTimeout(startTour, 1800);
+      return () => clearTimeout(t);
+    }
+  }, [isAdmin]);
 
   const { data: myProfile } = useQuery<{ id: number } | null>({
     queryKey: ["employees", "me"],
@@ -333,6 +344,12 @@ export function Layout({ children }: LayoutProps) {
                     <Settings className="h-4 w-4 mr-2" />
                     Profile settings
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onSelect={startTour}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Take a tour
+                    </DropdownMenuItem>
+                  )}
                   {user?.role === "admin" && (
                     <DropdownMenuItem asChild data-testid="menu-billing">
                       <Link href="/billing">
