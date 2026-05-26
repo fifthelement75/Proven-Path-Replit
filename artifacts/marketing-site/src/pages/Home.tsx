@@ -381,7 +381,7 @@ export default function Home() {
 
                 <HeroStack />
 
-                <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
+                <div className="hidden sm:flex absolute -top-4 -right-4 z-40 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   <span>Live performance data</span>
                 </div>
