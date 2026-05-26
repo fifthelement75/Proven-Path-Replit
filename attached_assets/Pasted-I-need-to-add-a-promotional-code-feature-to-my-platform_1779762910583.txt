@@ -1,0 +1,81 @@
+I need to add a promotional code feature to my platform. When a user enters a 
+valid promo code at checkout, they receive one month of free access (no charge).
+
+Please implement the following:
+
+---
+
+## 1. DATABASE
+
+Create a `promo_codes` table in Supabase with these fields:
+- id (uuid, primary key)
+- code (text, unique, not null) — e.g. "FREEMONTH"
+- is_active (boolean, default true)
+- max_uses (integer, nullable — null = unlimited)
+- times_used (integer, default 0)
+- expires_at (timestamp, nullable — null = no expiry)
+- created_at (timestamp, default now())
+
+Also add a `promo_code_redemptions` table to track who used what:
+- id (uuid, primary key)
+- user_id (uuid, references auth.users)
+- promo_code_id (uuid, references promo_codes)
+- redeemed_at (timestamp, default now())
+
+---
+
+## 2. BACKEND / API
+
+Create the following API routes:
+
+### POST /api/promo/validate
+- Accepts: { code: string, userId: string }
+- Checks: code exists, is_active = true, not expired, under max_uses, 
+  user hasn't already redeemed it
+- Returns: { valid: boolean, message: string }
+
+### POST /api/promo/apply
+- Accepts: { code: string, userId: string }
+- Validates the code (same logic as above)
+- If valid:
+  - Increments `times_used` on the promo_codes record
+  - Inserts a row into `promo_code_redemptions`
+  - Sets the user's subscription to active with a 1-month free trial 
+    (extend their `subscription_end_date` by 30 days from today, 
+    or set it if they have no existing subscription)
+  - Returns: { success: true, message: "One month free access applied!" }
+- If invalid: returns appropriate error message
+
+---
+
+## 3. CHECKOUT UI
+
+On the checkout/payment page, add:
+- A text input field labeled "Promo Code" with a placeholder "Enter code"
+- An "Apply" button next to it
+- On click: call POST /api/promo/validate and show inline feedback 
+  (green checkmark + "Code applied! 1 month free" or red error message)
+- If valid, skip or bypass the payment step and call POST /api/promo/apply 
+  on final form submission
+- Show the discount reflected in the order summary (e.g. "1 Month Free — $0.00")
+
+---
+
+## 4. ADMIN (optional but helpful)
+
+Add a simple admin UI or seed script to create the first promo code:
+- Code: "FREEMONTH"
+- is_active: true
+- max_uses: null (unlimited)
+- expires_at: null (no expiry)
+
+---
+
+## TECH STACK
+- Frontend: Next.js (React)
+- Backend: Next.js API routes
+- Database: Supabase (PostgreSQL)
+- Auth: Supabase Auth
+
+Please create all necessary files, migrations, and components. 
+Add appropriate error handling and loading states.

@@ -13,6 +13,7 @@ import notificationsRouter from "./notifications";
 import candidatesRouter from "./candidates";
 import contactRouter from "./contact";
 import stripeRouter from "./stripe";
+import promoRouter from "./promo";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(notificationsRouter);
 router.use(candidatesRouter);
 router.use(contactRouter);
 router.use(stripeRouter);
+router.use(promoRouter);
 
 export default router;

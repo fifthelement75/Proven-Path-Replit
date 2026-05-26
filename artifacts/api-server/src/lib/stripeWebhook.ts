@@ -17,6 +17,12 @@ export async function processStripeWebhook(rawBody: Buffer, signature: string): 
       event.type === "customer.subscription.deleted"
     ) {
       await syncCompanyFromEvent(event);
+    } else if (event.type === "invoice.payment_succeeded") {
+      await handleInvoicePaymentSucceeded(event);
+    } else if (event.type === "invoice.payment_failed") {
+      await handleInvoicePaymentFailed(event);
+    } else if (event.type === "customer.subscription.trial_will_end") {
+      await handleTrialWillEnd(event);
     }
   } catch (err) {
     logger.error({ err, eventType: event.type }, "Failed to handle stripe webhook event");
@@ -75,4 +81,48 @@ async function syncCompanyFromEvent(event: any): Promise<void> {
 
   await db.update(companiesTable).set(updates).where(eq(companiesTable.id, companyId));
   logger.info({ companyId, updates }, "Synced company from Stripe event");
+}
+
+async function getCompanyByCustomerId(customerId: string): Promise<number | null> {
+  const [company] = await db
+    .select({ id: companiesTable.id })
+    .from(companiesTable)
+    .where(eq(companiesTable.stripeCustomerId, customerId))
+    .limit(1);
+  return company?.id ?? null;
+}
+
+async function handleInvoicePaymentSucceeded(event: any): Promise<void> {
+  const invoice = event.data.object;
+  const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  if (!customerId) return;
+  const companyId = await getCompanyByCustomerId(customerId);
+  if (!companyId) return;
+  await db
+    .update(companiesTable)
+    .set({ subscriptionStatus: "active", plan: "pro" })
+    .where(eq(companiesTable.id, companyId));
+  logger.info({ companyId }, "invoice.payment_succeeded — subscription set to active");
+}
+
+async function handleInvoicePaymentFailed(event: any): Promise<void> {
+  const invoice = event.data.object;
+  const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  if (!customerId) return;
+  const companyId = await getCompanyByCustomerId(customerId);
+  if (!companyId) return;
+  await db
+    .update(companiesTable)
+    .set({ subscriptionStatus: "past_due" })
+    .where(eq(companiesTable.id, companyId));
+  logger.info({ companyId }, "invoice.payment_failed — subscription set to past_due");
+}
+
+async function handleTrialWillEnd(event: any): Promise<void> {
+  const subscription = event.data.object;
+  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
+  if (!customerId) return;
+  const companyId = await getCompanyByCustomerId(customerId);
+  if (!companyId) return;
+  logger.info({ companyId }, "customer.subscription.trial_will_end — trial ending soon");
 }

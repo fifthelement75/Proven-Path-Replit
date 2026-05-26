@@ -1,0 +1,128 @@
+I need to add a promotional code feature to my platform using Stripe for payments. 
+When a user enters the promo code "PATH-PASS" at checkout, they receive one month 
+of free access — Stripe should NOT charge them.
+
+Please implement the following:
+
+---
+
+## 1. DATABASE
+
+Create a `promo_codes` table in Supabase with these fields:
+- id (uuid, primary key)
+- code (text, unique, not null)
+- is_active (boolean, default true)
+- max_uses (integer, nullable — null = unlimited)
+- times_used (integer, default 0)
+- expires_at (timestamp, nullable — null = no expiry)
+- created_at (timestamp, default now())
+
+Also create a `promo_code_redemptions` table:
+- id (uuid, primary key)
+- user_id (uuid, references auth.users)
+- promo_code_id (uuid, references promo_codes)
+- redeemed_at (timestamp, default now())
+
+Seed the table with one record:
+- code: "PATH-PASS"
+- is_active: true
+- max_uses: null (unlimited)
+- expires_at: null (no expiry)
+
+---
+
+## 2. STRIPE INTEGRATION
+
+When the promo code "PATH-PASS" is applied at checkout:
+
+### Option A — Stripe Free Trial (preferred)
+- Do NOT create a Stripe Coupon or Discount object
+- Instead, when creating the Stripe Subscription for this user, set:
+  trial_period_days: 30
+- This gives the user 30 days free before their first charge
+- Do NOT require a payment method if you want a fully free trial, OR
+  collect the payment method but set trial_period_days: 30 so they 
+  aren't charged until after the trial ends
+
+### Option B — Stripe Coupon (use only if subscription already exists)
+- Create a 100% off Coupon in Stripe with duration: "once"
+- Apply it to the customer's subscription for one invoice cycle only
+
+Use Option A unless the user already has an active Stripe subscription.
+
+---
+
+## 3. BACKEND / API
+
+Create the following API routes:
+
+### POST /api/promo/validate
+- Accepts: { code: string, userId: string }
+- Checks:
+  - code exists in `promo_codes` table
+  - is_active = true
+  - not expired (expires_at is null OR expires_at > now())
+  - times_used < max_uses (or max_uses is null)
+  - user has NOT already redeemed this code (check promo_code_redemptions)
+- Returns: { valid: boolean, message: string }
+
+### POST /api/promo/apply
+- Accepts: { code: string, userId: string }
+- Re-validates the code
+- If valid:
+  - Creates or retrieves the Stripe Customer for this user
+  - Creates a Stripe Subscription with trial_period_days: 30 
+    (do NOT charge the user)
+  - Increments `times_used` in the promo_codes table
+  - Inserts a row into `promo_code_redemptions`
+  - Updates the user's profile/subscription record in Supabase:
+    - subscription_status: "trialing"
+    - subscription_end_date: 30 days from today
+    - stripe_customer_id: (from Stripe)
+    - stripe_subscription_id: (from Stripe)
+  - Returns: { success: true, message: "PATH-PASS applied! Enjoy 1 month free." }
+- If invalid: return a clear error message
+
+---
+
+## 4. CHECKOUT UI
+
+On the checkout/payment page:
+- Add a text input labeled "Promo Code" with placeholder "Have a code?"
+- Add an "Apply" button next to the input
+- On click: call POST /api/promo/validate
+  - If valid: show a green checkmark with "✓ PATH-PASS applied — 1 month free!"
+  - Update the order summary to show: Total $0.00 (Free Trial)
+  - Hide or disable the Stripe payment form / CardElement if no 
+    payment method is required for the trial
+  - If you still want to collect a card for after the trial, keep the 
+    Stripe CardElement visible but show messaging: 
+    "You won't be charged until [date 30 days from now]"
+  - If invalid: show a red inline error message (e.g. "Invalid or expired code")
+- On final form submission: call POST /api/promo/apply before completing checkout
+
+---
+
+## 5. STRIPE WEBHOOK (important)
+
+Add a Stripe webhook handler at POST /api/webhooks/stripe to listen for:
+- `customer.subscription.trial_will_end` — send user an email reminder 
+   3 days before trial ends
+- `invoice.payment_succeeded` — update subscription_status to "active" 
+   in Supabase after trial converts
+- `invoice.payment_failed` — update subscription_status to "past_due" 
+   in Supabase
+
+---
+
+## TECH STACK
+- Frontend: Next.js (React)
+- Backend: Next.js API routes
+- Database: Supabase (PostgreSQL)
+- Auth: Supabase Auth
+- Payments: Stripe (use the official `stripe` npm package)
+- Use environment variables for all Stripe keys:
+  STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
+
+Please create all necessary files, database migrations, API routes, and 
+UI components. Include error handling, loading states, and TypeScript types.

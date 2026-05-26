@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, Sparkles, AlertTriangle, Loader2 } from "lucide-react";
+import { CheckCircle2, Sparkles, AlertTriangle, Loader2, Tag, XCircle } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { getToken, type SubscriptionStatus } from "@/lib/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -21,6 +22,12 @@ export default function BillingPage() {
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+
+  const [promoCode, setPromoCode] = useState("");
+  const [promoState, setPromoState] = useState<"idle" | "validating" | "valid" | "applying" | "applied" | "error">("idle");
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoTrialEnd, setPromoTrialEnd] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function load(): Promise<void> {
     setLoading(true);
@@ -44,6 +51,62 @@ export default function BillingPage() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+
+  async function handleValidatePromo(): Promise<void> {
+    if (!promoCode.trim()) return;
+    setPromoState("validating");
+    setPromoMessage("");
+    try {
+      const res = await fetch(getApiUrl("/promo/validate"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setPromoState("valid");
+        setPromoMessage(data.message);
+      } else {
+        setPromoState("error");
+        setPromoMessage(data.message || "Invalid or expired code.");
+      }
+    } catch {
+      setPromoState("error");
+      setPromoMessage("Could not validate code. Try again.");
+    }
+  }
+
+  async function handleApplyPromo(): Promise<void> {
+    setPromoState("applying");
+    try {
+      const res = await fetch(getApiUrl("/promo/apply"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPromoState("applied");
+        setPromoMessage(data.message);
+        setPromoTrialEnd(data.trialEndsAt ?? null);
+        await load();
+      } else {
+        setPromoState("error");
+        setPromoMessage(data.message || "Failed to apply code.");
+      }
+    } catch {
+      setPromoState("error");
+      setPromoMessage("Failed to apply promo code. Try again.");
+    }
+  }
+
+  function resetPromo() {
+    setPromoCode("");
+    setPromoState("idle");
+    setPromoMessage("");
+    setPromoTrialEnd(null);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
 
   async function startCheckout(): Promise<void> {
     setWorking(true);
@@ -81,6 +144,10 @@ export default function BillingPage() {
     }
   }
 
+  const alreadySubscribed = status?.subscriptionActive || status?.trialActive;
+  const promoApplied = promoState === "applied";
+  const promoValid = promoState === "valid";
+
   return (
     <Layout>
       <div className="mx-auto max-w-3xl px-4 py-10 space-y-6">
@@ -104,7 +171,20 @@ export default function BillingPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {status?.subscriptionActive ? (
+                {promoApplied ? (
+                  <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <AlertTitle>Promo code applied!</AlertTitle>
+                    <AlertDescription>
+                      {promoMessage}
+                      {promoTrialEnd && (
+                        <span className="block mt-0.5 text-xs text-emerald-700">
+                          Your free month runs until {new Date(promoTrialEnd).toLocaleDateString()}.
+                        </span>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                ) : status?.subscriptionActive ? (
                   <Alert>
                     <CheckCircle2 className="h-4 w-4" />
                     <AlertTitle>Subscription active</AlertTitle>
@@ -134,15 +214,78 @@ export default function BillingPage() {
                     <Button onClick={openPortal} disabled={working}>
                       {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Manage subscription"}
                     </Button>
-                  ) : (
+                  ) : !promoApplied ? (
                     <Button onClick={startCheckout} disabled={working}>
                       {working ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                       Subscribe — $9.99 / month
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
+
+            {!alreadySubscribed && !promoApplied && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Tag className="h-4 w-4" />
+                    Promo Code
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      ref={inputRef}
+                      placeholder="Have a code?"
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value.toUpperCase());
+                        if (promoState !== "idle") setPromoState("idle");
+                      }}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleValidatePromo(); }}
+                      disabled={promoState === "validating" || promoState === "applying" || promoValid}
+                      className="font-mono tracking-widest uppercase placeholder:tracking-normal placeholder:font-normal placeholder:normal-case"
+                    />
+                    {promoValid ? (
+                      <>
+                        <Button
+                          onClick={handleApplyPromo}
+                          disabled={promoState === "applying"}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                        >
+                          {promoState === "applying" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Activate"}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={resetPromo} className="shrink-0">
+                          <XCircle className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={handleValidatePromo}
+                        disabled={!promoCode.trim() || promoState === "validating"}
+                        className="shrink-0"
+                      >
+                        {promoState === "validating" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                      </Button>
+                    )}
+                  </div>
+
+                  {promoValid && (
+                    <p className="text-sm text-emerald-700 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4" />
+                      {promoMessage} — Click <strong>Activate</strong> to start your free month.
+                    </p>
+                  )}
+                  {promoState === "error" && (
+                    <p className="text-sm text-destructive flex items-center gap-1.5">
+                      <XCircle className="h-4 w-4" />
+                      {promoMessage}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
