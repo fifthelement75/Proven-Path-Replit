@@ -179,6 +179,72 @@ function HeroCarousel({ className }: { className?: string }) {
   return <FeatureCarousel slides={CAROUSEL_SLIDES} className={className} />;
 }
 
+function BrowserChrome({ url }: { url: string }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-200 shrink-0">
+      <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+      <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+      <div className="ml-2 flex-1 max-w-[220px] px-2.5 py-1 rounded-md bg-white border border-gray-200 text-[11px] text-gray-400 truncate">
+        {url}
+      </div>
+    </div>
+  );
+}
+
+function HeroStack() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const base = import.meta.env.BASE_URL;
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+
+  const y0 = useTransform(scrollYProgress, [0, 1], [55, -55]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [28, -28]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [10, -10]);
+
+  return (
+    <div ref={containerRef} className="relative" style={{ height: 480 }}>
+      {/* Back card — top-right, rotated CW */}
+      <motion.div
+        style={{ y: y0 }}
+        className="absolute top-0 right-0 w-[78%] z-10 rotate-[5deg] origin-bottom-left rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+      >
+        <BrowserChrome url="provenpath.app/employees/review" />
+        <img
+          src={`${base}feature-score-breakdown.png`}
+          alt="Score breakdown"
+          className="w-full h-[210px] object-cover object-top block"
+        />
+      </motion.div>
+
+      {/* Mid card — center, slight CCW rotation */}
+      <motion.div
+        style={{ y: y1 }}
+        className="absolute top-[88px] left-[6%] w-[80%] z-20 -rotate-[2deg] origin-bottom-right rounded-xl overflow-hidden shadow-xl border border-gray-200 bg-white"
+      >
+        <BrowserChrome url="provenpath.app/candidates/jane-doe" />
+        <img
+          src={`${base}feature-skill-matrix.png`}
+          alt="Skill matrix"
+          className="w-full h-[210px] object-cover object-top block"
+        />
+      </motion.div>
+
+      {/* Front card — bottom-left, no rotation */}
+      <motion.div
+        style={{ y: y2 }}
+        className="absolute bottom-0 left-[2%] w-[82%] z-30 rounded-xl overflow-hidden shadow-2xl border border-gray-200 bg-white"
+      >
+        <BrowserChrome url="provenpath.app/dashboard" />
+        <img
+          src={`${base}hero-dashboard.png`}
+          alt="Performance dashboard"
+          className="w-full h-[230px] object-cover object-top block"
+        />
+      </motion.div>
+    </div>
+  );
+}
+
 function Parallax({ children, strength = 30, className }: { children: React.ReactNode; strength?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -264,7 +330,7 @@ export default function Home() {
               >
                 <div className="absolute -inset-6 -z-10 bg-gradient-to-tr from-primary/25 via-success/15 to-warning/15 blur-3xl opacity-70 rounded-full" />
 
-                <HeroCarousel className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white" />
+                <HeroStack />
 
                 <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-lg shadow-primary/30 ring-4 ring-white">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
