@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert } from "@/components/ui/alert";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BEHAVIORAL_SKILL_CATEGORIES, BEHAVIORAL_SKILL_BY_KEY } from "@/lib/behavioral-skills";
@@ -1617,15 +1618,167 @@ function TimelineTab({ reviews, feedback }: { reviews: ReviewItem[]; feedback: F
   );
 }
 
+const EDIT_LEVELS = ["Junior", "Mid", "Senior", "Lead", "Manager", "Director"];
+const EDIT_DEPARTMENTS = ["Engineering", "Product", "Design", "Marketing", "Sales", "Operations", "HR", "Finance"];
+
+interface EmployeeForEdit {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  level: string;
+  startDate: string;
+  managerId: number | null;
+}
+
+function EditEmployeeDialog({ open, onClose, employee }: { open: boolean; onClose: () => void; employee: EmployeeForEdit }) {
+  const queryClient = useQueryClient();
+  const buildForm = () => ({
+    name: employee.name ?? "",
+    email: employee.email ?? "",
+    role: employee.role ?? "",
+    department: employee.department ?? "",
+    level: employee.level ?? "",
+    startDate: (employee.startDate ?? "").slice(0, 10),
+    managerId: employee.managerId != null ? String(employee.managerId) : "none",
+  });
+  const [form, setForm] = useState(buildForm);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setForm(buildForm());
+      setError("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, employee]);
+
+  const { data: employees = [] } = useQuery<EmployeeForEdit[]>({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl("/employees"), { headers: authHeaders() });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: open,
+  });
+
+  const departmentOptions = Array.from(new Set([...EDIT_DEPARTMENTS, employee.department].filter(Boolean)));
+  const levelOptions = Array.from(new Set([...EDIT_LEVELS, employee.level].filter(Boolean)));
+  const managerOptions = employees.filter(e => e.id !== employee.id);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(getApiUrl(`/employees/${employee.id}`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          role: form.role,
+          department: form.department,
+          level: form.level,
+          startDate: form.startDate,
+          managerId: (form.managerId && form.managerId !== "none") ? parseInt(form.managerId) : null,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to update employee");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee", employee.id] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      onClose();
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    mutate();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit employee</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3 mt-2">
+          {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5 col-span-2">
+              <Label>Full name</Label>
+              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            </div>
+            <div className="space-y-1.5 col-span-2">
+              <Label>Email</Label>
+              <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
+            </div>
+            <div className="space-y-1.5 col-span-2">
+              <Label>Role / Title</Label>
+              <Input value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Department</Label>
+              <Select value={form.department} onValueChange={v => setForm(f => ({ ...f, department: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {departmentOptions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Level</Label>
+              <Select value={form.level} onValueChange={v => setForm(f => ({ ...f, level: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {levelOptions.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Start date</Label>
+              <Input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Manager (optional)</Label>
+              <Select value={form.managerId} onValueChange={v => setForm(f => ({ ...f, managerId: v }))}>
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {managerOptions.map(e => <SelectItem key={e.id} value={String(e.id)}>{e.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={isPending}>{isPending ? "Saving..." : "Save changes"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EmployeeDetailPage() {
   const params = useParams<{ id: string }>();
   const employeeId = parseInt(params.id!);
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuthContext();
+  const isAdmin = user?.role === "admin";
   const [reviewOpen, setReviewOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [peerOpen, setPeerOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const { data: employee, isLoading: loadingEmployee } = useQuery({
@@ -1732,6 +1885,7 @@ export default function EmployeeDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            {isAdmin && <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>Edit</Button>}
             <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>Share profile</Button>
             <Button variant="outline" size="sm" onClick={() => setFeedbackOpen(true)}>Log feedback</Button>
             <Button size="sm" onClick={() => setReviewOpen(true)}>Add review</Button>
@@ -1886,21 +2040,24 @@ export default function EmployeeDetailPage() {
           </TabsContent>
         </Tabs>
 
-        <div className="border-t pt-4">
-          {!deleteConfirm ? (
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteConfirm(true)}>
-              Delete employee
-            </Button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">This will permanently delete all data for {employee.name}.</span>
-              <Button variant="destructive" size="sm" onClick={() => deleteEmployee()}>Confirm delete</Button>
-              <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-            </div>
-          )}
-        </div>
+        {isAdmin && (
+          <div className="border-t pt-4">
+            {!deleteConfirm ? (
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteConfirm(true)}>
+                Delete employee
+              </Button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">This will permanently delete all data for {employee.name}.</span>
+                <Button variant="destructive" size="sm" onClick={() => deleteEmployee()}>Confirm delete</Button>
+                <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {isAdmin && <EditEmployeeDialog open={editOpen} onClose={() => setEditOpen(false)} employee={employee} />}
       <AddReviewDialog open={reviewOpen} onClose={() => setReviewOpen(false)} employeeId={employeeId} employeeEmail={employee.email ?? ""} employeeName={employee.name} />
       <AddFeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} employeeId={employeeId} />
       <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} employeeId={employeeId} />
