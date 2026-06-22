@@ -1,6 +1,13 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { getUser, getToken, setToken, setUser, removeToken, type User } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import { toast } from "@/hooks/use-toast";
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  manager: "Manager",
+  employee: "Employee",
+};
 
 interface AuthContextValue {
   user: User | null;
@@ -15,18 +22,21 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(getUser);
   const [token, setTokenState] = useState<string | null>(getToken);
+  const prevRoleRef = useRef<string | null>(getUser()?.role ?? null);
 
   const login = useCallback((newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
     setTokenState(newToken);
     setUserState(newUser);
+    prevRoleRef.current = newUser.role;
   }, []);
 
   const logout = useCallback(() => {
     removeToken();
     setTokenState(null);
     setUserState(null);
+    prevRoleRef.current = null;
   }, []);
 
   // Refresh the current user (including their access role) from the server on
@@ -45,6 +55,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!res.ok) return;
         const fresh = (await res.json()) as User;
         if (cancelled) return;
+
+        const previousRole = prevRoleRef.current;
+        if (previousRole !== null && fresh.role !== previousRole) {
+          const label = ROLE_LABELS[fresh.role] ?? fresh.role;
+          const wasDowngraded =
+            (previousRole === "admin" && fresh.role !== "admin") ||
+            (previousRole === "manager" && fresh.role === "employee");
+
+          toast({
+            title: "Your access level has changed",
+            description: wasDowngraded
+              ? `Your role has been updated to ${label}. You may lose access to some pages.`
+              : `Your access level has been updated to ${label}.`,
+          });
+
+          prevRoleRef.current = fresh.role;
+        } else if (previousRole === null) {
+          prevRoleRef.current = fresh.role;
+        }
+
         setUser(fresh);
         setUserState(fresh);
       } catch {
