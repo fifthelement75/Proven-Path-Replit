@@ -24,7 +24,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     page: "/employees",
     target: "employees-header",
     title: "Step 1: Build Your Team Roster",
-    body: "The Employees page is where everything starts. Add everyone in your organization here — each person gets their own profile for performance reviews, skill tracking, AI development plans, and a portable Career Passport.",
+    body: "The Employees page is where everything starts. Add everyone in your organization here — each person gets their own profile for performance reviews, skill tracking, AI development plans, and a portable career history report.",
     placement: "bottom",
   },
   {
