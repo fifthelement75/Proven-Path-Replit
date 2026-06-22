@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, UnauthorizedError, getApiUrl } from "@/lib/api";
-import { CheckCircle2, Loader2, Plug, KeyRound, Copy } from "lucide-react";
+import { CheckCircle2, Loader2, Plug, KeyRound, Copy, ChevronDown, ChevronRight, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getToken } from "@/lib/auth";
@@ -437,6 +437,84 @@ function inviteStatusClass(status: string): string {
   return "bg-blue-50 text-blue-700 border-blue-200";
 }
 
+function ReportingStructure({ members }: { members: TeamMember[] }) {
+  const [open, setOpen] = useState(false);
+
+  const byManager = members.reduce<Record<string, TeamMember[]>>((acc, m) => {
+    const key = m.managerId == null ? "__none__" : String(m.managerId);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(m);
+    return acc;
+  }, {});
+
+  const topLevel = byManager["__none__"] ?? [];
+  const managersWithReports = members.filter(m => byManager[String(m.id)]?.length > 0);
+
+  return (
+    <div className="mt-3 rounded-md border">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span className="flex items-center gap-1.5">
+          <Users size={13} />
+          Reporting structure
+        </span>
+        {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+      </button>
+
+      {open && (
+        <div className="border-t px-3 py-3 space-y-3">
+          {topLevel.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">No manager assigned</p>
+              <ul className="space-y-0.5">
+                {topLevel.map(m => (
+                  <li key={m.id} className="flex items-center gap-1.5 text-xs">
+                    <span className="font-medium">{m.name}</span>
+                    <Badge variant="outline" className={`text-[10px] py-0 ${accessBadgeClass(m.userRole)}`}>
+                      {ACCESS_LABELS[m.userRole] || m.userRole}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {managersWithReports.map(mgr => {
+            const reports = byManager[String(mgr.id)] ?? [];
+            return (
+              <div key={mgr.id}>
+                <p className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                  {mgr.name}
+                  <Badge variant="outline" className={`text-[10px] py-0 ${accessBadgeClass(mgr.userRole)}`}>
+                    {ACCESS_LABELS[mgr.userRole] || mgr.userRole}
+                  </Badge>
+                </p>
+                <ul className="ml-4 border-l pl-3 space-y-0.5">
+                  {reports.map(r => (
+                    <li key={r.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{r.name}</span>
+                      <Badge variant="outline" className={`text-[10px] py-0 ${accessBadgeClass(r.userRole)}`}>
+                        {ACCESS_LABELS[r.userRole] || r.userRole}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+
+          {topLevel.length === 0 && managersWithReports.length === 0 && (
+            <p className="text-xs text-muted-foreground">No reporting relationships configured yet.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TeamCard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -519,14 +597,27 @@ function TeamCard() {
           ) : members.length === 0 ? (
             <p className="text-sm text-muted-foreground py-2">No members yet.</p>
           ) : (
+            <>
             <ul className="divide-y rounded-md border">
               {members.map(m => {
                 const isUpdatingThis = updatingMember && updatingVars?.id === m.id;
                 return (
                   <li key={m.id} className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{m.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium truncate">{m.name}</span>
+                        <Badge variant="outline" className={`text-xs shrink-0 ${accessBadgeClass(m.userRole)}`}>
+                          {ACCESS_LABELS[m.userRole] || m.userRole}
+                        </Badge>
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">{m.email}</div>
+                      {m.managerName ? (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Reports to: <span className="font-medium text-foreground">{m.managerName}</span>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground/60 mt-0.5">No manager assigned</div>
+                      )}
                     </div>
                     {isAdmin ? (
                       <div className="flex items-center gap-2 shrink-0">
@@ -556,7 +647,7 @@ function TeamCard() {
                           }}
                         >
                           <SelectTrigger className="h-8 w-[160px] text-xs">
-                            <SelectValue placeholder="Reports to" />
+                            <SelectValue placeholder="No manager" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">No manager</SelectItem>
@@ -566,15 +657,14 @@ function TeamCard() {
                           </SelectContent>
                         </Select>
                       </div>
-                    ) : (
-                      <Badge variant="outline" className={`text-xs shrink-0 ${accessBadgeClass(m.userRole)}`}>
-                        {ACCESS_LABELS[m.userRole] || m.userRole}
-                      </Badge>
-                    )}
+                    ) : null}
                   </li>
                 );
               })}
             </ul>
+
+            {members.length > 1 && <ReportingStructure members={members} />}
+            </>
           )}
         </div>
 
