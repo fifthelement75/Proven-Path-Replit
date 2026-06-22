@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Loader2, LogOut, Trash2 } from "lucide-react";
+import { Camera, ChevronDown, Eye, EyeOff, Loader2, LogOut, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProfileDialogProps {
@@ -46,6 +46,14 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const [photoDirty, setPhotoDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [pwOpen, setPwOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [savingPw, setSavingPw] = useState(false);
+
   useEffect(() => {
     if (!open || !user) return;
     setName(user.name ?? user.companyName ?? "");
@@ -53,6 +61,12 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     setDepartment(user.department ?? "");
     setPhotoUrl(user.profilePhotoUrl ?? null);
     setPhotoDirty(false);
+    setPwOpen(false);
+    setCurrentPw("");
+    setNewPw("");
+    setConfirmPw("");
+    setShowCurrentPw(false);
+    setShowNewPw(false);
   }, [open, user]);
 
   if (!user) return null;
@@ -124,6 +138,46 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
       });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleChangePassword() {
+    if (!newPw || newPw.length < 6) {
+      toast({ title: "New password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+    setSavingPw(true);
+    try {
+      const token = getToken();
+      const res = await fetch(getApiUrl("/auth/change-password"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to change password");
+      }
+      toast({ title: "Password updated" });
+      setPwOpen(false);
+      setCurrentPw("");
+      setNewPw("");
+      setConfirmPw("");
+    } catch (e) {
+      toast({
+        title: "Password change failed",
+        description: e instanceof Error ? e.message : String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPw(false);
     }
   }
 
@@ -218,6 +272,88 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             <Label>Email</Label>
             <Input value={user.email} disabled />
           </div>
+        </div>
+
+        <div className="border rounded-md">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors"
+            onClick={() => setPwOpen((v) => !v)}
+          >
+            Change password
+            <ChevronDown
+              size={16}
+              className={`text-muted-foreground transition-transform duration-200 ${pwOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {pwOpen && (
+            <div className="px-3 pb-3 space-y-3 border-t pt-3">
+              <div>
+                <Label htmlFor="pw-current">Current password</Label>
+                <div className="relative">
+                  <Input
+                    id="pw-current"
+                    type={showCurrentPw ? "text" : "password"}
+                    value={currentPw}
+                    onChange={(e) => setCurrentPw(e.target.value)}
+                    placeholder="Enter current password"
+                    className="pr-9"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowCurrentPw((v) => !v)}
+                    tabIndex={-1}
+                    aria-label={showCurrentPw ? "Hide password" : "Show password"}
+                  >
+                    {showCurrentPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="pw-new">New password</Label>
+                <div className="relative">
+                  <Input
+                    id="pw-new"
+                    type={showNewPw ? "text" : "password"}
+                    value={newPw}
+                    onChange={(e) => setNewPw(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="pr-9"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowNewPw((v) => !v)}
+                    tabIndex={-1}
+                    aria-label={showNewPw ? "Hide password" : "Show password"}
+                  >
+                    {showNewPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="pw-confirm">Confirm new password</Label>
+                <Input
+                  id="pw-confirm"
+                  type="password"
+                  value={confirmPw}
+                  onChange={(e) => setConfirmPw(e.target.value)}
+                  placeholder="Repeat new password"
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                disabled={savingPw || !currentPw || !newPw || !confirmPw}
+                onClick={handleChangePassword}
+              >
+                {savingPw ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Update password
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">

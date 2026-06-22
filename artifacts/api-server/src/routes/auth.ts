@@ -99,6 +99,63 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   });
 });
 
+router.post("/auth/change-password", requireAuth, async (req, res): Promise<void> => {
+  const auth = req.auth!;
+  const body = (req.body ?? {}) as { currentPassword?: unknown; newPassword?: unknown };
+
+  const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
+  const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+
+  if (!currentPassword) {
+    res.status(400).json({ error: "Current password is required" });
+    return;
+  }
+  if (!newPassword || newPassword.length < 6) {
+    res.status(400).json({ error: "New password must be at least 6 characters" });
+    return;
+  }
+
+  if (auth.role === "admin") {
+    const [company] = await db.select().from(companiesTable).where(eq(companiesTable.id, auth.companyId)).limit(1);
+    if (!company) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const valid = await bcrypt.compare(currentPassword, company.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: "Current password is incorrect" });
+      return;
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await db.update(companiesTable).set({ passwordHash }).where(eq(companiesTable.id, company.id));
+    res.json({ message: "Password updated" });
+    return;
+  }
+
+  if (auth.employeeId) {
+    const [emp] = await db
+      .select()
+      .from(employeesTable)
+      .where(and(eq(employeesTable.id, auth.employeeId), eq(employeesTable.companyId, auth.companyId)))
+      .limit(1);
+    if (!emp || !emp.passwordHash) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const valid = await bcrypt.compare(currentPassword, emp.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: "Current password is incorrect" });
+      return;
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await db.update(employeesTable).set({ passwordHash }).where(eq(employeesTable.id, emp.id));
+    res.json({ message: "Password updated" });
+    return;
+  }
+
+  res.status(401).json({ error: "Unauthorized" });
+});
+
 router.post("/auth/logout", async (_req, res): Promise<void> => {
   res.json({ message: "Logged out" });
 });
