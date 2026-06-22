@@ -4,6 +4,7 @@ interface DocumentMeta {
   title: string;
   description: string;
   ogImage?: string;
+  ogImageAlt?: string;
   canonicalPath?: string;
 }
 
@@ -32,10 +33,13 @@ function setLinkTag(rel: string, href: string): void {
   el.setAttribute("href", href);
 }
 
+const DEFAULT_IMAGE_ALT = "Proven Path dashboard and performance intelligence preview";
+
 export function useDocumentMeta({
   title,
   description,
   ogImage,
+  ogImageAlt = DEFAULT_IMAGE_ALT,
   canonicalPath,
 }: DocumentMeta): void {
   useEffect(() => {
@@ -55,6 +59,12 @@ export function useDocumentMeta({
       "property",
       "og:type",
       "website",
+    );
+    setMetaTag(
+      'meta[property="og:locale"]',
+      "property",
+      "og:locale",
+      "en_US",
     );
 
     setMetaTag(
@@ -83,10 +93,22 @@ export function useDocumentMeta({
         fullImage,
       );
       setMetaTag(
+        'meta[property="og:image:alt"]',
+        "property",
+        "og:image:alt",
+        ogImageAlt,
+      );
+      setMetaTag(
         'meta[name="twitter:image"]',
         "name",
         "twitter:image",
         fullImage,
+      );
+      setMetaTag(
+        'meta[name="twitter:image:alt"]',
+        "name",
+        "twitter:image:alt",
+        ogImageAlt,
       );
     }
 
@@ -104,5 +126,5 @@ export function useDocumentMeta({
       "og:url",
       window.location.href,
     );
-  }, [title, description, ogImage, canonicalPath]);
+  }, [title, description, ogImage, ogImageAlt, canonicalPath]);
 }

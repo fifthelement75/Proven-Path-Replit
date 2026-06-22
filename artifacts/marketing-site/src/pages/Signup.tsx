@@ -5,9 +5,9 @@ import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Signup() {
   useDocumentMeta({
-    title: "Sign Up — Proven Path | Start Your 7-Day Free Trial",
+    title: "Join the Waitlist — Proven Path | Private Beta",
     description:
-      "Create your Proven Path account and start a 7-day free trial. Modern performance intelligence for HR teams — no credit card required.",
+      "Proven Path is currently in private beta. Join the waitlist and be the first to know when we open up to new HR teams.",
     ogImage: "opengraph.jpg",
     canonicalPath: "/signup",
   });

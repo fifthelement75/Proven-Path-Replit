@@ -31,10 +31,10 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/contact" component={Contact} />
       <Route path="/signup" component={Signup} />
-      <Route path="/blog" component={() => <Placeholder title="Blog" />} />
+      <Route path="/blog" component={() => <Placeholder title="Blog" canonicalPath="/blog" />} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
-      <Route path="/security" component={() => <Placeholder title="Security" />} />
+      <Route path="/security" component={() => <Placeholder title="Security" canonicalPath="/security" />} />
       <Route component={NotFound} />
     </Switch>
   );

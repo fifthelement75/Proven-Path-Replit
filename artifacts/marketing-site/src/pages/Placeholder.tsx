@@ -2,12 +2,19 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
-export default function Placeholder({ title }: { title: string }) {
+export default function Placeholder({
+  title,
+  canonicalPath,
+}: {
+  title: string;
+  canonicalPath?: string;
+}) {
   useDocumentMeta({
     title: `${title} — Proven Path`,
     description:
       "Proven Path — performance intelligence for modern HR teams. This page is coming soon.",
     ogImage: "opengraph.jpg",
+    canonicalPath,
   });
 
   return (
