@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { db, companiesTable, employeesTable, reviewsTable, feedbackTable, devPlansTable, devPlanSkillsTable } from "@workspace/db";
-import { eq, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { db, companiesTable, employeesTable, reviewsTable, feedbackTable, devPlansTable, devPlanSkillsTable, peerReviewsTable } from "@workspace/db";
+import { eq, count, sql, inArray } from "drizzle-orm";
+import { requireAuth, requireAdmin } from "../middlewares/auth";
 
 const router = Router();
 
@@ -303,6 +303,135 @@ router.get("/companies/me/employee-summaries", requireAuth, async (req, res): Pr
   }).sort((a, b) => new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime());
 
   res.json(summaries);
+});
+
+function csvEsc(val: unknown): string {
+  if (val == null) return "";
+  const s = String(val);
+  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function csvRow(cols: unknown[]): string {
+  return cols.map(csvEsc).join(",");
+}
+
+function sectionHeader(title: string): string {
+  return `\n${title}\n`;
+}
+
+router.get("/companies/me/export", requireAdmin, async (req, res): Promise<void> => {
+  const { companyId } = req.auth!;
+
+  const employees = await db
+    .select()
+    .from(employeesTable)
+    .where(eq(employeesTable.companyId, companyId))
+    .orderBy(employeesTable.name);
+
+  const employeeIds = employees.map(e => e.id);
+
+  const managerMap: Record<number, string> = {};
+  for (const e of employees) managerMap[e.id] = e.name;
+
+  let reviews: (typeof reviewsTable.$inferSelect & { employeeName: string })[] = [];
+  let feedback: (typeof feedbackTable.$inferSelect & { employeeName: string })[] = [];
+  let peerReviews: (typeof peerReviewsTable.$inferSelect & { employeeName: string })[] = [];
+
+  if (employeeIds.length > 0) {
+    const rawReviews = await db
+      .select({ r: reviewsTable, employeeName: employeesTable.name })
+      .from(reviewsTable)
+      .innerJoin(employeesTable, eq(reviewsTable.employeeId, employeesTable.id))
+      .where(inArray(reviewsTable.employeeId, employeeIds))
+      .orderBy(reviewsTable.createdAt);
+    reviews = rawReviews.map(row => ({ ...row.r, employeeName: row.employeeName }));
+
+    const rawFeedback = await db
+      .select({ f: feedbackTable, employeeName: employeesTable.name })
+      .from(feedbackTable)
+      .innerJoin(employeesTable, eq(feedbackTable.employeeId, employeesTable.id))
+      .where(inArray(feedbackTable.employeeId, employeeIds))
+      .orderBy(feedbackTable.createdAt);
+    feedback = rawFeedback.map(row => ({ ...row.f, employeeName: row.employeeName }));
+
+    const rawPeer = await db
+      .select({ p: peerReviewsTable, employeeName: employeesTable.name })
+      .from(peerReviewsTable)
+      .innerJoin(employeesTable, eq(peerReviewsTable.employeeId, employeesTable.id))
+      .where(inArray(peerReviewsTable.employeeId, employeeIds))
+      .orderBy(peerReviewsTable.submittedAt);
+    peerReviews = rawPeer.map(row => ({ ...row.p, employeeName: row.employeeName }));
+  }
+
+  const lines: string[] = [];
+
+  lines.push(sectionHeader("EMPLOYEES"));
+  lines.push(csvRow(["Employee ID", "Name", "Email", "Job Title", "Department", "Level", "Access Role", "Manager", "Start Date", "Added Date"]));
+  for (const e of employees) {
+    lines.push(csvRow([
+      e.id, e.name, e.email, e.role, e.department, e.level,
+      e.userRole, e.managerId ? (managerMap[e.managerId] ?? e.managerId) : "",
+      e.startDate, e.createdAt.toISOString(),
+    ]));
+  }
+
+  lines.push(sectionHeader("PERFORMANCE REVIEWS"));
+  lines.push(csvRow([
+    "Review ID", "Employee ID", "Employee Name", "Review Type", "Period", "Status",
+    "Technical Score", "Communication Score", "Problem Solving Score",
+    "Teamwork Score", "Leadership Score", "Overall Score",
+    "Strengths", "Areas to Improve", "Goals", "Recommendation", "Created Date",
+  ]));
+  for (const r of reviews) {
+    lines.push(csvRow([
+      r.id, r.employeeId, r.employeeName, r.reviewType, r.period, r.status,
+      r.technicalScore, r.communicationScore, r.problemSolvingScore,
+      r.teamworkScore, r.leadershipScore, r.overallScore,
+      r.strengths, r.areasToImprove, r.goals, r.recommendation,
+      r.createdAt.toISOString(),
+    ]));
+  }
+
+  lines.push(sectionHeader("MEETING FEEDBACK"));
+  lines.push(csvRow([
+    "Feedback ID", "Employee ID", "Employee Name", "Meeting Type", "Meeting Date",
+    "What Went Well", "Areas to Improve", "Action Items", "Next Steps",
+    "Employee Response", "Created Date",
+  ]));
+  for (const f of feedback) {
+    lines.push(csvRow([
+      f.id, f.employeeId, f.employeeName, f.meetingType, f.meetingDate,
+      f.whatWentWell, f.areasToImprove, f.actionItems, f.nextSteps,
+      f.employeeResponse, f.createdAt.toISOString(),
+    ]));
+  }
+
+  lines.push(sectionHeader("PEER REVIEWS"));
+  lines.push(csvRow([
+    "Peer Review ID", "Employee ID", "Employee Name", "Peer Email",
+    "Personal Planning Score", "Track Planning Score", "Solution Driven Score",
+    "Team Leadership Score", "Persuasion Score", "Cross Functional Score",
+    "Business Alignment Score", "Customer Centric Score", "Data Informed Score",
+    "Promotion Recommendation", "Strengths", "Areas to Improve", "Submitted Date",
+  ]));
+  for (const p of peerReviews) {
+    lines.push(csvRow([
+      p.id, p.employeeId, p.employeeName, p.peerEmail,
+      p.personalPlanningScore, p.trackPlanningScore, p.solutionDrivenScore,
+      p.teamLeadershipScore, p.persuasionScore, p.crossFunctionalScore,
+      p.businessAlignmentScore, p.customerCentricScore, p.dataInformedScore,
+      p.promotionRecommendation, p.strengths, p.areasToImprove,
+      p.submittedAt.toISOString(),
+    ]));
+  }
+
+  const csv = lines.join("\n");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", 'attachment; filename="proven-path-export.csv"');
+  res.send(csv);
 });
 
 export default router;
