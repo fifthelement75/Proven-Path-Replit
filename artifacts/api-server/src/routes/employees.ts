@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { db, employeesTable, reviewsTable, feedbackTable, devPlansTable, notificationsTable } from "@workspace/db";
+import { db, employeesTable, reviewsTable, feedbackTable, devPlansTable, notificationsTable, companiesTable } from "@workspace/db";
 import { eq, and, sql, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { canAccessEmployee } from "../lib/access";
+import { sendRoleChangeEmail } from "../lib/email";
+import { logger } from "../lib/logger";
 import {
   CreateEmployeeBody, UpdateEmployeeBody, GetEmployeeParams,
   UpdateEmployeeParams, DeleteEmployeeParams, ListEmployeesQueryParams,
@@ -294,6 +296,19 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
       message,
       type: "role_change",
     });
+
+    if (updated.email) {
+      const [company] = await db.select({ name: companiesTable.name }).from(companiesTable)
+        .where(eq(companiesTable.id, companyId)).limit(1);
+      sendRoleChangeEmail({
+        toEmail: updated.email,
+        toName: updated.name ?? null,
+        companyName: company?.name ?? "Proven Path",
+        newRole: newUserRole,
+      }).catch((err: unknown) => {
+        logger.warn({ err }, "Failed to send role-change email");
+      });
+    }
   }
 
   res.json({ ...updated, managerName: null, createdAt: updated.createdAt.toISOString(), latestScore: null });

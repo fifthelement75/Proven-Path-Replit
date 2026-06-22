@@ -353,6 +353,70 @@ export async function sendInvitationEmail({
   }
 }
 
+export async function sendRoleChangeEmail({
+  toEmail,
+  toName,
+  companyName,
+  newRole,
+}: {
+  toEmail: string;
+  toName: string | null;
+  companyName: string;
+  newRole: string;
+}): Promise<void> {
+  const { apiKey, fromEmail } = await getCredentials();
+  const client = new Resend(apiKey);
+
+  const ROLE_LABELS_LOCAL: Record<string, string> = {
+    admin: "Administrator",
+    manager: "Manager",
+    employee: "Employee",
+  };
+
+  const safeToName = toName ? escapeHtml(toName) : null;
+  const safeCompany = escapeHtml(companyName);
+  const safeRole = escapeHtml(ROLE_LABELS_LOCAL[newRole] ?? newRole);
+  const greeting = safeToName ? `Hi ${safeToName.split(" ")[0]},` : "Hi,";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#111827;">
+  <h2 style="margin:0 0 8px;font-size:20px;">Your access level has been updated</h2>
+  <p style="margin:0 0 16px;color:#374151;">${greeting}</p>
+  <p style="margin:0 0 16px;color:#374151;">
+    Your access level on <strong>${safeCompany}</strong> has been updated to <strong>${safeRole}</strong>.
+  </p>
+  <p style="margin:0 0 24px;color:#374151;">
+    You may notice changes in what you can see and do when you next log in. If you have questions about this change, please reach out to your administrator.
+  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+  <p style="margin:0;color:#9ca3af;font-size:12px;">You received this email because your access level on Proven Path was changed by an administrator. If you believe this was sent in error, please contact your company admin.</p>
+</body>
+</html>`;
+
+  const plainName = toName ? toName.split(" ")[0] : null;
+  const text = `${plainName ? `Hi ${plainName},` : "Hi,"}\n\nYour access level on ${companyName} has been updated to ${ROLE_LABELS_LOCAL[newRole] ?? newRole}.\n\nYou may notice changes in what you can see and do when you next log in. If you have questions about this change, please reach out to your administrator.\n\n— The Proven Path team`;
+
+  const result = await client.emails.send({
+    from: fromEmail,
+    to: toEmail,
+    subject: `Your access level on ${companyName} has been updated`,
+    html,
+    text,
+  });
+
+  if (result.error) {
+    const msg = result.error.message || "";
+    if (/domain is not verified/i.test(msg)) {
+      throw new Error(
+        "Email could not be sent because the configured sender domain is not verified with Resend."
+      );
+    }
+    throw new Error(`Resend error: ${msg}`);
+  }
+}
+
 export function getSelfReflectionLink(token: string): string {
   const base =
     process.env.APP_PUBLIC_URL ||
