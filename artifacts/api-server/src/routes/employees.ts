@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, employeesTable, reviewsTable, feedbackTable, devPlansTable } from "@workspace/db";
+import { db, employeesTable, reviewsTable, feedbackTable, devPlansTable, notificationsTable } from "@workspace/db";
 import { eq, and, sql, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { canAccessEmployee } from "../lib/access";
@@ -255,12 +255,13 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const existing = await db.select({ id: employeesTable.id }).from(employeesTable)
+  const existing = await db.select({ id: employeesTable.id, userRole: employeesTable.userRole }).from(employeesTable)
     .where(and(eq(employeesTable.id, params.data.id), eq(employeesTable.companyId, companyId))).limit(1);
   if (existing.length === 0) {
     res.status(404).json({ error: "Employee not found" });
     return;
   }
+  const prevUserRole = existing[0].userRole;
 
   let updateData = body.data;
   if (role !== "admin") {
@@ -281,6 +282,20 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
     }
   }
   const [updated] = await db.update(employeesTable).set(updateData).where(eq(employeesTable.id, params.data.id)).returning();
+
+  const newUserRole = updated.userRole;
+  if (role === "admin" && newUserRole !== prevUserRole) {
+    const ROLE_LABELS: Record<string, string> = { admin: "Admin", manager: "Manager", employee: "Employee" };
+    const newLabel = ROLE_LABELS[newUserRole] ?? newUserRole;
+    const message = `Your role was updated to ${newLabel}`;
+    await db.insert(notificationsTable).values({
+      companyId,
+      userId: params.data.id,
+      message,
+      type: "role_change",
+    });
+  }
+
   res.json({ ...updated, managerName: null, createdAt: updated.createdAt.toISOString(), latestScore: null });
 });
 
