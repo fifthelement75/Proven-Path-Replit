@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch, UnauthorizedError } from "@/lib/api";
-import { CheckCircle2, Loader2, Plug } from "lucide-react";
+import { apiFetch, UnauthorizedError, getApiUrl } from "@/lib/api";
+import { CheckCircle2, Loader2, Plug, KeyRound, Copy } from "lucide-react";
 
 type IntegrationOption = { value: string; label: string };
 
@@ -244,6 +244,152 @@ const MEETING_OPTIONS: IntegrationOption[] = [
   { value: "notion", label: "Notion" },
 ];
 
+interface SyncKeyInfo {
+  keyPrefix: string;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
+function SyncKeyCard() {
+  const { toast } = useToast();
+  const [info, setInfo] = useState<SyncKeyInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [working, setWorking] = useState(false);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const endpoint = getApiUrl("/integrations/sync/employees");
+
+  async function load() {
+    try {
+      const res = await apiFetch("/integrations/sync-key");
+      if (!res.ok) throw new Error("failed");
+      const data = await res.json();
+      setInfo(data.syncKey ?? null);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
+      toast({ title: "Could not load sync key", description: "Please refresh the page.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function generate(rotate: boolean) {
+    setWorking(true);
+    try {
+      const res = await apiFetch("/integrations/sync-key", { method: "POST" });
+      if (!res.ok) throw new Error("failed");
+      const data = await res.json();
+      setRevealedKey(data.key);
+      await load();
+      toast({ title: rotate ? "Sync key rotated" : "Sync key generated", description: "Copy it now — it won't be shown again." });
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
+      toast({ title: "Could not generate key", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function revoke() {
+    if (!window.confirm("Revoke this sync key? Any HRIS/ATS system using it will stop being able to push updates.")) return;
+    setWorking(true);
+    try {
+      const res = await apiFetch("/integrations/sync-key", { method: "DELETE" });
+      if (!res.ok) throw new Error("failed");
+      setRevealedKey(null);
+      setInfo(null);
+      toast({ title: "Sync key revoked" });
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
+      toast({ title: "Could not revoke key", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  function copy(text: string, label: string) {
+    navigator.clipboard?.writeText(text).then(
+      () => toast({ title: `${label} copied` }),
+      () => toast({ title: "Copy failed", description: "Copy it manually.", variant: "destructive" }),
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <KeyRound size={16} className="text-muted-foreground" />
+          <CardTitle className="text-base">Automated Employee Sync</CardTitle>
+        </div>
+        <CardDescription className="text-sm">
+          Generate a secure key so your HRIS/ATS (or a tool like Merge or Finch) can push employee updates to Proven Path automatically. Records are matched and updated by email.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground">Endpoint (HTTP POST)</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-muted px-3 py-2 rounded break-all">{endpoint}</code>
+            <Button type="button" variant="outline" size="sm" onClick={() => copy(endpoint, "Endpoint URL")}>
+              <Copy size={14} />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Send the key as <code className="text-[11px]">Authorization: Bearer &lt;key&gt;</code> with a JSON body:{" "}
+            <code className="text-[11px]">{`{ "employees": [{ "email": "...", "name": "...", "role": "...", "department": "...", "level": "...", "startDate": "YYYY-MM-DD", "managerEmail": "..." }] }`}</code>
+          </p>
+        </div>
+
+        {revealedKey && (
+          <div className="space-y-1.5 rounded-md border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs font-medium text-amber-800">Your new sync key — copy it now, it won't be shown again:</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-white px-3 py-2 rounded break-all border">{revealedKey}</code>
+              <Button type="button" variant="outline" size="sm" onClick={() => copy(revealedKey, "Sync key")}>
+                <Copy size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 size={16} className="animate-spin" /> Loading...
+          </div>
+        ) : info ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 size={16} className="text-green-600" />
+              <span>
+                Active key <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{info.keyPrefix}…</code>
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Created {formatDate(info.createdAt)} · {info.lastUsedAt ? `Last used ${formatDate(info.lastUsedAt)}` : "Not used yet"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" disabled={working} onClick={() => generate(true)}>
+                {working ? "Working..." : "Rotate key"}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={working} onClick={revoke}>
+                Revoke
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button type="button" disabled={working} onClick={() => generate(false)}>
+            {working ? "Generating..." : "Generate sync key"}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -311,6 +457,11 @@ export default function SettingsPage() {
                 connection={byCategory("ats")}
                 onChanged={loadConnections}
               />
+            </div>
+
+            <div>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Automated Sync</h2>
+              <SyncKeyCard />
             </div>
 
             <div>

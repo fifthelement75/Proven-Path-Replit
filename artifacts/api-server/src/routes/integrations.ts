@@ -1,10 +1,25 @@
 import { Router } from "express";
-import { db, integrationConnectionsTable } from "@workspace/db";
+import crypto from "crypto";
+import { db, integrationConnectionsTable, syncKeysTable, employeesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
 
 const router = Router();
+
+const SYNC_KEY_PREFIX = "ppk_live_";
+
+function generateSyncKey(): { key: string; keyHash: string; keyPrefix: string } {
+  const secret = crypto.randomBytes(24).toString("hex");
+  const key = `${SYNC_KEY_PREFIX}${secret}`;
+  const keyHash = crypto.createHash("sha256").update(key).digest("hex");
+  const keyPrefix = key.slice(0, SYNC_KEY_PREFIX.length + 6);
+  return { key, keyHash, keyPrefix };
+}
+
+function hashSyncKey(key: string): string {
+  return crypto.createHash("sha256").update(key).digest("hex");
+}
 
 const CATEGORIES = ["hris", "ats", "meeting"] as const;
 type Category = (typeof CATEGORIES)[number];
@@ -116,6 +131,246 @@ router.post("/integrations/disconnect", requireAuth, async (req, res): Promise<v
   } catch (err: any) {
     logger.error({ err }, "integrations/disconnect error");
     res.status(500).json({ message: "Could not disconnect integration." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Inbound sync API key management (admin, JWT-authenticated)
+// ---------------------------------------------------------------------------
+
+router.get("/integrations/sync-key", requireAuth, async (req, res): Promise<void> => {
+  const auth = req.auth!;
+  if (auth.role !== "admin") {
+    res.status(403).json({ message: "Only company admins can manage the sync key." });
+    return;
+  }
+  try {
+    const [existing] = await db
+      .select({
+        keyPrefix: syncKeysTable.keyPrefix,
+        lastUsedAt: syncKeysTable.lastUsedAt,
+        createdAt: syncKeysTable.createdAt,
+      })
+      .from(syncKeysTable)
+      .where(eq(syncKeysTable.companyId, auth.companyId))
+      .limit(1);
+    res.json({ syncKey: existing ?? null });
+  } catch (err: any) {
+    logger.error({ err }, "integrations/sync-key get error");
+    res.status(500).json({ message: "Could not load the sync key." });
+  }
+});
+
+router.post("/integrations/sync-key", requireAuth, async (req, res): Promise<void> => {
+  const auth = req.auth!;
+  if (auth.role !== "admin") {
+    res.status(403).json({ message: "Only company admins can manage the sync key." });
+    return;
+  }
+  try {
+    const { key, keyHash, keyPrefix } = generateSyncKey();
+    const now = new Date();
+    await db
+      .insert(syncKeysTable)
+      .values({ companyId: auth.companyId, keyHash, keyPrefix, createdAt: now, updatedAt: now, lastUsedAt: null })
+      .onConflictDoUpdate({
+        target: [syncKeysTable.companyId],
+        set: { keyHash, keyPrefix, updatedAt: now, lastUsedAt: null },
+      });
+    logger.info({ companyId: auth.companyId }, "Sync key generated/rotated");
+    // The plaintext key is returned exactly once and never stored.
+    res.json({ key, keyPrefix });
+  } catch (err: any) {
+    logger.error({ err }, "integrations/sync-key post error");
+    res.status(500).json({ message: "Could not generate a sync key." });
+  }
+});
+
+router.delete("/integrations/sync-key", requireAuth, async (req, res): Promise<void> => {
+  const auth = req.auth!;
+  if (auth.role !== "admin") {
+    res.status(403).json({ message: "Only company admins can manage the sync key." });
+    return;
+  }
+  try {
+    await db.delete(syncKeysTable).where(eq(syncKeysTable.companyId, auth.companyId));
+    logger.info({ companyId: auth.companyId }, "Sync key revoked");
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error({ err }, "integrations/sync-key delete error");
+    res.status(500).json({ message: "Could not revoke the sync key." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Inbound employee sync (authenticated by the company's sync key, not JWT).
+// HRIS/ATS systems (or middleware like Merge/Finch) push employee records here.
+// Records are upserted by email within the company.
+// ---------------------------------------------------------------------------
+
+interface ParsedSyncRecord {
+  email: string;
+  name?: string;
+  role?: string;
+  department?: string;
+  level?: string;
+  startDate?: string;
+  managerEmail?: string;
+}
+
+function asTrimmedString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function parseSyncEmployeesBody(
+  body: unknown,
+): { employees: ParsedSyncRecord[] } | { error: string } {
+  if (!body || typeof body !== "object" || !Array.isArray((body as any).employees)) {
+    return { error: "Body must include an 'employees' array." };
+  }
+  const list = (body as any).employees as unknown[];
+  if (list.length === 0) return { error: "'employees' must not be empty." };
+  if (list.length > 1000) return { error: "Too many records in one request (max 1000)." };
+
+  const employees: ParsedSyncRecord[] = [];
+  for (const raw of list) {
+    if (!raw || typeof raw !== "object") {
+      return { error: "Each employee must be an object." };
+    }
+    const r = raw as Record<string, unknown>;
+    const email = asTrimmedString(r.email);
+    if (!email || !email.includes("@")) {
+      return { error: "Each employee requires a valid 'email'." };
+    }
+    employees.push({
+      email,
+      name: asTrimmedString(r.name),
+      role: asTrimmedString(r.role) ?? asTrimmedString(r.title),
+      department: asTrimmedString(r.department),
+      level: asTrimmedString(r.level),
+      startDate: asTrimmedString(r.startDate),
+      managerEmail: asTrimmedString(r.managerEmail),
+    });
+  }
+  return { employees };
+}
+
+router.post("/integrations/sync/employees", async (req, res): Promise<void> => {
+  // Authenticate via the company's sync key.
+  const header = req.headers.authorization;
+  const headerKey = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
+  const altKey = typeof req.headers["x-sync-key"] === "string" ? (req.headers["x-sync-key"] as string) : undefined;
+  const providedKey = headerKey ?? altKey;
+
+  if (!providedKey) {
+    res.status(401).json({ message: "Missing sync key. Provide it as 'Authorization: Bearer <key>' or 'X-Sync-Key'." });
+    return;
+  }
+
+  const [keyRow] = await db
+    .select({ companyId: syncKeysTable.companyId })
+    .from(syncKeysTable)
+    .where(eq(syncKeysTable.keyHash, hashSyncKey(providedKey)))
+    .limit(1);
+
+  if (!keyRow) {
+    res.status(401).json({ message: "Invalid sync key." });
+    return;
+  }
+  const companyId = keyRow.companyId;
+
+  const parsed = parseSyncEmployeesBody(req.body);
+  if ("error" in parsed) {
+    res.status(400).json({ message: parsed.error });
+    return;
+  }
+
+  try {
+    await db.update(syncKeysTable).set({ lastUsedAt: new Date() }).where(eq(syncKeysTable.companyId, companyId));
+
+    // Load existing employees in this company, indexed by lowercased email.
+    const existing = await db
+      .select({ id: employeesTable.id, email: employeesTable.email })
+      .from(employeesTable)
+      .where(eq(employeesTable.companyId, companyId));
+    const byEmail = new Map<string, number>();
+    for (const e of existing) byEmail.set(e.email.toLowerCase(), e.id);
+
+    let created = 0;
+    let updated = 0;
+    const errors: { email: string; reason: string }[] = [];
+    // Collect manager assignments to resolve after all upserts.
+    const managerLinks: { email: string; managerEmail: string }[] = [];
+
+    for (const rec of parsed.employees) {
+      const email = rec.email.trim();
+      const emailKey = email.toLowerCase();
+      const title = rec.role;
+      if (rec.managerEmail) managerLinks.push({ email, managerEmail: rec.managerEmail });
+
+      const existingId = byEmail.get(emailKey);
+      if (existingId != null) {
+        const updateData: Record<string, unknown> = {};
+        if (rec.name != null) updateData.name = rec.name;
+        if (title != null) updateData.role = title;
+        if (rec.department != null) updateData.department = rec.department;
+        if (rec.level != null) updateData.level = rec.level;
+        if (rec.startDate != null) updateData.startDate = rec.startDate;
+        if (Object.keys(updateData).length > 0) {
+          await db.update(employeesTable).set(updateData).where(eq(employeesTable.id, existingId));
+        }
+        updated++;
+      } else {
+        const missing: string[] = [];
+        if (!rec.name) missing.push("name");
+        if (!title) missing.push("role/title");
+        if (!rec.department) missing.push("department");
+        if (!rec.level) missing.push("level");
+        if (!rec.startDate) missing.push("startDate");
+        if (missing.length > 0) {
+          errors.push({ email, reason: `New employee missing required field(s): ${missing.join(", ")}` });
+          continue;
+        }
+        const [inserted] = await db
+          .insert(employeesTable)
+          .values({
+            companyId,
+            name: rec.name!,
+            email,
+            role: title!,
+            department: rec.department!,
+            level: rec.level!,
+            startDate: rec.startDate!,
+          })
+          .returning({ id: employeesTable.id });
+        byEmail.set(emailKey, inserted.id);
+        created++;
+      }
+    }
+
+    // Resolve manager relationships now that all employees exist.
+    let managersLinked = 0;
+    for (const link of managerLinks) {
+      const empId = byEmail.get(link.email.toLowerCase());
+      const mgrId = byEmail.get(link.managerEmail.toLowerCase());
+      if (empId == null) continue;
+      if (mgrId == null) {
+        errors.push({ email: link.email, reason: `Manager '${link.managerEmail}' not found in this company` });
+        continue;
+      }
+      if (mgrId === empId) {
+        errors.push({ email: link.email, reason: "Employee cannot be their own manager" });
+        continue;
+      }
+      await db.update(employeesTable).set({ managerId: mgrId }).where(eq(employeesTable.id, empId));
+      managersLinked++;
+    }
+
+    logger.info({ companyId, created, updated, managersLinked, errorCount: errors.length }, "Inbound employee sync processed");
+    res.json({ created, updated, managersLinked, skipped: errors.length, errors });
+  } catch (err: any) {
+    logger.error({ err }, "integrations/sync/employees error");
+    res.status(500).json({ message: "Could not process the employee sync." });
   }
 });
 

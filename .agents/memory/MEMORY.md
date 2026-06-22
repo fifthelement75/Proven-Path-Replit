@@ -1,1 +1,2 @@
 - [career-passport auth & session expiry](career-passport-auth.md) — route guards check token presence not validity; expired JWTs 401 silently; use apiFetch for auto login-redirect.
+- [db schema changes](db-schema-changes.md) — drizzle-kit push hangs on promo_codes drift prompt; apply DDL via psql/db-sandbox + keep schema barrel in sync.
