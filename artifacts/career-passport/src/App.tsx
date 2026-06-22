@@ -19,6 +19,7 @@ import SelfReflectionPage from "@/pages/self-reflection";
 import CandidatesPage from "@/pages/candidates";
 import CandidateDetailPage from "@/pages/candidate-detail";
 import BillingPage from "@/pages/billing";
+import AcceptInvitePage from "@/pages/accept-invite";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,13 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   return <Component />;
 }
 
+function ManagerRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, user } = useAuthContext();
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (user?.role !== "admin" && user?.role !== "manager") return <Redirect to="/employees/me" />;
+  return <Component />;
+}
+
 function PublicOnlyRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, user } = useAuthContext();
   if (isAuthenticated) {
@@ -60,7 +68,7 @@ function Router() {
       <Route path="/login" component={() => <PublicOnlyRoute component={LoginPage} />} />
       <Route path="/register" component={() => <PublicOnlyRoute component={RegisterPage} />} />
       <Route path="/dashboard" component={() => <AdminRoute component={DashboardPage} />} />
-      <Route path="/employees" component={() => <AdminRoute component={EmployeesPage} />} />
+      <Route path="/employees" component={() => <ManagerRoute component={EmployeesPage} />} />
       <Route path="/employees/me" component={() => <PrivateRoute component={MyProfileRedirect} />} />
       <Route path="/employees/:id" component={() => <PrivateRoute component={EmployeeDetailPage} />} />
       <Route path="/settings" component={() => <AdminRoute component={SettingsPage} />} />
@@ -70,6 +78,7 @@ function Router() {
       <Route path="/share/:token" component={SharePage} />
       <Route path="/peer-review/:token" component={PeerReviewPage} />
       <Route path="/self-reflection/:token" component={SelfReflectionPage} />
+      <Route path="/accept-invite/:token" component={AcceptInvitePage} />
       <Route component={NotFound} />
     </Switch>
   );

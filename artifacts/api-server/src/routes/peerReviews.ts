@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, peerReviewRequestsTable, peerReviewsTable, notificationsTable, employeesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { canAccessEmployee, managerCanAccessEmployee } from "../lib/access";
 import { requireActivePlan } from "../middlewares/requireActivePlan";
 import crypto from "crypto";
 import { sendPeerReviewEmail, getPeerReviewLink } from "../lib/email";
@@ -21,6 +22,10 @@ router.get("/employees/:id/peer-review-requests", requireAuth, async (req, res):
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId)))
     .limit(1);
   if (!empCheck.length) { res.status(404).json({ error: "Employee not found" }); return; }
+  if (!(await canAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee" });
+    return;
+  }
 
   const requests = await db.select().from(peerReviewRequestsTable)
     .where(and(eq(peerReviewRequestsTable.employeeId, employeeId), eq(peerReviewRequestsTable.companyId, companyId)));
@@ -51,6 +56,10 @@ router.post("/employees/:id/peer-review-requests", requireAuth, requireActivePla
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId)))
     .limit(1);
   if (!empCheck.length) { res.status(404).json({ error: "Employee not found" }); return; }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "Only admins and managers can request peer reviews" });
+    return;
+  }
 
   const { peerEmails, peerNames, expiresInDays } = req.body;
   if (!Array.isArray(peerEmails) || peerEmails.length === 0) {
@@ -144,6 +153,10 @@ router.delete("/employees/:id/peer-review-requests/:requestId", requireAuth, asy
     ))
     .limit(1);
   if (!request) { res.status(404).json({ error: "Request not found" }); return; }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "Only admins and managers can manage peer review requests" });
+    return;
+  }
 
   const existing = await db.select({ id: peerReviewsTable.id })
     .from(peerReviewsTable)
@@ -172,6 +185,10 @@ router.post("/employees/:id/peer-review-requests/:requestId/nudge", requireAuth,
     ))
     .limit(1);
   if (!request) { res.status(404).json({ error: "Request not found" }); return; }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "Only admins and managers can manage peer review requests" });
+    return;
+  }
 
   if (request.expiresAt && request.expiresAt < new Date()) {
     res.status(410).json({ error: "This request has expired — peers can no longer respond" });
@@ -308,6 +325,10 @@ router.get("/employees/:id/peer-reviews", requireAuth, async (req, res): Promise
   const empCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (!empCheck.length) { res.status(404).json({ error: "Employee not found" }); return; }
+  if (!(await canAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee" });
+    return;
+  }
 
   const reviews = await db.select().from(peerReviewsTable).where(eq(peerReviewsTable.employeeId, employeeId));
   res.json(reviews.map(r => ({ ...r, submittedAt: r.submittedAt.toISOString(), createdAt: r.createdAt.toISOString() })));

@@ -174,6 +174,7 @@ export function Layout({ children }: LayoutProps) {
   }, []);
 
   const isAdmin = user?.role === "admin";
+  const isManager = user?.role === "manager";
 
   useEffect(() => {
     if (!autoStarted.current && isAdmin && !tourState.active && !tourState.dismissed) {
@@ -181,6 +182,7 @@ export function Layout({ children }: LayoutProps) {
       const t = setTimeout(startTour, 1800);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [isAdmin]);
 
   const { data: myProfile } = useQuery<{ id: number } | null>({
@@ -211,7 +213,12 @@ export function Layout({ children }: LayoutProps) {
     ? [{ href: `/employees/${myProfile.id}`, label: "My Profile" }]
     : [];
 
-  const navItems = isAdmin ? adminNavItems : employeeNavItems;
+  const managerNavItems = [
+    { href: "/employees", label: "Employees" },
+    ...(myProfile ? [{ href: `/employees/${myProfile.id}`, label: "My Profile" }] : []),
+  ];
+
+  const navItems = isAdmin ? adminNavItems : isManager ? managerNavItems : employeeNavItems;
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 

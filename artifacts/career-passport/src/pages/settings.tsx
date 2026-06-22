@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, UnauthorizedError, getApiUrl } from "@/lib/api";
 import { CheckCircle2, Loader2, Plug, KeyRound, Copy } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getToken } from "@/lib/auth";
 
 type IntegrationOption = { value: string; label: string };
 
@@ -390,6 +393,183 @@ function SyncKeyCard() {
   );
 }
 
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+interface TeamMember {
+  id: number;
+  name: string;
+  email: string;
+  userRole: string;
+}
+
+interface Invitation {
+  id: number;
+  email: string;
+  userRole: string;
+  status: string;
+  expiresAt: string | null;
+  acceptedAt: string | null;
+  createdAt: string;
+}
+
+const ACCESS_LABELS: Record<string, string> = {
+  admin: "Administrator",
+  manager: "Manager",
+  employee: "Team Member",
+};
+
+function accessBadgeClass(role: string): string {
+  if (role === "admin") return "bg-indigo-50 text-indigo-700 border-indigo-200";
+  if (role === "manager") return "bg-blue-50 text-blue-700 border-blue-200";
+  return "bg-muted text-muted-foreground";
+}
+
+function inviteStatusClass(status: string): string {
+  if (status === "accepted") return "bg-green-50 text-green-700 border-green-200";
+  if (status === "expired") return "bg-amber-50 text-amber-700 border-amber-200";
+  if (status === "revoked") return "bg-red-50 text-red-700 border-red-200";
+  return "bg-blue-50 text-blue-700 border-blue-200";
+}
+
+function TeamCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: members = [], isLoading: membersLoading } = useQuery<TeamMember[]>({
+    queryKey: ["team-members"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl("/employees"), { headers: authHeaders() });
+      if (!res.ok) throw new Error("Failed to load team");
+      return res.json();
+    },
+  });
+
+  const { data: invitations = [], isLoading: invitesLoading } = useQuery<Invitation[]>({
+    queryKey: ["invitations"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl("/invitations"), { headers: authHeaders() });
+      if (!res.ok) throw new Error("Failed to load invitations");
+      return res.json();
+    },
+  });
+
+  const { mutate: revoke, isPending: revoking } = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(getApiUrl(`/invitations/${id}`), { method: "DELETE", headers: authHeaders() });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to revoke invitation");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+      toast({ title: "Invitation revoked" });
+    },
+    onError: (err: Error) => toast({ title: "Could not revoke", description: err.message, variant: "destructive" }),
+  });
+
+  const pendingInvites = invitations.filter(i => i.status === "pending");
+  const otherInvites = invitations.filter(i => i.status !== "pending");
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Team members</CardTitle>
+        <CardDescription className="text-sm">
+          People with access to your organization, and pending invitations.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Members ({members.length})
+          </h3>
+          {membersLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-3">
+              <Loader2 size={14} className="animate-spin" /> Loading members...
+            </div>
+          ) : members.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">No members yet.</p>
+          ) : (
+            <ul className="divide-y rounded-md border">
+              {members.map(m => (
+                <li key={m.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{m.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{m.email}</div>
+                  </div>
+                  <Badge variant="outline" className={`text-xs shrink-0 ${accessBadgeClass(m.userRole)}`}>
+                    {ACCESS_LABELS[m.userRole] || m.userRole}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Pending invitations ({pendingInvites.length})
+          </h3>
+          {invitesLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-3">
+              <Loader2 size={14} className="animate-spin" /> Loading invitations...
+            </div>
+          ) : pendingInvites.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">
+              No pending invitations. Invite people from the Employees page.
+            </p>
+          ) : (
+            <ul className="divide-y rounded-md border">
+              {pendingInvites.map(inv => (
+                <li key={inv.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{inv.email}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {ACCESS_LABELS[inv.userRole] || inv.userRole}
+                      {inv.expiresAt && ` · expires ${formatDate(inv.expiresAt)}`}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="outline" className={`text-xs ${inviteStatusClass(inv.status)}`}>Pending</Badge>
+                    <Button variant="ghost" size="sm" disabled={revoking} onClick={() => revoke(inv.id)}>
+                      Revoke
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {otherInvites.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              History
+            </h3>
+            <ul className="divide-y rounded-md border">
+              {otherInvites.map(inv => (
+                <li key={inv.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{inv.email}</div>
+                    <div className="text-xs text-muted-foreground">{ACCESS_LABELS[inv.userRole] || inv.userRole}</div>
+                  </div>
+                  <Badge variant="outline" className={`text-xs shrink-0 capitalize ${inviteStatusClass(inv.status)}`}>
+                    {inv.status}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -431,6 +611,11 @@ export default function SettingsPage() {
           </div>
         ) : (
           <>
+            <div>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Organization</h2>
+              <TeamCard />
+            </div>
+
             <div>
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">HR Information Systems</h2>
               <IntegrationCard

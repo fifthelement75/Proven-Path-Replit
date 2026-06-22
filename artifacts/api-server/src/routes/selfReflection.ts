@@ -9,7 +9,8 @@ import {
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
-import { requireAdmin } from "../middlewares/auth";
+import { requireManagerOrAdmin } from "../middlewares/auth";
+import { managerCanAccessEmployee } from "../lib/access";
 import { sendSelfReflectionEmail, getSelfReflectionLink } from "../lib/email";
 
 const router = Router();
@@ -46,7 +47,7 @@ function clampScore(v: unknown): number | null {
   return Math.max(1, Math.min(5, Math.round(n)));
 }
 
-router.get("/employees/:id/self-reflection-requests", requireAdmin, async (req, res): Promise<void> => {
+router.get("/employees/:id/self-reflection-requests", requireManagerOrAdmin, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   if (isNaN(employeeId)) { res.status(400).json({ error: "Invalid employee id" }); return; }
@@ -54,6 +55,10 @@ router.get("/employees/:id/self-reflection-requests", requireAdmin, async (req, 
   const empCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (!empCheck.length) { res.status(404).json({ error: "Employee not found" }); return; }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee" });
+    return;
+  }
 
   const requests = await db.select().from(selfReflectionRequestsTable)
     .where(and(eq(selfReflectionRequestsTable.employeeId, employeeId), eq(selfReflectionRequestsTable.companyId, companyId)));
@@ -69,7 +74,7 @@ router.get("/employees/:id/self-reflection-requests", requireAdmin, async (req, 
   })));
 });
 
-router.post("/employees/:id/self-reflection-requests", requireAdmin, async (req, res): Promise<void> => {
+router.post("/employees/:id/self-reflection-requests", requireManagerOrAdmin, async (req, res): Promise<void> => {
   const { companyId, userId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   if (isNaN(employeeId)) { res.status(400).json({ error: "Invalid employee id" }); return; }
@@ -77,6 +82,10 @@ router.post("/employees/:id/self-reflection-requests", requireAdmin, async (req,
   const [emp] = await db.select().from(employeesTable)
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (!emp) { res.status(404).json({ error: "Employee not found" }); return; }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee" });
+    return;
+  }
 
   const employeeEmail = String(req.body?.employeeEmail || emp.email || "").trim().toLowerCase();
   if (!employeeEmail) { res.status(400).json({ error: "Employee email is required" }); return; }
@@ -137,11 +146,15 @@ router.post("/employees/:id/self-reflection-requests", requireAdmin, async (req,
   });
 });
 
-router.delete("/employees/:id/self-reflection-requests/:requestId", requireAdmin, async (req, res): Promise<void> => {
+router.delete("/employees/:id/self-reflection-requests/:requestId", requireManagerOrAdmin, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   const requestId = parseInt(req.params.requestId);
   if (isNaN(employeeId) || isNaN(requestId)) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee" });
+    return;
+  }
 
   const [request] = await db.select().from(selfReflectionRequestsTable)
     .where(and(
@@ -156,11 +169,15 @@ router.delete("/employees/:id/self-reflection-requests/:requestId", requireAdmin
   res.json({ success: true });
 });
 
-router.post("/employees/:id/self-reflection-requests/:requestId/nudge", requireAdmin, async (req, res): Promise<void> => {
+router.post("/employees/:id/self-reflection-requests/:requestId/nudge", requireManagerOrAdmin, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   const requestId = parseInt(req.params.requestId);
   if (isNaN(employeeId) || isNaN(requestId)) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee" });
+    return;
+  }
 
   const [request] = await db.select().from(selfReflectionRequestsTable)
     .where(and(

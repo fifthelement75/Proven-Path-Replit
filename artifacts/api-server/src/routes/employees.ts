@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, employeesTable, reviewsTable, feedbackTable, devPlansTable } from "@workspace/db";
 import { eq, and, sql, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { canAccessEmployee } from "../lib/access";
 import {
   CreateEmployeeBody, UpdateEmployeeBody, GetEmployeeParams,
   UpdateEmployeeParams, DeleteEmployeeParams, ListEmployeesQueryParams,
@@ -130,6 +131,7 @@ router.get("/employees", requireAuth, async (req, res): Promise<void> => {
     name: r.emp.name,
     email: r.emp.email,
     role: r.emp.role,
+    userRole: r.emp.userRole,
     department: r.emp.department,
     level: r.emp.level,
     startDate: r.emp.startDate,
@@ -202,6 +204,11 @@ router.get("/employees/:id", requireAuth, async (req, res): Promise<void> => {
   }
   const { emp, managerName } = emps[0];
 
+  if (role === "manager" && authEmployeeId !== id && emp.managerId !== authEmployeeId) {
+    res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+
   const reviews = await db.select().from(reviewsTable).where(eq(reviewsTable.employeeId, id));
   const [{ cnt: fbCnt }] = await db.select({ cnt: count() }).from(feedbackTable).where(eq(feedbackTable.employeeId, id));
   const devPlanRows = await db.select({ id: devPlansTable.id }).from(devPlansTable).where(eq(devPlansTable.employeeId, id));
@@ -242,8 +249,9 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  if (role === "employee" && authEmployeeId !== params.data.id) {
-    res.status(403).json({ error: "You can only edit your own profile" });
+  const isSelf = authEmployeeId != null && authEmployeeId === params.data.id;
+  if (role !== "admin" && !isSelf) {
+    res.status(403).json({ error: "Only admins can edit other employees" });
     return;
   }
 
@@ -255,7 +263,7 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
   }
 
   let updateData = body.data;
-  if (role === "employee") {
+  if (role !== "admin") {
     const { role: _role, level: _level, department: _dept, managerId: _mgr, ...allowedFields } = updateData as Record<string, unknown>;
     updateData = allowedFields as typeof body.data;
   }
@@ -307,6 +315,11 @@ router.get("/employees/:id/score-history", requireAuth, async (req, res): Promis
 
   if (role === "employee" && authEmployeeId !== params.data.id) {
     res.status(403).json({ error: "You can only view your own score history" });
+    return;
+  }
+
+  if (!(await canAccessEmployee(auth, params.data.id))) {
+    res.status(404).json({ error: "Employee not found" });
     return;
   }
 

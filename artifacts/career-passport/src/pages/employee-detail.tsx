@@ -1774,6 +1774,7 @@ export default function EmployeeDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
   const isAdmin = user?.role === "admin";
+  const canEvaluate = user?.role === "admin" || user?.role === "manager";
   const [reviewOpen, setReviewOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1886,9 +1887,9 @@ export default function EmployeeDetailPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             {isAdmin && <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>Edit</Button>}
-            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>Share profile</Button>
-            <Button variant="outline" size="sm" onClick={() => setFeedbackOpen(true)}>Log feedback</Button>
-            <Button size="sm" onClick={() => setReviewOpen(true)}>Add review</Button>
+            {canEvaluate && <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>Share profile</Button>}
+            {canEvaluate && <Button variant="outline" size="sm" onClick={() => setFeedbackOpen(true)}>Log feedback</Button>}
+            {canEvaluate && <Button size="sm" onClick={() => setReviewOpen(true)}>Add review</Button>}
           </div>
         </div>
 
@@ -2058,10 +2059,10 @@ export default function EmployeeDetailPage() {
       </div>
 
       {isAdmin && <EditEmployeeDialog open={editOpen} onClose={() => setEditOpen(false)} employee={employee} />}
-      <AddReviewDialog open={reviewOpen} onClose={() => setReviewOpen(false)} employeeId={employeeId} employeeEmail={employee.email ?? ""} employeeName={employee.name} />
-      <AddFeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} employeeId={employeeId} />
-      <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} employeeId={employeeId} />
-      <RequestPeerReviewDialog open={peerOpen} onClose={() => setPeerOpen(false)} employeeId={employeeId} employeeName={employee.name} />
+      {canEvaluate && <AddReviewDialog open={reviewOpen} onClose={() => setReviewOpen(false)} employeeId={employeeId} employeeEmail={employee.email ?? ""} employeeName={employee.name} />}
+      {canEvaluate && <AddFeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} employeeId={employeeId} />}
+      {canEvaluate && <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} employeeId={employeeId} />}
+      {canEvaluate && <RequestPeerReviewDialog open={peerOpen} onClose={() => setPeerOpen(false)} employeeId={employeeId} employeeName={employee.name} />}
     </Layout>
   );
 }

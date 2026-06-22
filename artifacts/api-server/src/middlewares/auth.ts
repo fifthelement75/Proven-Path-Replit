@@ -59,6 +59,26 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
   }
 }
 
+export function requireManagerOrAdmin(req: Request, res: Response, next: NextFunction): void {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const token = header.slice(7);
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as unknown as AuthPayload;
+    req.auth = payload;
+    if (payload.role !== "admin" && payload.role !== "manager") {
+      res.status(403).json({ error: "Manager or admin access required" });
+      return;
+    }
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
 export function signToken(payload: AuthPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 }

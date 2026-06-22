@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { db, companiesTable, employeesTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { signToken, requireAuth } from "../middlewares/auth";
 import { RegisterCompanyBody, LoginBody } from "@workspace/api-zod";
 
@@ -14,6 +14,11 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     return;
   }
   const { companyName, email, password } = parsed.data;
+  const trimmedName = companyName.trim();
+  if (!trimmedName) {
+    res.status(400).json({ error: "Company name is required" });
+    return;
+  }
 
   const existing = await db.select().from(companiesTable).where(eq(companiesTable.email, email)).limit(1);
   if (existing.length > 0) {
@@ -21,12 +26,32 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     return;
   }
 
+  const nameTaken = await db
+    .select({ id: companiesTable.id })
+    .from(companiesTable)
+    .where(sql`lower(${companiesTable.name}) = lower(${trimmedName})`)
+    .limit(1);
+  if (nameTaken.length > 0) {
+    res.status(409).json({ error: "That organization name is already taken. Please choose a different one." });
+    return;
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
   const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const [company] = await db
-    .insert(companiesTable)
-    .values({ name: companyName, email, passwordHash, plan: "trial", trialEndsAt })
-    .returning();
+  let company;
+  try {
+    [company] = await db
+      .insert(companiesTable)
+      .values({ name: trimmedName, email, passwordHash, plan: "trial", trialEndsAt })
+      .returning();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/companies_name_lower_unique/i.test(msg)) {
+      res.status(409).json({ error: "That organization name is already taken. Please choose a different one." });
+      return;
+    }
+    throw err;
+  }
 
   const token = signToken({ companyId: company.id, userId: company.id, email: company.email, role: "admin", employeeId: null });
   res.status(201).json({

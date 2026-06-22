@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, reviewsTable, employeesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { canAccessEmployee, managerCanAccessEmployee } from "../lib/access";
 import { CreateReviewBody, UpdateReviewBody, ListReviewsParams, CreateReviewParams, GetReviewParams, UpdateReviewParams } from "@workspace/api-zod";
 
 const router = Router();
@@ -72,6 +73,10 @@ router.get("/employees/:employeeId/reviews", requireAuth, async (req, res): Prom
     res.status(404).json({ error: "Employee not found" });
     return;
   }
+  if (!(await canAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee's reviews" });
+    return;
+  }
   const reviews = await db.select().from(reviewsTable).where(eq(reviewsTable.employeeId, employeeId));
 
   const reviewerIds = reviews.filter(r => r.reviewerId != null).map(r => r.reviewerId!);
@@ -102,6 +107,10 @@ router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Pro
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (empCheck.length === 0) {
     res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "Only admins and managers can create reviews" });
     return;
   }
   if (body.data.reviewerId != null) {
@@ -152,6 +161,10 @@ router.get("/employees/:employeeId/reviews/:reviewId", requireAuth, async (req, 
     res.status(404).json({ error: "Employee not found" });
     return;
   }
+  if (!(await canAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee's reviews" });
+    return;
+  }
   const [review] = await db.select().from(reviewsTable)
     .where(and(eq(reviewsTable.id, reviewId), eq(reviewsTable.employeeId, employeeId))).limit(1);
   if (!review) {
@@ -178,6 +191,10 @@ router.patch("/employees/:employeeId/reviews/:reviewId", requireAuth, async (req
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (empCheck.length === 0) {
     res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+  if (!(await managerCanAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "Only admins and managers can update reviews" });
     return;
   }
   const [existing] = await db.select().from(reviewsTable)
