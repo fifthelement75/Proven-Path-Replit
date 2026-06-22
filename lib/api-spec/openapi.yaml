@@ -941,6 +941,8 @@ components:
           type: string
         role:
           type: string
+        userRole:
+          type: string
         department:
           type: string
         level:
@@ -961,6 +963,7 @@ components:
         - name
         - email
         - role
+        - userRole
         - department
         - level
         - startDate
@@ -1061,6 +1064,9 @@ components:
           type: string
         managerId:
           type: ["integer", "null"]
+        userRole:
+          type: string
+          enum: ["admin", "manager", "employee"]
 
     ScoreHistoryItem:
       type: object

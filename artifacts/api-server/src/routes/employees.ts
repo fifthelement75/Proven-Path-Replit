@@ -264,11 +264,15 @@ router.patch("/employees/:id", requireAuth, async (req, res): Promise<void> => {
 
   let updateData = body.data;
   if (role !== "admin") {
-    const { role: _role, level: _level, department: _dept, managerId: _mgr, ...allowedFields } = updateData as Record<string, unknown>;
+    const { role: _role, level: _level, department: _dept, managerId: _mgr, userRole: _userRole, ...allowedFields } = updateData as Record<string, unknown>;
     updateData = allowedFields as typeof body.data;
   }
 
-  if (body.data.managerId != null && role === "admin") {
+  if (role === "admin" && body.data.managerId != null) {
+    if (body.data.managerId === params.data.id) {
+      res.status(400).json({ error: "An employee cannot be their own manager" });
+      return;
+    }
     const managerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
       .where(and(eq(employeesTable.id, body.data.managerId), eq(employeesTable.companyId, companyId))).limit(1);
     if (managerCheck.length === 0) {

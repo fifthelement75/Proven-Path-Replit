@@ -5,6 +5,7 @@
  * Career Passport API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateEmployeeBodyUserRole } from "./updateEmployeeBodyUserRole";
 
 export interface UpdateEmployeeBody {
   name?: string;
@@ -15,4 +16,5 @@ export interface UpdateEmployeeBody {
   startDate?: string;
   /** @nullable */
   managerId?: number | null;
+  userRole?: UpdateEmployeeBodyUserRole;
 }

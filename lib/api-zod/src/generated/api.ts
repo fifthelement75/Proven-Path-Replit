@@ -129,6 +129,7 @@ export const ListEmployeesResponseItem = zod.object({
   name: zod.string(),
   email: zod.string(),
   role: zod.string(),
+  userRole: zod.string(),
   department: zod.string(),
   level: zod.string(),
   startDate: zod.string(),
@@ -192,6 +193,7 @@ export const UpdateEmployeeBody = zod.object({
   level: zod.string().optional(),
   startDate: zod.string().optional(),
   managerId: zod.number().nullish(),
+  userRole: zod.enum(["admin", "manager", "employee"]).optional(),
 });
 
 export const UpdateEmployeeResponse = zod.object({
@@ -200,6 +202,7 @@ export const UpdateEmployeeResponse = zod.object({
   name: zod.string(),
   email: zod.string(),
   role: zod.string(),
+  userRole: zod.string(),
   department: zod.string(),
   level: zod.string(),
   startDate: zod.string(),
@@ -555,6 +558,7 @@ export const GetPublicProfileResponse = zod.object({
     name: zod.string(),
     email: zod.string(),
     role: zod.string(),
+    userRole: zod.string(),
     department: zod.string(),
     level: zod.string(),
     startDate: zod.string(),

@@ -98,6 +98,7 @@ export interface Employee {
   name: string;
   email: string;
   role: string;
+  userRole: string;
   department: string;
   level: string;
   startDate: string;
@@ -142,6 +143,15 @@ export interface CreateEmployeeBody {
   managerId?: number | null;
 }
 
+export type UpdateEmployeeBodyUserRole =
+  (typeof UpdateEmployeeBodyUserRole)[keyof typeof UpdateEmployeeBodyUserRole];
+
+export const UpdateEmployeeBodyUserRole = {
+  admin: "admin",
+  manager: "manager",
+  employee: "employee",
+} as const;
+
 export interface UpdateEmployeeBody {
   name?: string;
   email?: string;
@@ -151,6 +161,7 @@ export interface UpdateEmployeeBody {
   startDate?: string;
   /** @nullable */
   managerId?: number | null;
+  userRole?: UpdateEmployeeBodyUserRole;
 }
 
 export interface ScoreHistoryItem {

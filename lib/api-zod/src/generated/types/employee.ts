@@ -12,6 +12,7 @@ export interface Employee {
   name: string;
   email: string;
   role: string;
+  userRole: string;
   department: string;
   level: string;
   startDate: string;

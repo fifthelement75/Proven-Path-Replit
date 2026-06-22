@@ -38,4 +38,5 @@ export * from "./review";
 export * from "./scoreHistoryItem";
 export * from "./shareLink";
 export * from "./updateEmployeeBody";
+export * from "./updateEmployeeBodyUserRole";
 export * from "./updateReviewBody";

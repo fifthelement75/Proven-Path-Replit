@@ -10,6 +10,7 @@ import { CheckCircle2, Loader2, Plug, KeyRound, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getToken } from "@/lib/auth";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 type IntegrationOption = { value: string; label: string };
 
@@ -403,6 +404,8 @@ interface TeamMember {
   name: string;
   email: string;
   userRole: string;
+  managerId: number | null;
+  managerName: string | null;
 }
 
 interface Invitation {
@@ -437,6 +440,8 @@ function inviteStatusClass(status: string): string {
 function TeamCard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuthContext();
+  const isAdmin = user?.role === "admin";
 
   const { data: members = [], isLoading: membersLoading } = useQuery<TeamMember[]>({
     queryKey: ["team-members"],
@@ -471,6 +476,26 @@ function TeamCard() {
     onError: (err: Error) => toast({ title: "Could not revoke", description: err.message, variant: "destructive" }),
   });
 
+  const { mutate: updateMember, isPending: updatingMember, variables: updatingVars } = useMutation({
+    mutationFn: async ({ id, changes }: { id: number; changes: Partial<Pick<TeamMember, "userRole" | "managerId">> }) => {
+      const res = await fetch(getApiUrl(`/employees/${id}`), {
+        method: "PATCH",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(changes),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to update member");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
+      toast({ title: "Member updated" });
+    },
+    onError: (err: Error) => toast({ title: "Could not update member", description: err.message, variant: "destructive" }),
+  });
+
   const pendingInvites = invitations.filter(i => i.status === "pending");
   const otherInvites = invitations.filter(i => i.status !== "pending");
 
@@ -495,17 +520,60 @@ function TeamCard() {
             <p className="text-sm text-muted-foreground py-2">No members yet.</p>
           ) : (
             <ul className="divide-y rounded-md border">
-              {members.map(m => (
-                <li key={m.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{m.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{m.email}</div>
-                  </div>
-                  <Badge variant="outline" className={`text-xs shrink-0 ${accessBadgeClass(m.userRole)}`}>
-                    {ACCESS_LABELS[m.userRole] || m.userRole}
-                  </Badge>
-                </li>
-              ))}
+              {members.map(m => {
+                const isUpdatingThis = updatingMember && updatingVars?.id === m.id;
+                return (
+                  <li key={m.id} className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{m.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{m.email}</div>
+                    </div>
+                    {isAdmin ? (
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isUpdatingThis && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
+                        <Select
+                          value={m.userRole}
+                          disabled={isUpdatingThis}
+                          onValueChange={(value) => {
+                            if (value !== m.userRole) updateMember({ id: m.id, changes: { userRole: value } });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 w-[150px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Administrator</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="employee">Team Member</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={m.managerId == null ? "none" : String(m.managerId)}
+                          disabled={isUpdatingThis}
+                          onValueChange={(value) => {
+                            const newManagerId = value === "none" ? null : Number(value);
+                            if (newManagerId !== m.managerId) updateMember({ id: m.id, changes: { managerId: newManagerId } });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 w-[160px] text-xs">
+                            <SelectValue placeholder="Reports to" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No manager</SelectItem>
+                            {members.filter(o => o.id !== m.id).map(o => (
+                              <SelectItem key={o.id} value={String(o.id)}>{o.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <Badge variant="outline" className={`text-xs shrink-0 ${accessBadgeClass(m.userRole)}`}>
+                        {ACCESS_LABELS[m.userRole] || m.userRole}
+                      </Badge>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
