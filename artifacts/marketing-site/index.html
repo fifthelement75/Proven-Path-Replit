@@ -29,6 +29,37 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://provenpath.app/" />
 
+    <!-- Structured Data: Organization + WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://provenpath.app/#organization",
+          "name": "Proven Path",
+          "url": "https://provenpath.app/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://provenpath.app/favicon.png"
+          },
+          "description": "Proven Path gives HR teams a single source of truth for candidate assessments, performance reviews, and career development—so every hiring and promotion decision is backed by verified data.",
+          "sameAs": []
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://provenpath.app/#website",
+          "url": "https://provenpath.app/",
+          "name": "Proven Path",
+          "description": "Performance Intelligence for Modern HR Teams",
+          "publisher": {
+            "@id": "https://provenpath.app/#organization"
+          }
+        }
+      ]
+    }
+    </script>
+
     <link rel="icon" type="image/png" href="%BASE_URL%favicon.png" />
     <link rel="apple-touch-icon" href="%BASE_URL%favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">

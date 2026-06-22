@@ -34,6 +34,44 @@ const routes = [
     title: "Pricing — Proven Path | Performance Management for Growing Teams",
     description:
       "Simple, transparent pricing for HR teams of every size. Start with a 7-day free trial of Proven Path Pro at $9.99/month — no credit card required.",
+    ldJson: {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Can I switch plans anytime?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, upgrade or downgrade anytime"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a free trial?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — every new account gets a 7-day free trial of the Professional plan with no credit card required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What payment methods do you accept?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Credit card, PayPal, invoice (Enterprise)"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I cancel anytime?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, no long-term contracts"
+          }
+        }
+      ]
+    },
   },
   {
     path: "/contact",
@@ -81,7 +119,7 @@ function escapeAttr(str) {
     .replace(/>/g, "&gt;");
 }
 
-function patchHtml(html, { title, description, canonicalUrl, pageUrl }) {
+function patchHtml(html, { title, description, canonicalUrl, pageUrl, ldJson }) {
   const t = escapeAttr(title);
   const d = escapeAttr(description);
   const alt = escapeAttr(ogImageAlt);
@@ -125,6 +163,11 @@ function patchHtml(html, { title, description, canonicalUrl, pageUrl }) {
     `$1${escapeAttr(canonicalUrl)}"`,
   );
 
+  if (ldJson) {
+    const block = `\n    <script type="application/ld+json">\n    ${JSON.stringify(ldJson, null, 2).replace(/\n/g, "\n    ")}\n    </script>`;
+    html = html.replace("</head>", `${block}\n  </head>`);
+  }
+
   return html;
 }
 
@@ -139,6 +182,7 @@ for (const route of routes) {
     description: route.description,
     canonicalUrl,
     pageUrl,
+    ldJson: route.ldJson,
   });
 
   if (route.path === "/") {

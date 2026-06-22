@@ -15,6 +15,25 @@ export default function Pricing() {
     canonicalPath: "/pricing",
   });
 
+  const faqs = [
+    {
+      q: "Can I switch plans anytime?",
+      a: "Yes, upgrade or downgrade anytime"
+    },
+    {
+      q: "Is there a free trial?",
+      a: "Yes — every new account gets a 7-day free trial of the Professional plan with no credit card required."
+    },
+    {
+      q: "What payment methods do you accept?",
+      a: "Credit card, PayPal, invoice (Enterprise)"
+    },
+    {
+      q: "Can I cancel anytime?",
+      a: "Yes, no long-term contracts"
+    }
+  ];
+
   const tiers = [
     {
       name: "Free",
@@ -86,25 +105,6 @@ export default function Pricing() {
       cta: "Contact Sales",
       link: "/contact",
       popular: false
-    }
-  ];
-
-  const faqs = [
-    {
-      q: "Can I switch plans anytime?",
-      a: "Yes, upgrade or downgrade anytime"
-    },
-    {
-      q: "Is there a free trial?",
-      a: "Yes — every new account gets a 7-day free trial of the Professional plan with no credit card required."
-    },
-    {
-      q: "What payment methods do you accept?",
-      a: "Credit card, PayPal, invoice (Enterprise)"
-    },
-    {
-      q: "Can I cancel anytime?",
-      a: "Yes, no long-term contracts"
     }
   ];
 
