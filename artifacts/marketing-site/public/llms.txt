@@ -1,0 +1,15 @@
+# ProvenPath
+
+ProvenPath is a performance intelligence platform for modern HR teams. It turns structured performance reviews, competency assessments, and career development data into portable, verified career records — helping organizations run fair, consistent evaluations and helping employees own their professional growth.
+
+## Canonical homepage
+
+https://provenpath.fyi/
+
+## Priority pages
+
+- https://provenpath.fyi/ — Product overview and key features
+- https://provenpath.fyi/pricing — Pricing plans and tiers
+- https://provenpath.fyi/contact — Contact and sales inquiries
+- https://provenpath.fyi/privacy — Privacy policy
+- https://provenpath.fyi/terms — Terms of service
