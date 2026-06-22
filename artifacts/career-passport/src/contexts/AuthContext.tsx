@@ -29,13 +29,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserState(null);
   }, []);
 
-  // On load, refresh the current user (including their access role) from the
-  // server so admin-driven role/manager changes take effect on the next load
-  // for nav and route gating, even while a session is still active.
+  // Refresh the current user (including their access role) from the server on
+  // mount and then every 60 seconds while the session is active. This ensures
+  // that admin-driven role changes (promote / demote) are reflected in the
+  // frontend nav and route guards promptly — without a full re-login. The
+  // backend already enforces the live role on every request, so security is
+  // immediate; this polling closes the UI lag.
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
-    (async () => {
+
+    async function refreshUser() {
       try {
         const res = await apiFetch("/auth/me");
         if (!res.ok) return;
@@ -46,9 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         /* ignore network/auth errors; apiFetch handles 401 redirects */
       }
-    })();
+    }
+
+    refreshUser();
+    const interval = setInterval(refreshUser, 60_000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
