@@ -11,3 +11,4 @@ export * from "./notifications";
 export * from "./candidateProfiles";
 export * from "./interviewAssessments";
 export * from "./promoCodes";
+export * from "./integrations";

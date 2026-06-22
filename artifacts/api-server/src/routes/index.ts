@@ -14,6 +14,7 @@ import candidatesRouter from "./candidates";
 import contactRouter from "./contact";
 import stripeRouter from "./stripe";
 import promoRouter from "./promo";
+import integrationsRouter from "./integrations";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(candidatesRouter);
 router.use(contactRouter);
 router.use(stripeRouter);
 router.use(promoRouter);
+router.use(integrationsRouter);
 
 export default router;
