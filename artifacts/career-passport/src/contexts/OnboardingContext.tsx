@@ -40,7 +40,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     page: "/employees",
     target: "employees-table",
     title: "Explore Employee Profiles",
-    body: "Click any employee to open their full profile. Inside you'll find tabs for Performance Reviews (manager and 360°), Peer Feedback from 1:1s, an AI-generated Development Plan, and a shareable career history report — a verified record of growth they can take anywhere.",
+    body: "Click any employee to open their full profile. Inside you'll find tabs for Performance Reviews (manager and 360°), Peer Feedback from 1:1s, an AI-generated Development Plan, and a shareable career history report — a verified record of growth that can be exported in a form of References to take anywhere.",
     placement: "top",
   },
   {
