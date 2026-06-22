@@ -1,0 +1,1 @@
+- [career-passport auth & session expiry](career-passport-auth.md) — route guards check token presence not validity; expired JWTs 401 silently; use apiFetch for auto login-redirect.

@@ -5,14 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { getApiUrl } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { apiFetch, UnauthorizedError } from "@/lib/api";
 import { CheckCircle2, Loader2, Plug } from "lucide-react";
-
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 type IntegrationOption = { value: string; label: string };
 
@@ -74,9 +68,9 @@ function IntegrationCard({
     }
     setBusy(true);
     try {
-      const res = await fetch(getApiUrl("/integrations/connect"), {
+      const res = await apiFetch("/integrations/connect", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category, provider: selected, accountLabel: accountLabel.trim() || undefined }),
       });
       const data = await res.json().catch(() => ({}));
@@ -91,7 +85,8 @@ function IntegrationCard({
       setSelected("");
       setAccountLabel("");
       onChanged();
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
       toast({ title: "Could not connect", description: "Network error. Please try again.", variant: "destructive" });
     } finally {
       setBusy(false);
@@ -101,9 +96,9 @@ function IntegrationCard({
   async function handleDisconnect() {
     setBusy(true);
     try {
-      const res = await fetch(getApiUrl("/integrations/disconnect"), {
+      const res = await apiFetch("/integrations/disconnect", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category }),
       });
       const data = await res.json().catch(() => ({}));
@@ -113,7 +108,8 @@ function IntegrationCard({
       }
       toast({ title: "Disconnected", description: `${connectedOption?.label ?? "Integration"} has been disconnected.` });
       onChanged();
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
       toast({ title: "Could not disconnect", description: "Network error. Please try again.", variant: "destructive" });
     } finally {
       setBusy(false);
@@ -191,9 +187,7 @@ function ExportCard() {
   async function handleExport() {
     setExporting(true);
     try {
-      const res = await fetch(getApiUrl("/companies/me/export"), {
-        headers: authHeaders(),
-      });
+      const res = await apiFetch("/companies/me/export");
       if (!res.ok) {
         toast({ title: "Export not yet available", description: "Data export is on the roadmap.", variant: "default" });
         return;
@@ -205,7 +199,8 @@ function ExportCard() {
       a.download = "proven-path-export.csv";
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
       toast({ title: "Coming Soon", description: "Data export is on the roadmap." });
     } finally {
       setExporting(false);
@@ -256,11 +251,12 @@ export default function SettingsPage() {
 
   async function loadConnections() {
     try {
-      const res = await fetch(getApiUrl("/integrations"), { headers: authHeaders() });
+      const res = await apiFetch("/integrations");
       if (!res.ok) throw new Error("failed");
       const data = await res.json();
       setConnections(Array.isArray(data.connections) ? data.connections : []);
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
       toast({ title: "Could not load integrations", description: "Please refresh the page.", variant: "destructive" });
     } finally {
       setLoading(false);
