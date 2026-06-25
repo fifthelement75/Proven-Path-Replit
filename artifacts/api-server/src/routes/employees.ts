@@ -4,6 +4,7 @@ import { eq, and, sql, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { canAccessEmployee } from "../lib/access";
 import { sendRoleChangeEmail } from "../lib/email";
+import { createInvitationRecord, deliverInvitationEmail } from "../lib/invitations";
 import { logger } from "../lib/logger";
 import {
   CreateEmployeeBody, UpdateEmployeeBody, GetEmployeeParams,
@@ -12,6 +13,8 @@ import {
 } from "@workspace/api-zod";
 
 const router = Router();
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function computeOverall(r: { technicalScore: number | null; communicationScore: number | null; problemSolvingScore: number | null; teamworkScore: number | null; leadershipScore: number | null }): number | null {
   const scores = [r.technicalScore, r.communicationScore, r.problemSolvingScore, r.teamworkScore, r.leadershipScore].filter((s): s is number => s != null);
@@ -161,6 +164,25 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { managerId, userRole, ...rest } = parsed.data;
+  const email = rest.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    res.status(400).json({ error: "A valid email address is required" });
+    return;
+  }
+
+  const [company] = await db.select({ email: companiesTable.email }).from(companiesTable).where(eq(companiesTable.id, companyId)).limit(1);
+  if (company && company.email.toLowerCase() === email) {
+    res.status(409).json({ error: "That email already owns this organization account" });
+    return;
+  }
+
+  const existingEmp = await db.select({ id: employeesTable.id }).from(employeesTable)
+    .where(and(eq(employeesTable.companyId, companyId), sql`lower(${employeesTable.email}) = ${email}`)).limit(1);
+  if (existingEmp.length > 0) {
+    res.status(409).json({ error: "Someone with that email is already a member of your organization" });
+    return;
+  }
+
   if (managerId != null) {
     const managerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
       .where(and(eq(employeesTable.id, managerId), eq(employeesTable.companyId, companyId))).limit(1);
@@ -169,12 +191,48 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
       return;
     }
   }
-  const [emp] = await db.insert(employeesTable).values({ ...rest, companyId, managerId: managerId ?? null, ...(userRole ? { userRole } : {}) }).returning();
+  let emp;
+  let invite;
+  try {
+    ({ emp, invite } = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(employeesTable)
+        .values({ ...rest, email, companyId, managerId: managerId ?? null, ...(userRole ? { userRole } : {}) })
+        .returning();
+      const inviteRecord = await createInvitationRecord(tx, {
+        companyId,
+        email,
+        userRole: created.userRole,
+        invitedByUserId: auth.userId,
+      });
+      return { emp: created, invite: inviteRecord };
+    }));
+  } catch (err) {
+    // A concurrent request may have inserted the same email first.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/employees_company_email_lower_unique/i.test(msg)) {
+      res.status(409).json({ error: "Someone with that email is already a member of your organization" });
+      return;
+    }
+    throw err;
+  }
+
+  // Send the email only after the transaction has committed, so we never email
+  // an invite for a record that was rolled back.
+  const { emailSent } = await deliverInvitationEmail({
+    companyId,
+    email,
+    userRole: emp.userRole,
+    token: invite.token,
+    expiresAt: invite.expiresAt,
+    inviterEmployeeId: auth.employeeId ?? null,
+  });
+
   res.status(201).json({
     ...emp,
     managerName: null,
     createdAt: emp.createdAt.toISOString(),
     latestScore: null,
+    emailSent,
   });
 });
 

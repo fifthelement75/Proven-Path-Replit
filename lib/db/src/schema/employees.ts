@@ -1,4 +1,5 @@
-import { pgTable, text, serial, timestamp, integer, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, uniqueIndex, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { companiesTable } from "./companies";
@@ -18,7 +19,9 @@ export const employeesTable = pgTable("employees", {
   profilePhotoUrl: text("profile_photo_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (table) => ({
+  emailPerCompanyUnique: uniqueIndex("employees_company_email_lower_unique").on(table.companyId, sql`lower(${table.email})`),
+}));
 
 export const insertEmployeeSchema = createInsertSchema(employeesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
