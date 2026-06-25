@@ -92,6 +92,14 @@ function AddEmployeeDialog({
     onError: (err: Error) => setError(err.message),
   });
 
+  function handleClose() {
+    setForm({ name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "" });
+    setError("");
+    setShowSuggestions(false);
+    setNameSuggestions([]);
+    onClose();
+  }
+
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setForm(f => ({ ...f, name: value }));
@@ -127,7 +135,7 @@ function AddEmployeeDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+    <Dialog open={open} onOpenChange={v => !v && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Employee</DialogTitle>
@@ -203,7 +211,7 @@ function AddEmployeeDialog({
             </div>
           </div>
           <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>{isPending ? "Adding..." : "Add employee"}</Button>
           </DialogFooter>
         </form>
