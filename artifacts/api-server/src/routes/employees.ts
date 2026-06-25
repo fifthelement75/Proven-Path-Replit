@@ -160,7 +160,7 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { managerId, ...rest } = parsed.data;
+  const { managerId, userRole, ...rest } = parsed.data;
   if (managerId != null) {
     const managerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
       .where(and(eq(employeesTable.id, managerId), eq(employeesTable.companyId, companyId))).limit(1);
@@ -169,7 +169,7 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
       return;
     }
   }
-  const [emp] = await db.insert(employeesTable).values({ ...rest, companyId, managerId: managerId ?? null }).returning();
+  const [emp] = await db.insert(employeesTable).values({ ...rest, companyId, managerId: managerId ?? null, ...(userRole ? { userRole } : {}) }).returning();
   res.status(201).json({
     ...emp,
     managerName: null,

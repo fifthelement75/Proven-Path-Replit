@@ -151,6 +151,7 @@ export const CreateEmployeeBody = zod.object({
   level: zod.string(),
   startDate: zod.string(),
   managerId: zod.number().nullish(),
+  userRole: zod.enum(["admin", "manager", "employee"]).optional(),
 });
 
 /**

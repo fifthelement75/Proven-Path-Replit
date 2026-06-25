@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+import type { CreateEmployeeBodyUserRole } from "./createEmployeeBodyUserRole";
+
 export interface CreateEmployeeBody {
   name: string;
   email: string;
@@ -15,4 +17,5 @@ export interface CreateEmployeeBody {
   startDate: string;
   /** @nullable */
   managerId?: number | null;
+  userRole?: CreateEmployeeBodyUserRole;
 }

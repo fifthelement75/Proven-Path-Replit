@@ -12,6 +12,7 @@ export * from "./authUser";
 export * from "./company";
 export * from "./companyHealth";
 export * from "./createEmployeeBody";
+export * from "./createEmployeeBodyUserRole";
 export * from "./createFeedbackBody";
 export * from "./createFeedbackBodyMeetingType";
 export * from "./createReviewBody";
