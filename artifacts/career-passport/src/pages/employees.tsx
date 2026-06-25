@@ -55,6 +55,8 @@ function AddEmployeeDialog({
     name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "none",
   });
   const [error, setError] = useState("");
+  const [nameSuggestions, setNameSuggestions] = useState<Employee[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   interface CreateEmployeeInput {
     name: string;
@@ -90,6 +92,26 @@ function AddEmployeeDialog({
     onError: (err: Error) => setError(err.message),
   });
 
+  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setForm(f => ({ ...f, name: value }));
+    if (value.trim().length >= 1) {
+      const matches = employees.filter(emp =>
+        emp.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setNameSuggestions(matches);
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }
+
+  function selectSuggestedEmployee(emp: Employee) {
+    setForm(f => ({ ...f, name: emp.name, email: emp.email }));
+    setShowSuggestions(false);
+    setNameSuggestions([]);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -113,9 +135,31 @@ function AddEmployeeDialog({
         <form onSubmit={handleSubmit} className="space-y-3 mt-2">
           {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5 col-span-2">
+            <div className="space-y-1.5 col-span-2 relative">
               <Label>Full name</Label>
-              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Jane Smith" />
+              <Input
+                value={form.name}
+                onChange={handleNameChange}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                required
+                placeholder="Jane Smith"
+                autoComplete="off"
+              />
+              {showSuggestions && (
+                <div className="absolute z-50 w-full bg-white border rounded-md shadow-lg mt-0.5 max-h-44 overflow-auto">
+                  {nameSuggestions.map(emp => (
+                    <button
+                      key={emp.id}
+                      type="button"
+                      className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors text-sm"
+                      onMouseDown={() => selectSuggestedEmployee(emp)}
+                    >
+                      <div className="font-medium">{emp.name}</div>
+                      <div className="text-xs text-muted-foreground">{emp.email}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="space-y-1.5 col-span-2">
               <Label>Email <span className="text-xs font-normal text-muted-foreground">(For records and evaluation use only)</span></Label>
