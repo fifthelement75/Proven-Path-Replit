@@ -118,7 +118,7 @@ function AddEmployeeDialog({
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Jane Smith" />
             </div>
             <div className="space-y-1.5 col-span-2">
-              <Label>Email</Label>
+              <Label>Email <span className="text-xs font-normal text-muted-foreground">(For records and evaluation use only)</span></Label>
               <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required placeholder="jane@company.com" />
             </div>
             <div className="space-y-1.5 col-span-2">
