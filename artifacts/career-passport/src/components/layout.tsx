@@ -206,7 +206,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/employees", label: "Employees" },
     { href: "/candidates", label: "Interviews" },
-    { href: "/settings", label: "Integrations" },
+    { href: "/settings", label: "Settings" },
   ];
 
   const employeeNavItems = myProfile
