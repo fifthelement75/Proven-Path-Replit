@@ -697,7 +697,7 @@ function TeamCard({ onInvite }: { onInvite?: () => void }) {
             </CardDescription>
           </div>
           {isAdmin && onInvite && (
-            <Button variant="outline" size="sm" className="text-[14px]" onClick={onInvite}>Invite user</Button>
+            <Button size="sm" className="text-[14px] text-[#f8fafc] bg-[#2463eb] hover:bg-[#1d4ed8]" onClick={onInvite}>Invite user</Button>
           )}
         </div>
       </CardHeader>
