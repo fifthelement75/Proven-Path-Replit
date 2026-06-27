@@ -216,13 +216,19 @@ function ExportCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Export Data</CardTitle>
-        <CardDescription className="text-sm">Download all company performance data as CSV for external analysis.</CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <CardTitle className="text-base">Export Data</CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
-        <Button onClick={handleExport} disabled={exporting} variant="outline">
-          {exporting ? "Exporting..." : "Download CSV"}
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Download all company performance data as CSV for external analysis.
+          </p>
+          <Button onClick={handleExport} disabled={exporting} variant="outline" className="shrink-0">
+            {exporting ? "Exporting..." : "Download CSV"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
