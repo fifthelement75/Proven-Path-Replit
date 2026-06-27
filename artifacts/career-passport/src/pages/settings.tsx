@@ -611,7 +611,6 @@ function TeamCard() {
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
   const isAdmin = user?.role === "admin";
-  const [inviteOpen, setInviteOpen] = useState(false);
 
   const { data: members = [], isLoading: membersLoading } = useQuery<TeamMember[]>({
     queryKey: ["team-members"],
@@ -672,17 +671,10 @@ function TeamCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">Team members</CardTitle>
-            <CardDescription className="text-sm">
-              People with access to your organization, and pending invitations.
-            </CardDescription>
-          </div>
-          {isAdmin && (
-            <Button size="sm" onClick={() => setInviteOpen(true)} className="shrink-0">Invite user</Button>
-          )}
-        </div>
+        <CardTitle className="text-base">Team members</CardTitle>
+        <CardDescription className="text-sm">
+          People with access to your organization, and pending invitations.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
@@ -823,7 +815,6 @@ function TeamCard() {
           </div>
         )}
       </CardContent>
-      {isAdmin && <InviteUserDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />}
     </Card>
   );
 }
@@ -831,7 +822,10 @@ function TeamCard() {
 export default function SettingsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuthContext();
+  const isAdmin = user?.role === "admin";
 
   async function loadConnections() {
     try {
@@ -856,10 +850,17 @@ export default function SettingsPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-2xl">
-        <div data-onboarding="settings-header">
-          <h1 className="text-2xl font-bold">Integrations & Settings</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Connect Proven Path to your existing HR and talent tools.</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between" data-onboarding="settings-header">
+          <div>
+            <h1 className="text-2xl font-bold">Integrations & Settings</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Connect Proven Path to your existing HR and talent tools.</p>
+          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setInviteOpen(true)}>Invite user</Button>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -928,6 +929,7 @@ export default function SettingsPage() {
           </>
         )}
       </div>
+      {isAdmin && <InviteUserDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />}
     </Layout>
   );
 }
