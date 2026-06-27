@@ -154,8 +154,8 @@ function IntegrationCard({
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row flex-1">
               <Select value={selected} onValueChange={setSelected}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder={placeholder} />
@@ -175,7 +175,7 @@ function IntegrationCard({
                 className="flex-1"
               />
             </div>
-            <Button onClick={handleConnect} variant="outline" disabled={busy} className="self-start">
+            <Button onClick={handleConnect} variant="outline" disabled={busy} className="shrink-0">
               {busy ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <Plug size={15} className="mr-1.5" />}
               Connect
             </Button>
