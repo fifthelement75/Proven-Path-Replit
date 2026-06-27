@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
+import { ArrowLeft } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -529,7 +530,10 @@ export default function CandidateDetailPage() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3">
+            <Link href="/candidates" className="mt-2 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+              <ArrowLeft size={20} />
+            </Link>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
               {candidate.name.charAt(0).toUpperCase()}
             </div>
