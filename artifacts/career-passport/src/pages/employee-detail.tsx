@@ -854,67 +854,131 @@ function AddFeedbackDialog({ open, onClose, employeeId }: { open: boolean; onClo
 
 function ShareDialog({ open, onClose, employeeId }: { open: boolean; onClose: () => void; employeeId: number }) {
   const [expiresIn, setExpiresIn] = useState<ExpiresIn>("7days");
-  const [shareUrl, setShareUrl] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [emails, setEmails] = useState<string[]>([]);
+  const [emailInput, setEmailInput] = useState("");
+  const [inputError, setInputError] = useState("");
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+
+  function handleClose() {
+    setEmails([]);
+    setEmailInput("");
+    setInputError("");
+    setError("");
+    setSent(false);
+    onClose();
+  }
+
+  function addEmail(raw: string) {
+    const val = raw.trim().toLowerCase();
+    if (!val) return;
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    if (!valid) { setInputError("Enter a valid email address"); return; }
+    if (emails.includes(val)) { setInputError("Already added"); return; }
+    setEmails(prev => [...prev, val]);
+    setEmailInput("");
+    setInputError("");
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addEmail(emailInput);
+    }
+    if (e.key === "Backspace" && emailInput === "" && emails.length > 0) {
+      setEmails(prev => prev.slice(0, -1));
+    }
+  }
+
+  function removeEmail(email: string) {
+    setEmails(prev => prev.filter(e => e !== email));
+  }
 
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await fetch(getApiUrl(`/employees/${employeeId}/share`), {
+      const allEmails = emailInput.trim() ? [...emails, emailInput.trim()] : emails;
+      if (allEmails.length === 0) throw new Error("Add at least one email address");
+      const res = await fetch(getApiUrl(`/employees/${employeeId}/share/email`), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ expiresIn }),
+        body: JSON.stringify({ emails: allEmails, expiresIn }),
       });
       if (!res.ok) throw new Error((await res.json()).error || "Failed");
       return res.json();
     },
-    onSuccess: (data) => {
-      const token = data.token;
-      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-      setShareUrl(`${window.location.origin}${base}/share/${token}`);
+    onSuccess: () => {
+      setSent(true);
       setError("");
     },
     onError: (err: Error) => setError(err.message),
   });
 
-  function handleCopy() {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
   return (
-    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+    <Dialog open={open} onOpenChange={v => !v && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Employee Profile</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
-          <div className="space-y-1.5">
-            <Label>Link expires in</Label>
-            <Select value={expiresIn} onValueChange={v => setExpiresIn(v as ExpiresIn)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7days">7 days</SelectItem>
-                <SelectItem value="30days">30 days</SelectItem>
-                <SelectItem value="never">Never</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {!shareUrl ? (
-            <Button onClick={() => mutate()} disabled={isPending} className="w-full">
-              {isPending ? "Generating..." : "Generate share link"}
-            </Button>
-          ) : (
-            <div className="space-y-2">
-              <Label>Share URL</Label>
-              <div className="flex gap-2">
-                <Input value={shareUrl} readOnly className="text-xs" />
-                <Button size="sm" variant="outline" onClick={handleCopy}>{copied ? "Copied!" : "Copy"}</Button>
-              </div>
-              <p className="text-xs text-muted-foreground">Anyone with this link can view this employee's profile (read-only)</p>
+          {sent ? (
+            <div className="py-6 text-center space-y-2">
+              <p className="text-sm font-medium text-green-700">Profile link sent!</p>
+              <p className="text-xs text-muted-foreground">
+                An email with the read-only profile link has been sent to {emails.length} recipient{emails.length !== 1 ? "s" : ""}.
+              </p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={handleClose}>Done</Button>
             </div>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <Label>Link expires in</Label>
+                <Select value={expiresIn} onValueChange={v => setExpiresIn(v as ExpiresIn)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7days">7 days</SelectItem>
+                    <SelectItem value="30days">30 days</SelectItem>
+                    <SelectItem value="never">Never</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Send to</Label>
+                <div
+                  className="min-h-10 flex flex-wrap gap-1.5 px-3 py-2 border rounded-md bg-background cursor-text focus-within:ring-1 focus-within:ring-ring"
+                  onClick={() => document.getElementById("share-email-input")?.focus()}
+                >
+                  {emails.map(email => (
+                    <span key={email} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
+                      {email}
+                      <button
+                        type="button"
+                        className="ml-0.5 hover:text-destructive"
+                        onClick={e => { e.stopPropagation(); removeEmail(email); }}
+                      >×</button>
+                    </span>
+                  ))}
+                  <input
+                    id="share-email-input"
+                    type="email"
+                    value={emailInput}
+                    onChange={e => { setEmailInput(e.target.value); setInputError(""); }}
+                    onKeyDown={handleKeyDown}
+                    onBlur={() => addEmail(emailInput)}
+                    placeholder={emails.length === 0 ? "email@example.com" : "Add another…"}
+                    className="flex-1 min-w-32 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </div>
+                {inputError && <p className="text-xs text-destructive">{inputError}</p>}
+                <p className="text-xs text-muted-foreground">Press Enter or comma to add each address. Recipients get a read-only view.</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={handleClose}>Cancel</Button>
+                <Button onClick={() => mutate()} disabled={isPending || (emails.length === 0 && !emailInput.trim())}>
+                  {isPending ? "Sending…" : `Send${emails.length > 0 ? ` (${emails.length})` : ""}`}
+                </Button>
+              </DialogFooter>
+            </>
           )}
         </div>
       </DialogContent>

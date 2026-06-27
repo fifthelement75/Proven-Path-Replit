@@ -3,6 +3,8 @@ import { db, shareLinksTable, employeesTable, reviewsTable, feedbackTable, devPl
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { CreateShareLinkParams, CreateShareLinkBody, ListShareLinksParams, GetPublicProfileParams } from "@workspace/api-zod";
+import { sendShareProfileEmail } from "../lib/email";
+import { logger } from "../lib/logger";
 import crypto from "crypto";
 
 const router = Router();
@@ -54,6 +56,68 @@ router.post("/employees/:employeeId/share", requireAuth, async (req, res): Promi
     createdAt: link.createdAt.toISOString(),
     url: `${baseUrl}/share/${token}`,
   });
+});
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const VALID_EXPIRES = new Set(["7days", "30days", "never"]);
+
+router.post("/employees/:employeeId/share/email", requireAuth, async (req, res): Promise<void> => {
+  const { companyId, email: senderEmail } = req.auth!;
+  const params = CreateShareLinkParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const { emails, expiresIn = "7days" } = req.body as { emails: unknown; expiresIn?: unknown };
+  if (!Array.isArray(emails) || emails.length === 0 || emails.length > 20) {
+    res.status(400).json({ error: "Provide 1–20 email addresses" });
+    return;
+  }
+  if (emails.some(e => typeof e !== "string" || !EMAIL_RE.test(e))) {
+    res.status(400).json({ error: "One or more email addresses are invalid" });
+    return;
+  }
+  if (typeof expiresIn !== "string" || !VALID_EXPIRES.has(expiresIn)) {
+    res.status(400).json({ error: "Invalid expiresIn value" });
+    return;
+  }
+
+  const empCheck = await db
+    .select({ id: employeesTable.id, name: employeesTable.name })
+    .from(employeesTable)
+    .where(and(eq(employeesTable.id, params.data.employeeId), eq(employeesTable.companyId, companyId)))
+    .limit(1);
+  if (empCheck.length === 0) {
+    res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  let expiresAt: Date | null = null;
+  if (expiresIn === "7days") expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  else if (expiresIn === "30days") expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  await db.insert(shareLinksTable).values({ employeeId: params.data.employeeId, token, expiresAt });
+
+  const baseUrl = getBaseUrl(req);
+  const shareUrl = `${baseUrl}/share/${token}`;
+
+  try {
+    await sendShareProfileEmail({
+      toEmails: emails as string[],
+      employeeName: empCheck[0].name,
+      shareUrl,
+      expiresAt: expiresAt?.toISOString() ?? null,
+      senderName: senderEmail,
+    });
+  } catch (err) {
+    logger.warn({ err }, "Failed to send share profile email");
+    res.status(500).json({ error: "Profile link created but email delivery failed. Please try again." });
+    return;
+  }
+
+  res.status(201).json({ sent: (emails as string[]).length });
 });
 
 router.get("/employees/:employeeId/share", requireAuth, async (req, res): Promise<void> => {

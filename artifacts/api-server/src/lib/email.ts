@@ -637,3 +637,64 @@ export async function sendTrialReminderEmail({
     throw new Error(`Resend error: ${result.error.message || "unknown"}`);
   }
 }
+
+export async function sendShareProfileEmail({
+  toEmails,
+  employeeName,
+  shareUrl,
+  expiresAt,
+  senderName,
+}: {
+  toEmails: string[];
+  employeeName: string;
+  shareUrl: string;
+  expiresAt: string | null;
+  senderName: string;
+}): Promise<void> {
+  const { apiKey, fromEmail } = await getCredentials();
+  const client = new Resend(apiKey);
+
+  const safeName = escapeHtml(employeeName);
+  const safeSender = escapeHtml(senderName);
+  const safeUrl = encodeURI(shareUrl);
+  const expiryLine = expiresAt
+    ? `<p style="margin:0 0 16px;font-size:13px;color:#6b7280;">This link expires on ${escapeHtml(new Date(expiresAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))}.</p>`
+    : "";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#111827;">
+  <h2 style="margin:0 0 8px;font-size:20px;">Employee Profile Shared</h2>
+  <p style="margin:0 0 16px;color:#374151;">
+    <strong>${safeSender}</strong> has shared an employee profile with you via Proven Path.
+  </p>
+  <p style="margin:0 0 24px;font-size:15px;color:#374151;">
+    You can view <strong>${safeName}</strong>'s performance profile using the link below:
+  </p>
+  <p style="margin:24px 0;text-align:center;">
+    <a href="${safeUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;font-size:15px;">
+      View Profile
+    </a>
+  </p>
+  <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Or copy this link into your browser:</p>
+  <p style="margin:0 0 16px;font-size:12px;color:#6b7280;word-break:break-all;">${safeUrl}</p>
+  ${expiryLine}
+  <p style="margin:32px 0 0;font-size:12px;color:#9ca3af;">This profile is read-only and was shared for evaluation purposes only.</p>
+</body>
+</html>`;
+
+  const text = `${senderName} has shared ${employeeName}'s employee profile with you.\n\nView the profile here:\n${shareUrl}\n${expiresAt ? `\nThis link expires on ${new Date(expiresAt).toLocaleDateString()}.` : ""}`;
+
+  const result = await client.emails.send({
+    from: fromEmail,
+    to: toEmails,
+    subject: `${employeeName}'s employee profile — shared via Proven Path`,
+    html,
+    text,
+  });
+
+  if (result.error) {
+    throw new Error(`Resend error: ${result.error.message || "unknown"}`);
+  }
+}
