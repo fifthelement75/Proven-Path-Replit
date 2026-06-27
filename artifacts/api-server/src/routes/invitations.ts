@@ -230,16 +230,13 @@ router.post("/invitations/accept/:token", async (req, res): Promise<void> => {
     return;
   }
 
-  // An employee record may already exist for this email — created up-front when
-  // an admin used "Add employee" (which also sends this invite). In that case we
-  // activate that existing record by setting a password rather than inserting a
-  // duplicate. If it already has a password, the person has already set up.
-  const [existingEmp] = await db
-    .select()
+  // Guard against a member having been created with this email in the meantime.
+  const existingEmp = await db
+    .select({ id: employeesTable.id })
     .from(employeesTable)
     .where(and(eq(employeesTable.companyId, inv.companyId), sql`lower(${employeesTable.email}) = ${inv.email.toLowerCase()}`))
     .limit(1);
-  if (existingEmp && existingEmp.passwordHash) {
+  if (existingEmp.length > 0) {
     res.status(409).json({ error: "An account with this email already exists. Please log in instead." });
     return;
   }
@@ -258,29 +255,20 @@ router.post("/invitations/accept/:token", async (req, res): Promise<void> => {
   const passwordHash = await bcrypt.hash(password, 10);
   const today = new Date().toISOString().slice(0, 10);
 
-  let emp;
-  if (existingEmp) {
-    [emp] = await db
-      .update(employeesTable)
-      .set({ name, passwordHash, userRole: inv.userRole })
-      .where(eq(employeesTable.id, existingEmp.id))
-      .returning();
-  } else {
-    [emp] = await db
-      .insert(employeesTable)
-      .values({
-        companyId: inv.companyId,
-        name,
-        email: inv.email,
-        passwordHash,
-        userRole: inv.userRole,
-        role: "Team Member",
-        department: "General",
-        level: "Mid",
-        startDate: today,
-      })
-      .returning();
-  }
+  const [emp] = await db
+    .insert(employeesTable)
+    .values({
+      companyId: inv.companyId,
+      name,
+      email: inv.email,
+      passwordHash,
+      userRole: inv.userRole,
+      role: "Team Member",
+      department: "General",
+      level: "Mid",
+      startDate: today,
+    })
+    .returning();
 
   const [company] = await db.select({ name: companiesTable.name }).from(companiesTable).where(eq(companiesTable.id, inv.companyId)).limit(1);
 

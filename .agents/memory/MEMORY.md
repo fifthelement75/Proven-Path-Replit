@@ -1,4 +1,3 @@
 - [career-passport auth & session expiry](career-passport-auth.md) — route guards check token presence not validity; expired JWTs 401 silently; use apiFetch for auto login-redirect.
 - [db schema changes](db-schema-changes.md) — drizzle-kit push hangs on promo_codes drift prompt; apply DDL via psql/db-sandbox + keep schema barrel in sync.
 - [api-server build vs typecheck](api-server-build.md) — tsc "no exported member" on @workspace/db barrel exports are stale-dist false positives; esbuild reads source, verify at runtime.
-- [Employee provisioning & login invites](employee-provisioning.md) — "Add employee" creates record + sends login invite; accept activates the passwordless row; keep email-uniqueness index.
