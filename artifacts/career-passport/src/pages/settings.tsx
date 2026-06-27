@@ -333,13 +333,18 @@ function SyncKeyCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <KeyRound size={16} className="text-muted-foreground" />
-          <CardTitle className="text-base">Automated Employee Sync</CardTitle>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <KeyRound size={16} className="text-muted-foreground" />
+            <CardTitle className="text-base">Automated Employee Sync</CardTitle>
+          </div>
+          {info && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+              <CheckCircle2 size={13} />
+              Active
+            </span>
+          )}
         </div>
-        <CardDescription className="text-sm">
-          Generate a secure key so your HRIS/ATS (or a tool like Merge or Finch) can push employee updates to Proven Path automatically. Records are matched and updated by email.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-1.5">
@@ -373,17 +378,19 @@ function SyncKeyCard() {
             <Loader2 size={16} className="animate-spin" /> Loading...
           </div>
         ) : info ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 size={16} className="text-green-600" />
-              <span>
-                Active key <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{info.keyPrefix}…</code>
-              </span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-green-600" />
+                <span>
+                  Active key <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{info.keyPrefix}…</code>
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Created {formatDate(info.createdAt)} · {info.lastUsedAt ? `Last used ${formatDate(info.lastUsedAt)}` : "Not used yet"}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Created {formatDate(info.createdAt)} · {info.lastUsedAt ? `Last used ${formatDate(info.lastUsedAt)}` : "Not used yet"}
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 shrink-0">
               <Button type="button" variant="outline" size="sm" disabled={working} onClick={() => generate(true)}>
                 {working ? "Working..." : "Rotate key"}
               </Button>
@@ -393,9 +400,14 @@ function SyncKeyCard() {
             </div>
           </div>
         ) : (
-          <Button type="button" disabled={working} onClick={() => generate(false)}>
-            {working ? "Generating..." : "Generate sync key"}
-          </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Generate a secure key so your HRIS/ATS (or a tool like Merge or Finch) can push employee updates to Proven Path automatically. Records are matched and updated by email.
+            </p>
+            <Button type="button" disabled={working} onClick={() => generate(false)} className="shrink-0">
+              {working ? "Generating..." : "Generate sync key"}
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
