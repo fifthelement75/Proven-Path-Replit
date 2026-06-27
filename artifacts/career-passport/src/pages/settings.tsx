@@ -624,7 +624,7 @@ function InviteUserDialog({ open, onClose }: { open: boolean; onClose: () => voi
   );
 }
 
-function TeamCard() {
+function TeamCard({ onInvite }: { onInvite?: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
@@ -689,10 +689,17 @@ function TeamCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Team members</CardTitle>
-        <CardDescription className="text-sm">
-          People with access to your organization, and pending invitations.
-        </CardDescription>
+        <div className="flex items-start sm:items-center sm:justify-between gap-2 flex-col sm:flex-row">
+          <div>
+            <CardTitle className="text-base">Team members</CardTitle>
+            <CardDescription className="text-sm">
+              People with access to your organization, and pending invitations.
+            </CardDescription>
+          </div>
+          {isAdmin && onInvite && (
+            <Button size="sm" onClick={onInvite}>Invite user</Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
@@ -874,11 +881,6 @@ export default function SettingsPage() {
             <h1 className="text-2xl font-bold">Integrations & Settings</h1>
             <p className="text-muted-foreground mt-1 text-sm">Connect Proven Path to your existing HR and talent tools.</p>
           </div>
-          {isAdmin && (
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setInviteOpen(true)}>Invite user</Button>
-            </div>
-          )}
         </div>
 
         {loading ? (
@@ -890,7 +892,7 @@ export default function SettingsPage() {
           <>
             <div>
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Organization</h2>
-              <TeamCard />
+              <TeamCard onInvite={() => setInviteOpen(true)} />
             </div>
 
             <div>
