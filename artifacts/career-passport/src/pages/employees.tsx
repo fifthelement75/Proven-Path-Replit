@@ -52,7 +52,7 @@ function AddEmployeeDialog({
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
-    name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "none", userRole: "employee",
+    name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "none",
   });
   const [error, setError] = useState("");
   const [nameSuggestions, setNameSuggestions] = useState<Employee[]>([]);
@@ -66,7 +66,6 @@ function AddEmployeeDialog({
     level: string;
     startDate: string;
     managerId: number | null;
-    userRole: "admin" | "manager" | "employee";
   }
 
   const { mutate, isPending } = useMutation({
@@ -87,14 +86,14 @@ function AddEmployeeDialog({
       queryClient.invalidateQueries({ queryKey: ["health"] });
       queryClient.invalidateQueries({ queryKey: ["activity"] });
       onClose();
-      setForm({ name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "", userRole: "employee" });
+      setForm({ name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "" });
       setError("");
     },
     onError: (err: Error) => setError(err.message),
   });
 
   function handleClose() {
-    setForm({ name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "", userRole: "employee" });
+    setForm({ name: "", email: "", role: "", department: "", level: "Mid", startDate: new Date().toISOString().split("T")[0], managerId: "" });
     setError("");
     setShowSuggestions(false);
     setNameSuggestions([]);
@@ -132,7 +131,6 @@ function AddEmployeeDialog({
       level: form.level,
       startDate: form.startDate,
       managerId: (form.managerId && form.managerId !== "none") ? parseInt(form.managerId) : null,
-      userRole: form.userRole as "admin" | "manager" | "employee",
     });
   }
 
@@ -211,16 +209,6 @@ function AddEmployeeDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5 col-span-2">
-              <Label>Access role</Label>
-              <Select value={form.userRole} onValueChange={v => setForm(f => ({ ...f, userRole: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {INVITE_ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">{INVITE_ROLES.find(r => r.value === form.userRole)?.hint}</p>
-            </div>
           </div>
           <DialogFooter className="mt-4">
             <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
@@ -231,12 +219,6 @@ function AddEmployeeDialog({
     </Dialog>
   );
 }
-
-const INVITE_ROLES = [
-  { value: "employee", label: "Team Member", hint: "Can view and manage their own profile only." },
-  { value: "manager", label: "Manager", hint: "Can review and manage their direct reports." },
-  { value: "admin", label: "Administrator", hint: "Full access to the whole organization." },
-];
 
 export default function EmployeesPage() {
   const { user } = useAuthContext();
