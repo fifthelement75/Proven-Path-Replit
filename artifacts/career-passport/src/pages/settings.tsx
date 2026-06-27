@@ -3,6 +3,8 @@ import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, UnauthorizedError, getApiUrl } from "@/lib/api";
@@ -515,11 +517,101 @@ function ReportingStructure({ members }: { members: TeamMember[] }) {
   );
 }
 
+const INVITE_ROLES = [
+  { value: "employee", label: "Team Member", hint: "Can view and manage their own profile only." },
+  { value: "manager", label: "Manager", hint: "Can review and manage their direct reports." },
+  { value: "admin", label: "Administrator", hint: "Full access to the whole organization." },
+];
+
+function InviteUserDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [email, setEmail] = useState("");
+  const [userRole, setUserRole] = useState("employee");
+  const [error, setError] = useState("");
+  const [sentMessage, setSentMessage] = useState("");
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (data: { email: string; userRole: string }) => {
+      const res = await fetch(getApiUrl("/invitations"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify(data),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Failed to send invitation");
+      return body as { emailSent: boolean };
+    },
+    onSuccess: (body) => {
+      setError("");
+      setSentMessage(
+        body.emailSent
+          ? `Invitation sent to ${email}.`
+          : `Invitation created for ${email}, but the email could not be delivered. Check email settings.`,
+      );
+      setEmail("");
+      setUserRole("employee");
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+    },
+    onError: (err: Error) => {
+      setSentMessage("");
+      setError(err.message);
+    },
+  });
+
+  function handleClose() {
+    setError("");
+    setSentMessage("");
+    setEmail("");
+    setUserRole("employee");
+    onClose();
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSentMessage("");
+    mutate({ email: email.trim(), userRole });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && handleClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Invite a team member</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3 mt-2">
+          {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
+          {sentMessage && <p className="text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded">{sentMessage}</p>}
+          <div className="space-y-1.5">
+            <Label>Email</Label>
+            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="colleague@company.com" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Role</Label>
+            <Select value={userRole} onValueChange={setUserRole}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {INVITE_ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{INVITE_ROLES.find(r => r.value === userRole)?.hint}</p>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button type="button" variant="outline" onClick={handleClose}>Close</Button>
+            <Button type="submit" disabled={isPending}>{isPending ? "Sending..." : "Send invitation"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TeamCard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
   const isAdmin = user?.role === "admin";
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const { data: members = [], isLoading: membersLoading } = useQuery<TeamMember[]>({
     queryKey: ["team-members"],
@@ -580,10 +672,17 @@ function TeamCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Team members</CardTitle>
-        <CardDescription className="text-sm">
-          People with access to your organization, and pending invitations.
-        </CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">Team members</CardTitle>
+            <CardDescription className="text-sm">
+              People with access to your organization, and pending invitations.
+            </CardDescription>
+          </div>
+          {isAdmin && (
+            <Button size="sm" onClick={() => setInviteOpen(true)} className="shrink-0">Invite user</Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
@@ -678,7 +777,7 @@ function TeamCard() {
             </div>
           ) : pendingInvites.length === 0 ? (
             <p className="text-sm text-muted-foreground py-2">
-              No pending invitations. Invite people from the Employees page.
+              No pending invitations.{isAdmin ? " Use the “Invite user” button to add someone." : ""}
             </p>
           ) : (
             <ul className="divide-y rounded-md border">
@@ -724,6 +823,7 @@ function TeamCard() {
           </div>
         )}
       </CardContent>
+      {isAdmin && <InviteUserDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />}
     </Card>
   );
 }

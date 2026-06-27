@@ -238,87 +238,6 @@ const INVITE_ROLES = [
   { value: "admin", label: "Administrator", hint: "Full access to the whole organization." },
 ];
 
-function InviteUserDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [email, setEmail] = useState("");
-  const [userRole, setUserRole] = useState("employee");
-  const [error, setError] = useState("");
-  const [sentMessage, setSentMessage] = useState("");
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (data: { email: string; userRole: string }) => {
-      const res = await fetch(getApiUrl("/invitations"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify(data),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || "Failed to send invitation");
-      return body as { emailSent: boolean };
-    },
-    onSuccess: (body) => {
-      setError("");
-      setSentMessage(
-        body.emailSent
-          ? `Invitation sent to ${email}.`
-          : `Invitation created for ${email}, but the email could not be delivered. Check email settings.`,
-      );
-      setEmail("");
-      setUserRole("employee");
-    },
-    onError: (err: Error) => {
-      setSentMessage("");
-      setError(err.message);
-    },
-  });
-
-  function handleClose() {
-    setError("");
-    setSentMessage("");
-    setEmail("");
-    setUserRole("employee");
-    onClose();
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setSentMessage("");
-    mutate({ email: email.trim(), userRole });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={v => !v && handleClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Invite a team member</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3 mt-2">
-          {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
-          {sentMessage && <p className="text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded">{sentMessage}</p>}
-          <div className="space-y-1.5">
-            <Label>Email</Label>
-            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="colleague@company.com" />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Role</Label>
-            <Select value={userRole} onValueChange={setUserRole}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {INVITE_ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">{INVITE_ROLES.find(r => r.value === userRole)?.hint}</p>
-          </div>
-          <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>Close</Button>
-            <Button type="submit" disabled={isPending}>{isPending ? "Sending..." : "Send invitation"}</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function EmployeesPage() {
   const { user } = useAuthContext();
   const isAdmin = user?.role === "admin";
@@ -326,7 +245,6 @@ export default function EmployeesPage() {
   const [department, setDepartment] = useState("all");
   const [level, setLevel] = useState("all");
   const [addOpen, setAddOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
 
   const { data: employees = [], isLoading } = useQuery<Employee[]>({
     queryKey: ["employees"],
@@ -354,7 +272,6 @@ export default function EmployeesPage() {
           </div>
           {isAdmin && (
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setInviteOpen(true)}>Invite user</Button>
               <Button onClick={() => setAddOpen(true)} data-onboarding="add-employee-btn">Add employee</Button>
             </div>
           )}
@@ -445,7 +362,6 @@ export default function EmployeesPage() {
         )}
       </div>
       {isAdmin && <AddEmployeeDialog open={addOpen} onClose={() => setAddOpen(false)} employees={employees} />}
-      {isAdmin && <InviteUserDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />}
     </Layout>
   );
 }
