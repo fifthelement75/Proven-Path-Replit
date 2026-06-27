@@ -38,16 +38,50 @@ function statusInfo(status: string) {
   return CANDIDATE_STATUSES.find(s => s.value === status) ?? { label: status, color: "bg-gray-100 text-gray-700" };
 }
 
-function AddCandidateDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+const EMPTY_FORM = { name: "", email: "", phone: "", roleApplyingFor: "", levelApplyingFor: "", source: "", notes: "" };
+
+function AddCandidateDialog({ open, onClose, candidates }: { open: boolean; onClose: () => void; candidates: Candidate[] }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({
-    name: "", email: "", phone: "",
-    roleApplyingFor: "", levelApplyingFor: "",
-    source: "", notes: "",
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState("");
+  const [nameSuggestions, setNameSuggestions] = useState<Candidate[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const selectedRole = ROLE_TEMPLATES.find(r => r.role === form.roleApplyingFor);
+
+  function handleClose() {
+    setForm(EMPTY_FORM);
+    setError("");
+    setShowSuggestions(false);
+    setNameSuggestions([]);
+    onClose();
+  }
+
+  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setForm(f => ({ ...f, name: value }));
+    if (value.trim().length >= 1) {
+      const matches = candidates.filter(c =>
+        c.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setNameSuggestions(matches);
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setShowSuggestions(false);
+      setNameSuggestions([]);
+    }
+  }
+
+  function selectSuggestedCandidate(c: Candidate) {
+    setForm(f => ({
+      ...f,
+      name: c.name,
+      email: c.email ?? f.email,
+      phone: c.phone ?? f.phone,
+    }));
+    setShowSuggestions(false);
+    setNameSuggestions([]);
+  }
 
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
@@ -61,7 +95,7 @@ function AddCandidateDialog({ open, onClose }: { open: boolean; onClose: () => v
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
-      setForm({ name: "", email: "", phone: "", roleApplyingFor: "", levelApplyingFor: "", source: "", notes: "" });
+      setForm(EMPTY_FORM);
       setError("");
       onClose();
     },
@@ -69,16 +103,39 @@ function AddCandidateDialog({ open, onClose }: { open: boolean; onClose: () => v
   });
 
   return (
-    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+    <Dialog open={open} onOpenChange={v => !v && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Candidate</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 mt-2">
           {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 relative">
             <Label>Full name <span className="text-destructive">*</span></Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Jane Smith" />
+            <Input
+              value={form.name}
+              onChange={handleNameChange}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              placeholder="Jane Smith"
+              autoComplete="off"
+            />
+            {showSuggestions && (
+              <div className="absolute z-50 w-full bg-white border rounded-md shadow-lg mt-0.5 max-h-44 overflow-auto">
+                {nameSuggestions.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="w-full text-left px-3 py-2 hover:bg-muted/60 transition-colors text-sm"
+                    onMouseDown={() => selectSuggestedCandidate(c)}
+                  >
+                    <div className="font-medium">{c.name}</div>
+                    {(c.email || c.phone) && (
+                      <div className="text-xs text-muted-foreground">{[c.email, c.phone].filter(Boolean).join(" · ")}</div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -125,7 +182,7 @@ function AddCandidateDialog({ open, onClose }: { open: boolean; onClose: () => v
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={handleClose}>Cancel</Button>
           <Button onClick={() => mutate()} disabled={isPending || !form.name || !form.roleApplyingFor}>
             {isPending ? "Adding..." : "Add candidate"}
           </Button>
@@ -263,7 +320,7 @@ export default function CandidatesPage() {
           </div>
         )}
       </div>
-      <AddCandidateDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddCandidateDialog open={addOpen} onClose={() => setAddOpen(false)} candidates={candidates} />
     </Layout>
   );
 }
