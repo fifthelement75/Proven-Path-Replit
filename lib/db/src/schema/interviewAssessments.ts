@@ -9,6 +9,8 @@ export const interviewAssessmentsTable = pgTable("interview_assessments", {
   role: text("role").notNull(),
   level: text("level").notNull(),
   interviewerId: integer("interviewer_id"),
+  panelInviteId: integer("panel_invite_id"),
+  panelistEmail: text("panelist_email"),
   interviewDate: text("interview_date").notNull(),
   scores: text("scores"),
   feedback: text("feedback"),

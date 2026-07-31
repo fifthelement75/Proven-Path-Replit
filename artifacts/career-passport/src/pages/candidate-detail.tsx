@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getApiUrl } from "@/lib/api";
@@ -35,6 +36,30 @@ interface Assessment {
   overallScore: string | null;
   notes: string | null;
   createdAt: string;
+  panelistEmail?: string | null;
+  interviewerName?: string | null;
+}
+
+interface PanelInvite {
+  id: number;
+  email: string;
+  role: string;
+  level: string;
+  interviewDate: string;
+  status: string;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+interface PanelSummaryData {
+  summary: {
+    consensus?: string;
+    disagreements?: string;
+    overallRead?: string;
+    suggestedRecommendation?: string;
+    keyThemes?: string[];
+  } | null;
+  generatedAt: string | null;
 }
 
 interface CandidateDetail {
@@ -259,6 +284,138 @@ function InterviewAssessmentDialog({
   );
 }
 
+function InvitePanelDialog({
+  open, onClose, candidateId, defaultRole, defaultLevel,
+}: {
+  open: boolean; onClose: () => void;
+  candidateId: number; defaultRole?: string; defaultLevel?: string;
+}) {
+  const queryClient = useQueryClient();
+  const [role, setRole] = useState(defaultRole || "");
+  const [level, setLevel] = useState(defaultLevel || "");
+  const [interviewDate, setInterviewDate] = useState(new Date().toISOString().split("T")[0]);
+  const [emailsText, setEmailsText] = useState("");
+  const [error, setError] = useState("");
+  const [results, setResults] = useState<Array<{ email: string; emailSent: boolean; emailError?: string }> | null>(null);
+
+  const selectedRole = ROLE_TEMPLATES.find(r => r.role === role);
+  const parsedEmails = emailsText.split(/[\n,;]+/).map(e => e.trim()).filter(Boolean);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async () => {
+      if (!role || !level) throw new Error("Select role and level");
+      if (parsedEmails.length === 0) throw new Error("Enter at least one email address");
+      const roleLabel = selectedRole
+        ? `${selectedRole.roleLabel} · ${selectedRole.levels.find(l => l.level === level)?.levelLabel ?? level}`
+        : role;
+      const res = await fetch(getApiUrl(`/candidates/${candidateId}/panel-invites`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ roleAssessed: role, level, interviewDate, emails: parsedEmails, roleLabel }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed to send invites");
+      return res.json();
+    },
+    onSuccess: (data: Array<{ email: string; emailSent: boolean; emailError?: string }>) => {
+      setError("");
+      setResults(data);
+      queryClient.invalidateQueries({ queryKey: ["panel-invites", candidateId] });
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const handleClose = () => {
+    setResults(null);
+    setEmailsText("");
+    setError("");
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && handleClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Invite Interview Panel</DialogTitle>
+        </DialogHeader>
+        {results ? (
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              {results.filter(r => r.emailSent).length} of {results.length} invitation{results.length > 1 ? "s" : ""} sent successfully.
+            </p>
+            <div className="space-y-1.5 max-h-56 overflow-y-auto">
+              {results.map((r, i) => (
+                <div key={i} className="flex items-start justify-between gap-3 text-sm border rounded-md px-3 py-2">
+                  <span className="truncate">{r.email}</span>
+                  {r.emailSent ? (
+                    <Badge className="text-xs bg-green-100 text-green-700 shrink-0">Sent</Badge>
+                  ) : (
+                    <div className="text-right shrink-0 max-w-[55%]">
+                      <Badge className="text-xs bg-red-100 text-red-700">Not sent</Badge>
+                      {r.emailError && <p className="text-xs text-muted-foreground mt-1">{r.emailError}</p>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button onClick={handleClose}>Done</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-4 mt-2">
+            {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{error}</p>}
+            <p className="text-sm text-muted-foreground">
+              Panelists receive an email with a secure link to complete the same interview assessment form — no account required. Their responses appear on this candidate's page.
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label>Role <span className="text-destructive">*</span></Label>
+                <Select value={role} onValueChange={v => { setRole(v); setLevel(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select role..." /></SelectTrigger>
+                  <SelectContent>
+                    {ROLE_TEMPLATES.map(r => <SelectItem key={r.role} value={r.role}>{r.roleLabel}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Level <span className="text-destructive">*</span></Label>
+                <Select value={level} onValueChange={setLevel} disabled={!selectedRole}>
+                  <SelectTrigger><SelectValue placeholder="Select level..." /></SelectTrigger>
+                  <SelectContent>
+                    {selectedRole?.levels.map(l => <SelectItem key={l.level} value={l.level}>{l.levelLabel}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Interview date</Label>
+                <Input type="date" value={interviewDate} onChange={e => setInterviewDate(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Panelist emails <span className="text-destructive">*</span></Label>
+              <Textarea
+                placeholder={"jane@company.com\nmark@company.com"}
+                value={emailsText}
+                onChange={e => setEmailsText(e.target.value)}
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">
+                One per line, or separated by commas.{parsedEmails.length > 0 ? ` ${parsedEmails.length} recipient${parsedEmails.length > 1 ? "s" : ""}.` : ""} Links expire in 7 days.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button onClick={() => mutate()} disabled={isPending}>
+                {isPending ? "Sending..." : "Send invitations"}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ImportToEmployeeDialog({
   open, onClose, candidateId, candidateName,
 }: {
@@ -397,6 +554,11 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {assessment.interviewDate} · {Object.keys(scores).length} skills scored
+              {assessment.panelistEmail
+                ? <> · <span className="text-primary">Panel: {assessment.panelistEmail}</span></>
+                : assessment.interviewerName
+                ? <> · {assessment.interviewerName}</>
+                : <> · Internal</>}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -450,6 +612,197 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
   );
 }
 
+const RECOMMENDATION_META: Record<string, { label: string; color: string }> = Object.fromEntries(
+  OVERALL_RECOMMENDATIONS.map(r => [r.value, { label: r.label, color: r.color }])
+);
+
+function PanelSummaryTab({ candidateId, assessments }: { candidateId: number; assessments: Assessment[] }) {
+  const queryClient = useQueryClient();
+  const [aiError, setAiError] = useState("");
+
+  const { data: summaryData } = useQuery<PanelSummaryData>({
+    queryKey: ["panel-summary", candidateId],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl(`/candidates/${candidateId}/panel-summary`), { headers: authHeaders() });
+      if (!res.ok) throw new Error("Failed to load panel summary");
+      return res.json();
+    },
+  });
+
+  const { mutate: generate, isPending: generating } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(getApiUrl(`/candidates/${candidateId}/panel-summary/generate`), {
+        method: "POST", headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed to generate summary");
+      return res.json();
+    },
+    onSuccess: (data: PanelSummaryData) => {
+      setAiError("");
+      queryClient.setQueryData(["panel-summary", candidateId], data);
+    },
+    onError: (err: Error) => setAiError(err.message),
+  });
+
+  // Per-criterion aggregation across all assessments
+  const perSkill = new Map<string, number[]>();
+  const recTally = new Map<string, number>();
+  const overallScores: number[] = [];
+  for (const a of assessments) {
+    if (a.scores) {
+      for (const [skill, s] of Object.entries(JSON.parse(a.scores) as Record<string, number>)) {
+        if (!perSkill.has(skill)) perSkill.set(skill, []);
+        perSkill.get(skill)!.push(s);
+      }
+    }
+    if (a.overallScore) overallScores.push(parseFloat(a.overallScore));
+    if (a.overallRecommendation) recTally.set(a.overallRecommendation, (recTally.get(a.overallRecommendation) || 0) + 1);
+  }
+  const overallAvg = overallScores.length
+    ? (overallScores.reduce((x, y) => x + y, 0) / overallScores.length).toFixed(1)
+    : null;
+
+  const skillRows = [...perSkill.entries()]
+    .map(([skill, vals]) => ({
+      skill,
+      avg: vals.reduce((x, y) => x + y, 0) / vals.length,
+      min: Math.min(...vals),
+      max: Math.max(...vals),
+      count: vals.length,
+    }))
+    .sort((a, b) => b.avg - a.avg);
+
+  if (assessments.length < 2) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          The panel summary becomes available once at least two assessments have been submitted.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const summary = summaryData?.summary;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card>
+          <CardContent className="pt-3 pb-3">
+            <p className="text-xs text-muted-foreground mb-1">Overall average · {assessments.length} assessments</p>
+            <div className="text-2xl font-bold">{overallAvg ?? "—"}<span className="text-sm font-normal text-muted-foreground">/5</span></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-3 pb-3">
+            <p className="text-xs text-muted-foreground mb-2">Recommendations</p>
+            {recTally.size === 0 ? (
+              <p className="text-sm text-muted-foreground">No recommendations given yet</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {[...recTally.entries()].sort((a, b) => b[1] - a[1]).map(([rec, count]) => {
+                  const meta = RECOMMENDATION_META[rec];
+                  return (
+                    <Badge key={rec} className={`text-xs ${meta?.color ?? "bg-gray-100 text-gray-700"}`}>
+                      {meta?.label ?? rec} × {count}
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2 pt-3">
+          <CardTitle className="text-sm font-medium">Average score per criterion</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2.5">
+          {skillRows.map(row => {
+            const spread = row.max - row.min;
+            return (
+              <div key={row.skill}>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate flex-1">{row.skill}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {spread >= 2 && (
+                      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">
+                        Split {row.min}–{row.max}
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground">{row.count} score{row.count > 1 ? "s" : ""}</span>
+                    <span className="font-medium w-8 text-right">{row.avg.toFixed(1)}</span>
+                  </div>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: `${(row.avg / 5) * 100}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2 pt-3 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm font-medium">AI panel analysis</CardTitle>
+          <Button size="sm" variant="outline" onClick={() => generate()} disabled={generating}>
+            {generating ? "Analyzing..." : summary ? "Regenerate" : "Generate analysis"}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {aiError && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">{aiError}</p>}
+          {!summary && !generating && (
+            <p className="text-sm text-muted-foreground">
+              Generate an AI synthesis of all panel notes, scores, and recommendations — consensus, disagreements, and an overall read.
+            </p>
+          )}
+          {generating && <p className="text-sm text-muted-foreground">Analyzing {assessments.length} assessments…</p>}
+          {summary && !generating && (
+            <>
+              {summary.suggestedRecommendation && RECOMMENDATION_META[summary.suggestedRecommendation] && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Suggested outcome:</span>
+                  <Badge className={`text-xs ${RECOMMENDATION_META[summary.suggestedRecommendation].color}`}>
+                    {RECOMMENDATION_META[summary.suggestedRecommendation].label}
+                  </Badge>
+                </div>
+              )}
+              {summary.consensus && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Where the panel agrees</p>
+                  <p className="text-sm">{summary.consensus}</p>
+                </div>
+              )}
+              {summary.disagreements && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Where opinions diverge</p>
+                  <p className="text-sm">{summary.disagreements}</p>
+                </div>
+              )}
+              {summary.overallRead && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Overall read</p>
+                  <p className="text-sm">{summary.overallRead}</p>
+                </div>
+              )}
+              {summary.keyThemes && summary.keyThemes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {summary.keyThemes.map((t, i) => <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>)}
+                </div>
+              )}
+              {summaryData?.generatedAt && (
+                <p className="text-xs text-muted-foreground">Generated {new Date(summaryData.generatedAt).toLocaleString()}</p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function CandidateDetailPage() {
   const params = useParams<{ id: string }>();
   const candidateId = parseInt(params.id!);
@@ -457,6 +810,7 @@ export default function CandidateDetailPage() {
   const queryClient = useQueryClient();
   const [assessOpen, setAssessOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [editStatus, setEditStatus] = useState(false);
   const [newStatus, setNewStatus] = useState("");
 
@@ -484,6 +838,35 @@ export default function CandidateDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       setEditStatus(false);
     },
+  });
+
+  const { data: panelInvites = [] } = useQuery<PanelInvite[]>({
+    queryKey: ["panel-invites", candidateId],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl(`/candidates/${candidateId}/panel-invites`), { headers: authHeaders() });
+      if (!res.ok) throw new Error("Failed to load panel invites");
+      return res.json();
+    },
+    // Poll while invitations are outstanding so new panel responses appear without a manual refresh
+    refetchInterval: q => (q.state.data ?? []).some(i => i.status === "pending") ? 30000 : false,
+  });
+  const pendingInvites = panelInvites.filter(i => i.status !== "completed");
+  const completedInviteCount = panelInvites.filter(i => i.status === "completed").length;
+
+  useEffect(() => {
+    // A panelist just submitted — refresh the assessments list and clear any stale AI summary
+    queryClient.invalidateQueries({ queryKey: ["candidate", candidateId] });
+    queryClient.invalidateQueries({ queryKey: ["panel-summary", candidateId] });
+  }, [completedInviteCount, candidateId, queryClient]);
+
+  const { mutate: deleteInvite } = useMutation({
+    mutationFn: async (inviteId: number) => {
+      const res = await fetch(getApiUrl(`/candidates/${candidateId}/panel-invites/${inviteId}`), {
+        method: "DELETE", headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to remove invite");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["panel-invites", candidateId] }),
   });
 
   const { mutate: deleteCandidate } = useMutation({
@@ -578,6 +961,9 @@ export default function CandidateDetailPage() {
                 Import to employee profile
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
+              Invite panel
+            </Button>
             <Button size="sm" onClick={() => setAssessOpen(true)}>
               Add interview assessment
             </Button>
@@ -600,31 +986,61 @@ export default function CandidateDetailPage() {
           </Card>
         )}
 
+        {pendingInvites.length > 0 && (
+          <Card>
+            <CardContent className="py-3">
+              <p className="text-xs text-muted-foreground font-medium mb-2">Pending panel invitations</p>
+              <div className="space-y-1.5">
+                {pendingInvites.map(inv => (
+                  <div key={inv.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="truncate">{inv.email}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {inv.status === "expired" ? (
+                        <Badge variant="outline" className="text-xs text-muted-foreground">Expired</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Awaiting response</Badge>
+                      )}
+                      <button
+                        className="text-xs text-muted-foreground hover:text-destructive underline"
+                        onClick={() => deleteInvite(inv.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div>
           <h2 className="text-base font-semibold mb-3">Interview Assessments ({candidate.assessments.length})</h2>
           {candidate.assessments.length === 0 ? (
             <Card>
               <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                No assessments yet. Click "Add interview assessment" to evaluate this candidate.
+                No assessments yet. Click "Add interview assessment" to evaluate this candidate, or "Invite panel" to collect assessments from panelists by email.
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {candidate.assessments.map(a => (
-                <AssessmentCard key={a.id} assessment={a} />
-              ))}
-            </div>
+            <Tabs defaultValue="responses">
+              <TabsList className="mb-3">
+                <TabsTrigger value="responses">Individual responses</TabsTrigger>
+                <TabsTrigger value="summary">Panel summary</TabsTrigger>
+              </TabsList>
+              <TabsContent value="responses">
+                <div className="space-y-3">
+                  {candidate.assessments.map(a => (
+                    <AssessmentCard key={a.id} assessment={a} />
+                  ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="summary">
+                <PanelSummaryTab candidateId={candidateId} assessments={candidate.assessments} />
+              </TabsContent>
+            </Tabs>
           )}
         </div>
-
-        {candidate.assessments.length > 1 && avgAllScores && (
-          <Card className="bg-muted/30">
-            <CardContent className="py-3">
-              <p className="text-xs text-muted-foreground mb-2">Aggregate across {candidate.assessments.length} assessments</p>
-              <div className="text-2xl font-bold">{avgAllScores}<span className="text-sm font-normal text-muted-foreground">/5</span></div>
-            </CardContent>
-          </Card>
-        )}
 
         <div className="border-t pt-4">
           <button
@@ -639,6 +1055,14 @@ export default function CandidateDetailPage() {
       <InterviewAssessmentDialog
         open={assessOpen}
         onClose={() => setAssessOpen(false)}
+        candidateId={candidateId}
+        defaultRole={candidate.roleApplyingFor}
+        defaultLevel={candidate.levelApplyingFor || undefined}
+      />
+
+      <InvitePanelDialog
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
         candidateId={candidateId}
         defaultRole={candidate.roleApplyingFor}
         defaultLevel={candidate.levelApplyingFor || undefined}

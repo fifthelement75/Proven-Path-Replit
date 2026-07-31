@@ -61,12 +61,21 @@ router.get("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
     .where(eq(interviewAssessmentsTable.candidateId, id))
     .orderBy(desc(interviewAssessmentsTable.createdAt));
 
+  const interviewerIds = [...new Set(assessments.map(a => a.interviewerId).filter((v): v is number => v != null))];
+  const interviewerNames = new Map<number, string>();
+  for (const iid of interviewerIds) {
+    const [emp] = await db.select({ name: employeesTable.name }).from(employeesTable)
+      .where(eq(employeesTable.id, iid)).limit(1);
+    if (emp) interviewerNames.set(iid, emp.name);
+  }
+
   res.json({
     ...candidate,
     createdAt: candidate.createdAt.toISOString(),
     updatedAt: candidate.updatedAt.toISOString(),
     assessments: assessments.map(a => ({
       ...a,
+      interviewerName: a.interviewerId != null ? interviewerNames.get(a.interviewerId) ?? null : null,
       createdAt: a.createdAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),
     })),

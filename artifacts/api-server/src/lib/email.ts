@@ -261,6 +261,96 @@ export function getPeerReviewLink(token: string): string {
   return `${base.replace(/\/$/, "")}/peer-review/${token}`;
 }
 
+export function getPanelAssessmentLink(token: string): string {
+  const base =
+    process.env.APP_PUBLIC_URL ||
+    (process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : null);
+  if (!base) {
+    throw new Error(
+      "Cannot construct panel assessment link: set APP_PUBLIC_URL environment variable"
+    );
+  }
+  return `${base.replace(/\/$/, "")}/panel-assessment/${token}`;
+}
+
+export async function sendPanelInviteEmail({
+  toEmail,
+  candidateName,
+  roleLabel,
+  interviewDate,
+  inviterName,
+  assessmentLink,
+  expiresAt,
+}: {
+  toEmail: string;
+  candidateName: string;
+  roleLabel: string;
+  interviewDate: string;
+  inviterName: string | null;
+  assessmentLink: string;
+  expiresAt: Date | null;
+}): Promise<void> {
+  const { apiKey, fromEmail } = await getCredentials();
+  const client = new Resend(apiKey);
+
+  const safeCandidate = escapeHtml(candidateName);
+  const safeRole = escapeHtml(roleLabel);
+  const safeDate = escapeHtml(interviewDate);
+  const safeInviter = inviterName ? escapeHtml(inviterName) : "A colleague";
+  const safeLink = escapeHtml(assessmentLink);
+  const expiryNote = expiresAt
+    ? `<p style="color:#6b7280;font-size:13px;">This link expires on ${escapeHtml(expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))}.</p>`
+    : "";
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#111827;">
+  <h2 style="margin:0 0 8px;font-size:20px;">Interview Panel Invitation</h2>
+  <p style="margin:0 0 16px;color:#374151;">Hi,</p>
+  <p style="margin:0 0 16px;color:#374151;">
+    ${safeInviter} has invited you to complete an interview assessment for candidate <strong>${safeCandidate}</strong>
+    (${safeRole}), interviewed on <strong>${safeDate}</strong>.
+  </p>
+  <p style="margin:0 0 24px;color:#374151;">
+    Click the button below to open the assessment form. You'll score the candidate against the role's skill criteria and give your overall recommendation — it takes about 5–10 minutes.
+  </p>
+  <a href="${safeLink}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:15px;">
+    Complete Interview Assessment
+  </a>
+  <p style="margin:24px 0 4px;color:#6b7280;font-size:13px;">Or copy this link into your browser:</p>
+  <p style="margin:0 0 16px;font-size:12px;color:#6b7280;word-break:break-all;">${safeLink}</p>
+  ${expiryNote}
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+  <p style="margin:0;color:#9ca3af;font-size:12px;">You received this email because you were invited to an interview panel on Proven Path. If you believe this was sent in error, you can safely ignore it.</p>
+</body>
+</html>`;
+
+  const text = `Hi,\n\n${inviterName || "A colleague"} has invited you to complete an interview assessment for candidate ${candidateName} (${roleLabel}), interviewed on ${interviewDate}.\n\nComplete the assessment here:\n${assessmentLink}${expiresAt ? `\n\nThis link expires on ${expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.` : ""}`;
+
+  const result = await client.emails.send({
+    from: fromEmail,
+    to: toEmail,
+    subject: `Interview assessment requested for ${candidateName}`,
+    html,
+    text,
+  });
+
+  if (result.error) {
+    const msg = result.error.message || "";
+    if (/domain is not verified/i.test(msg)) {
+      throw new Error(
+        "Email could not be sent because the configured sender domain is not verified with Resend. " +
+          "Verify a domain at https://resend.com/domains and set RESEND_FROM_EMAIL to an address on it, " +
+          "or share the link manually below."
+      );
+    }
+    throw new Error(`Resend error: ${msg}`);
+  }
+}
+
 export function getInviteLink(token: string): string {
   const base =
     process.env.APP_PUBLIC_URL ||

@@ -20,6 +20,7 @@ import CandidatesPage from "@/pages/candidates";
 import CandidateDetailPage from "@/pages/candidate-detail";
 import BillingPage from "@/pages/billing";
 import AcceptInvitePage from "@/pages/accept-invite";
+import PanelAssessmentPage from "@/pages/panel-assessment";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/peer-review/:token" component={PeerReviewPage} />
       <Route path="/self-reflection/:token" component={SelfReflectionPage} />
       <Route path="/accept-invite/:token" component={AcceptInvitePage} />
+      <Route path="/panel-assessment/:token" component={PanelAssessmentPage} />
       <Route component={NotFound} />
     </Switch>
   );

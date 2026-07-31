@@ -13,6 +13,8 @@ export const candidateProfilesTable = pgTable("candidate_profiles", {
   source: text("source"),
   status: text("status").notNull().default("interviewing"),
   notes: text("notes"),
+  panelAiSummary: text("panel_ai_summary"),
+  panelAiSummaryAt: timestamp("panel_ai_summary_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

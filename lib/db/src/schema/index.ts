@@ -10,6 +10,7 @@ export * from "./selfReflectionRequests";
 export * from "./notifications";
 export * from "./candidateProfiles";
 export * from "./interviewAssessments";
+export * from "./panelInvites";
 export * from "./promoCodes";
 export * from "./integrations";
 export * from "./syncKeys";
