@@ -283,6 +283,7 @@ export async function sendPanelInviteEmail({
   inviterName,
   assessmentLink,
   expiresAt,
+  isReminder = false,
 }: {
   toEmail: string;
   candidateName: string;
@@ -291,6 +292,7 @@ export async function sendPanelInviteEmail({
   inviterName: string | null;
   assessmentLink: string;
   expiresAt: Date | null;
+  isReminder?: boolean;
 }): Promise<void> {
   const { apiKey, fromEmail } = await getCredentials();
   const client = new Resend(apiKey);
@@ -308,11 +310,12 @@ export async function sendPanelInviteEmail({
 <html>
 <head><meta charset="utf-8" /></head>
 <body style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#111827;">
-  <h2 style="margin:0 0 8px;font-size:20px;">Interview Panel Invitation</h2>
+  <h2 style="margin:0 0 8px;font-size:20px;">${isReminder ? "Reminder: Interview Assessment Pending" : "Interview Panel Invitation"}</h2>
   <p style="margin:0 0 16px;color:#374151;">Hi,</p>
   <p style="margin:0 0 16px;color:#374151;">
-    ${safeInviter} has invited you to complete an interview assessment for candidate <strong>${safeCandidate}</strong>
-    (${safeRole}), interviewed on <strong>${safeDate}</strong>.
+    ${isReminder
+      ? `This is a friendly reminder — your interview assessment for candidate <strong>${safeCandidate}</strong> (${safeRole}), interviewed on <strong>${safeDate}</strong>, is still waiting for your input.`
+      : `${safeInviter} has invited you to complete an interview assessment for candidate <strong>${safeCandidate}</strong> (${safeRole}), interviewed on <strong>${safeDate}</strong>.`}
   </p>
   <p style="margin:0 0 24px;color:#374151;">
     Click the button below to open the assessment form. You'll score the candidate against the role's skill criteria and give your overall recommendation — it takes about 5–10 minutes.
@@ -328,12 +331,17 @@ export async function sendPanelInviteEmail({
 </body>
 </html>`;
 
-  const text = `Hi,\n\n${inviterName || "A colleague"} has invited you to complete an interview assessment for candidate ${candidateName} (${roleLabel}), interviewed on ${interviewDate}.\n\nComplete the assessment here:\n${assessmentLink}${expiresAt ? `\n\nThis link expires on ${expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.` : ""}`;
+  const intro = isReminder
+    ? `This is a friendly reminder — your interview assessment for candidate ${candidateName} (${roleLabel}), interviewed on ${interviewDate}, is still waiting for your input.`
+    : `${inviterName || "A colleague"} has invited you to complete an interview assessment for candidate ${candidateName} (${roleLabel}), interviewed on ${interviewDate}.`;
+  const text = `Hi,\n\n${intro}\n\nComplete the assessment here:\n${assessmentLink}${expiresAt ? `\n\nThis link expires on ${expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.` : ""}`;
 
   const result = await client.emails.send({
     from: fromEmail,
     to: toEmail,
-    subject: `Interview assessment requested for ${candidateName}`,
+    subject: isReminder
+      ? `Reminder: interview assessment pending for ${candidateName}`
+      : `Interview assessment requested for ${candidateName}`,
     html,
     text,
   });

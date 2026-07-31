@@ -14,6 +14,7 @@ export const panelInvitesTable = pgTable("panel_invites", {
   token: text("token").notNull().unique(),
   status: text("status").notNull().default("pending"),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
+  reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

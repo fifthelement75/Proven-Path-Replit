@@ -1,6 +1,8 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startTrialReminderScheduler } from "./lib/trialReminders";
+import { startPanelInviteReminderScheduler } from "./lib/panelInviteReminders";
+import { ensurePanelInviteSchema } from "./lib/ensurePanelInviteSchema";
 
 const rawPort = process.env["PORT"];
 
@@ -44,12 +46,28 @@ async function initStripe(): Promise<void> {
   }
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
+async function main(): Promise<void> {
+  // Guarantee the schema exists before accepting any API traffic.
+  try {
+    await ensurePanelInviteSchema();
+  } catch (err) {
+    logger.error({ err }, "Failed to ensure panel invite schema");
     process.exit(1);
   }
-  logger.info({ port }, "Server listening");
-  initStripe().catch((e) => logger.error({ err: e }, "initStripe failed"));
-  startTrialReminderScheduler();
+
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
+    logger.info({ port }, "Server listening");
+    initStripe().catch((e) => logger.error({ err: e }, "initStripe failed"));
+    startTrialReminderScheduler();
+    startPanelInviteReminderScheduler();
+  });
+}
+
+main().catch((err) => {
+  logger.error({ err }, "Fatal startup error");
+  process.exit(1);
 });

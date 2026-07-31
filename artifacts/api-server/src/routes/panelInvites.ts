@@ -148,6 +148,76 @@ router.get("/candidates/:id/panel-invites", requireAuth, async (req, res): Promi
 });
 
 // ---------------------------------------------------------------------------
+// Authenticated: resend a pending invite (refreshes the 7-day expiry)
+// ---------------------------------------------------------------------------
+router.post("/candidates/:id/panel-invites/:inviteId/resend", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
+  const { companyId, userId, role } = req.auth!;
+  if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
+
+  const candidateId = parseInt(String(req.params.id));
+  const inviteId = parseInt(String(req.params.inviteId));
+  if (isNaN(candidateId) || isNaN(inviteId)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [invite] = await db.select().from(panelInvitesTable)
+    .where(and(
+      eq(panelInvitesTable.id, inviteId),
+      eq(panelInvitesTable.candidateId, candidateId),
+      eq(panelInvitesTable.companyId, companyId),
+    )).limit(1);
+  if (!invite) { res.status(404).json({ error: "Invite not found" }); return; }
+
+  // Fresh 7-day window; clear the auto-reminder flag so a new reminder can go out later.
+  // Atomic: only refresh an invite that is still pending, so a concurrent submission
+  // can never be reopened by a resend.
+  const expiresAt = new Date(Date.now() + PANEL_INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+  const [updated] = await db.update(panelInvitesTable)
+    .set({ expiresAt, reminderSentAt: null })
+    .where(and(
+      eq(panelInvitesTable.id, invite.id),
+      eq(panelInvitesTable.status, "pending"),
+    ))
+    .returning({ id: panelInvitesTable.id });
+  if (!updated) {
+    res.status(409).json({ error: "This invitation has already been completed" }); return;
+  }
+
+  const [candidate] = await db.select({ name: candidateProfilesTable.name }).from(candidateProfilesTable)
+    .where(eq(candidateProfilesTable.id, candidateId)).limit(1);
+
+  let inviterName: string | null = null;
+  const [inviter] = await db.select({ name: employeesTable.name }).from(employeesTable)
+    .where(and(eq(employeesTable.id, userId), eq(employeesTable.companyId, companyId))).limit(1);
+  if (inviter) inviterName = inviter.name;
+
+  let emailSent = false;
+  let emailError: string | undefined;
+  try {
+    await sendPanelInviteEmail({
+      toEmail: invite.email,
+      candidateName: candidate?.name ?? "Unknown",
+      roleLabel: invite.role,
+      interviewDate: invite.interviewDate,
+      inviterName,
+      assessmentLink: getPanelAssessmentLink(invite.token),
+      expiresAt,
+    });
+    emailSent = true;
+  } catch (err) {
+    emailError = err instanceof Error ? err.message : String(err);
+    logger.error({ err, inviteId: invite.id }, "Failed to resend panel invite email");
+  }
+
+  res.json({
+    id: invite.id,
+    email: invite.email,
+    status: "pending",
+    expiresAt: expiresAt.toISOString(),
+    emailSent,
+    ...(emailError ? { emailError } : {}),
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Authenticated: delete a pending invite
 // ---------------------------------------------------------------------------
 router.delete("/candidates/:id/panel-invites/:inviteId", requireAuth, async (req, res): Promise<void> => {

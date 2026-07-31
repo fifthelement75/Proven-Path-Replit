@@ -8,6 +8,13 @@
       "when": 1779763530876,
       "tag": "0000_spooky_mentallo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785537755591,
+      "tag": "0001_panel_invites_and_reminders",
+      "breakpoints": true
     }
   ]
 }

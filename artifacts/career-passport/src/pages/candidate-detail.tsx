@@ -859,6 +859,28 @@ export default function CandidateDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["panel-summary", candidateId] });
   }, [completedInviteCount, candidateId, queryClient]);
 
+  const [resendingId, setResendingId] = useState<number | null>(null);
+  const [resendResult, setResendResult] = useState<{ id: number; ok: boolean; message: string } | null>(null);
+  const { mutate: resendInvite } = useMutation({
+    mutationFn: async (inviteId: number) => {
+      setResendingId(inviteId);
+      const res = await fetch(getApiUrl(`/candidates/${candidateId}/panel-invites/${inviteId}/resend`), {
+        method: "POST", headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend invitation");
+      return data as { id: number; emailSent: boolean; emailError?: string };
+    },
+    onSuccess: (data) => {
+      setResendResult(data.emailSent
+        ? { id: data.id, ok: true, message: "Invitation re-sent — link valid for another 7 days" }
+        : { id: data.id, ok: false, message: data.emailError || "Email could not be sent" });
+      queryClient.invalidateQueries({ queryKey: ["panel-invites", candidateId] });
+    },
+    onError: (err: Error, inviteId) => setResendResult({ id: inviteId, ok: false, message: err.message }),
+    onSettled: () => setResendingId(null),
+  });
+
   const { mutate: deleteInvite } = useMutation({
     mutationFn: async (inviteId: number) => {
       const res = await fetch(getApiUrl(`/candidates/${candidateId}/panel-invites/${inviteId}`), {
@@ -992,21 +1014,35 @@ export default function CandidateDetailPage() {
               <p className="text-xs text-muted-foreground font-medium mb-2">Pending panel invitations</p>
               <div className="space-y-1.5">
                 {pendingInvites.map(inv => (
-                  <div key={inv.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">{inv.email}</span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {inv.status === "expired" ? (
-                        <Badge variant="outline" className="text-xs text-muted-foreground">Expired</Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs">Awaiting response</Badge>
-                      )}
-                      <button
-                        className="text-xs text-muted-foreground hover:text-destructive underline"
-                        onClick={() => deleteInvite(inv.id)}
-                      >
-                        Remove
-                      </button>
+                  <div key={inv.id}>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate">{inv.email}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {inv.status === "expired" ? (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">Expired</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">Awaiting response</Badge>
+                        )}
+                        <button
+                          className="text-xs text-primary hover:underline disabled:opacity-50"
+                          disabled={resendingId === inv.id}
+                          onClick={() => { setResendResult(null); resendInvite(inv.id); }}
+                        >
+                          {resendingId === inv.id ? "Resending..." : "Resend"}
+                        </button>
+                        <button
+                          className="text-xs text-muted-foreground hover:text-destructive underline"
+                          onClick={() => deleteInvite(inv.id)}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
+                    {resendResult?.id === inv.id && (
+                      <p className={`text-xs mt-0.5 ${resendResult.ok ? "text-green-600" : "text-destructive"}`}>
+                        {resendResult.message}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

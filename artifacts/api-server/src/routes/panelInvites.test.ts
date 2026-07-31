@@ -10,7 +10,7 @@ import {
   panelInvitesTable,
   notificationsTable,
 } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and, isNull, gte, lte } from "drizzle-orm";
 import panelInvitesRouter from "./panelInvites";
 
 // Minimal app hosting only the routes under test (public token routes need no auth).
@@ -234,5 +234,102 @@ describe("POST /panel-assessment/:token/submit", () => {
     const mine = notes.filter(n => n.userId === 424242 && n.type === "panel_assessment_completed");
     expect(mine.length).toBe(1);
     expect(mine[0].message).toContain("Test Candidate");
+  });
+});
+
+describe("resend and reminder race safety (atomic conditional updates)", () => {
+  // Mirrors the conditional update the resend endpoint performs.
+  async function resendStyleUpdate(inviteId: number) {
+    const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const rows = await db.update(panelInvitesTable)
+      .set({ expiresAt: newExpiry, reminderSentAt: null })
+      .where(and(
+        eq(panelInvitesTable.id, inviteId),
+        eq(panelInvitesTable.status, "pending"),
+      ))
+      .returning({ id: panelInvitesTable.id });
+    return rows.length;
+  }
+
+  it("resend cannot reopen or refresh a completed invite", async () => {
+    const invite = await createInvite();
+    const res = await request(app).post(`/panel-assessment/${invite.token}/submit`).send(validBody);
+    expect(res.status).toBe(201);
+
+    const updated = await resendStyleUpdate(invite.id);
+    expect(updated).toBe(0);
+
+    const [after] = await db.select().from(panelInvitesTable).where(eq(panelInvitesTable.id, invite.id));
+    expect(after.status).toBe("completed");
+  });
+
+  it("concurrent submit and resend never produce a second usable submission", async () => {
+    const invite = await createInvite();
+    const [submitRes] = await Promise.all([
+      request(app).post(`/panel-assessment/${invite.token}/submit`).send(validBody),
+      resendStyleUpdate(invite.id),
+    ]);
+    expect(submitRes.status).toBe(201);
+
+    // Whatever the interleaving, a second submit must now be rejected...
+    const again = await request(app).post(`/panel-assessment/${invite.token}/submit`).send(validBody);
+    expect(again.status).toBe(409);
+
+    // ...and exactly one assessment exists for this invite.
+    const assessments = await db.select().from(interviewAssessmentsTable)
+      .where(eq(interviewAssessmentsTable.panelInviteId, invite.id));
+    expect(assessments.length).toBe(1);
+
+    const [after] = await db.select().from(panelInvitesTable).where(eq(panelInvitesTable.id, invite.id));
+    expect(after.status).toBe("completed");
+  });
+
+  // Mirrors the atomic claim the reminder scheduler performs before emailing.
+  async function reminderClaim(inviteId: number, now: Date, cutoff: Date) {
+    const rows = await db.update(panelInvitesTable)
+      .set({ reminderSentAt: new Date() })
+      .where(and(
+        eq(panelInvitesTable.id, inviteId),
+        eq(panelInvitesTable.status, "pending"),
+        isNull(panelInvitesTable.reminderSentAt),
+        gte(panelInvitesTable.expiresAt, now),
+        lte(panelInvitesTable.expiresAt, cutoff),
+      ))
+      .returning({ id: panelInvitesTable.id });
+    return rows.length;
+  }
+
+  it("only one of several concurrent reminder workers claims an invite", async () => {
+    const invite = await createInvite({
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // inside the 2-day window
+    });
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => reminderClaim(invite.id, now, cutoff)),
+    );
+    expect(results.reduce((a, b) => a + b, 0)).toBe(1);
+  });
+
+  it("reminder claim skips completed invites and releases retry after failure", async () => {
+    const invite = await createInvite({
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+    // Completed invites are never claimed.
+    await request(app).post(`/panel-assessment/${invite.token}/submit`).send(validBody);
+    expect(await reminderClaim(invite.id, now, cutoff)).toBe(0);
+
+    // A failed email releases the claim (reminderSentAt reset), allowing retry.
+    const invite2 = await createInvite({
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+    expect(await reminderClaim(invite2.id, now, cutoff)).toBe(1);
+    expect(await reminderClaim(invite2.id, now, cutoff)).toBe(0); // one-reminder semantics
+    await db.update(panelInvitesTable).set({ reminderSentAt: null })
+      .where(eq(panelInvitesTable.id, invite2.id)); // release, as the scheduler does on email failure
+    expect(await reminderClaim(invite2.id, now, cutoff)).toBe(1); // retried on next run
   });
 });
