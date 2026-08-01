@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, peerReviewRequestsTable, peerReviewsTable, notificationsTable, employeesTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { canAccessEmployee, managerCanAccessEmployee } from "../lib/access";
 import { requireActivePlan } from "../middlewares/requireActivePlan";
@@ -251,6 +251,13 @@ router.get("/peer-review/:token", async (req, res): Promise<void> => {
   });
 });
 
+// Test-only hook, invoked inside the submit transaction after the claim.
+// Lets tests deterministically force a post-claim failure and verify rollback.
+let afterClaimHook: ((requestId: number) => Promise<void>) | undefined;
+export function __setAfterClaimHookForTests(hook: typeof afterClaimHook): void {
+  afterClaimHook = hook;
+}
+
 router.post("/peer-review/:token/submit", async (req, res): Promise<void> => {
   const { token } = req.params;
   const [request] = await db.select().from(peerReviewRequestsTable).where(eq(peerReviewRequestsTable.token, token)).limit(1);
@@ -260,15 +267,28 @@ router.post("/peer-review/:token/submit", async (req, res): Promise<void> => {
     res.status(410).json({ error: "This review link has expired" }); return;
   }
 
-  const existing = await db.select({ id: peerReviewsTable.id }).from(peerReviewsTable).where(eq(peerReviewsTable.requestId, request.id)).limit(1);
-  if (existing.length) { res.status(409).json({ error: "Review already submitted" }); return; }
-
   const b = req.body;
 
   const validateScore = (v: unknown): string | null =>
     typeof v === "string" && VALID_SCORES.includes(v) ? v : null;
 
-  const [review] = await db.insert(peerReviewsTable).values({
+  // Claim + review insert run in one transaction: the conditional status update
+  // acts as the lock (only the first concurrent submit wins), and any failure
+  // after the claim rolls it back so the token stays retryable.
+  let review: typeof peerReviewsTable.$inferSelect | undefined;
+  const claimedOk = await db.transaction(async (tx) => {
+    const [claimed] = await tx.update(peerReviewRequestsTable)
+      .set({ status: "completed" })
+      .where(and(
+        eq(peerReviewRequestsTable.id, request.id),
+        ne(peerReviewRequestsTable.status, "completed"),
+      ))
+      .returning({ id: peerReviewRequestsTable.id });
+    if (!claimed) return false;
+
+    if (afterClaimHook) await afterClaimHook(request.id);
+
+    [review] = await tx.insert(peerReviewsTable).values({
     requestId: request.id,
     employeeId: request.employeeId,
     companyId: request.companyId,
@@ -294,27 +314,34 @@ router.post("/peer-review/:token/submit", async (req, res): Promise<void> => {
     promotionRecommendation: ["yes", "no", "unsure"].includes(b.promotionRecommendation) ? b.promotionRecommendation : null,
     strengths: b.strengths || null,
     areasToImprove: b.areasToImprove || null,
-  }).returning();
-
-  await db.update(peerReviewRequestsTable).set({ status: "completed" }).where(eq(peerReviewRequestsTable.id, request.id));
-
-  const completedCount = await db.select({ id: peerReviewsTable.id })
-    .from(peerReviewsTable).where(eq(peerReviewsTable.employeeId, request.employeeId));
-  const totalCount = await db.select({ id: peerReviewRequestsTable.id })
-    .from(peerReviewRequestsTable).where(eq(peerReviewRequestsTable.employeeId, request.employeeId));
-
-  const [emp] = await db.select({ name: employeesTable.name }).from(employeesTable).where(eq(employeesTable.id, request.employeeId)).limit(1);
-
-  await db.insert(notificationsTable).values({
-    companyId: request.companyId,
-    userId: request.requestedByUserId,
-    message: `Peer review completed for ${emp?.name ?? "an employee"} by ${request.peerEmail} (${completedCount.length} of ${totalCount.length} completed)`,
-    type: "peer_review_completed",
-    relatedEmployeeId: request.employeeId,
-    relatedRequestId: request.id,
+    }).returning();
+    return true;
   });
+  if (!claimedOk) { res.status(409).json({ error: "Review already submitted" }); return; }
 
-  res.status(201).json({ success: true, reviewId: review.id });
+  // Notification is best-effort after the durable review: a failure here must
+  // not undo the submission or make the token look retryable.
+  try {
+    const completedCount = await db.select({ id: peerReviewsTable.id })
+      .from(peerReviewsTable).where(eq(peerReviewsTable.employeeId, request.employeeId));
+    const totalCount = await db.select({ id: peerReviewRequestsTable.id })
+      .from(peerReviewRequestsTable).where(eq(peerReviewRequestsTable.employeeId, request.employeeId));
+
+    const [emp] = await db.select({ name: employeesTable.name }).from(employeesTable).where(eq(employeesTable.id, request.employeeId)).limit(1);
+
+    await db.insert(notificationsTable).values({
+      companyId: request.companyId,
+      userId: request.requestedByUserId,
+      message: `Peer review completed for ${emp?.name ?? "an employee"} by ${request.peerEmail} (${completedCount.length} of ${totalCount.length} completed)`,
+      type: "peer_review_completed",
+      relatedEmployeeId: request.employeeId,
+      relatedRequestId: request.id,
+    });
+  } catch (err) {
+    console.error("Failed to create peer-review notification", err);
+  }
+
+  res.status(201).json({ success: true, reviewId: review!.id });
 });
 
 router.get("/employees/:id/peer-reviews", requireAuth, async (req, res): Promise<void> => {

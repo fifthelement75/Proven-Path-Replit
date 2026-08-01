@@ -983,7 +983,7 @@ export default function CandidateDetailPage() {
                 Import to employee profile
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)} data-onboarding="invite-panel-btn">
               Invite panel
             </Button>
             <Button size="sm" onClick={() => setAssessOpen(true)}>

@@ -40,5 +40,7 @@ export async function ensurePanelInviteSchema(): Promise<void> {
   await db.execute(sql`DO $$ BEGIN
     ALTER TABLE "panel_invites" ADD CONSTRAINT "panel_invites_candidate_id_candidate_profiles_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidate_profiles"("id") ON DELETE cascade ON UPDATE no action;
   EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+  // One review per peer-review request (backs the atomic submit claim).
+  await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS "peer_reviews_request_id_unique" ON "peer_reviews" ("request_id")`);
   logger.info("Panel invite schema ensured");
 }

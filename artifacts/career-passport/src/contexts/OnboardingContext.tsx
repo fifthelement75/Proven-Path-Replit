@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
-const STORAGE_KEY = "pp_onboarding_v1";
+const STORAGE_KEY = "pp_onboarding_v2";
 
 export interface OnboardingStep {
   id: string;
@@ -40,7 +40,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     page: "/employees",
     target: "employees-table",
     title: "Explore Employee Profiles",
-    body: "Click any employee to open their full profile. Inside you'll find tabs for Performance Reviews (manager and 360°), Peer Feedback from 1:1s, an AI-generated Development Plan, and a shareable career history report — a verified record of growth that can be exported in a form of References to take anywhere.",
+    body: "Click any employee to open their full profile. Inside you'll find tabs for Performance Reviews (manager and 360°), Peer Feedback from 1:1s, an AI-generated Development Plan, and a shareable career history report. Peer reviewers who haven't responded yet can be nudged with a one-click resend — their link automatically refreshes for another 7 days.",
     placement: "top",
   },
   {
@@ -56,8 +56,15 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     page: "/candidates",
     target: "candidates-header",
     title: "Interview Pipeline",
-    body: "Track every candidate with structured, role-based scoring rubrics. Rate applicants consistently on technical skills, communication, problem-solving, and culture fit — then keep a verified record of each hiring decision for future reference and bias auditing.",
+    body: "Track every candidate through a structured interview pipeline. Score them on technical skills, communication, and culture fit — then invite external panelists by email to submit their own independent assessments. All scores roll up into a Panel Summary with per-criterion averages and an AI analysis.",
     placement: "bottom",
+  },
+  {
+    id: "panel-interviews",
+    page: null,
+    target: null,
+    title: "Panel Interviews Made Simple",
+    body: "Open any candidate and click 'Invite panel' to email tokenized links to any interviewer — inside or outside your company. Each panelist fills out their own scoring form with no login required. Links expire in 7 days and automatic reminders go out 2 days before expiry. You can also resend a fresh link at any time from the candidate page.",
   },
   {
     id: "integrations",

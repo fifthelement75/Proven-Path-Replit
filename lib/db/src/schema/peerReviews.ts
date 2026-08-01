@@ -5,7 +5,7 @@ import { companiesTable } from "./companies";
 
 export const peerReviewsTable = pgTable("peer_reviews", {
   id: serial("id").primaryKey(),
-  requestId: integer("request_id").notNull().references(() => peerReviewRequestsTable.id, { onDelete: "cascade" }),
+  requestId: integer("request_id").notNull().unique().references(() => peerReviewRequestsTable.id, { onDelete: "cascade" }),
   employeeId: integer("employee_id").notNull().references(() => employeesTable.id, { onDelete: "cascade" }),
   companyId: integer("company_id").notNull().references(() => companiesTable.id, { onDelete: "cascade" }),
   peerEmail: text("peer_email").notNull(),
