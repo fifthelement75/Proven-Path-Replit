@@ -282,7 +282,7 @@ export default function CandidatesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2" data-onboarding="candidates-list">
             {filtered.map(c => {
               const roleLabel = ROLE_TEMPLATES.find(r => r.role === c.roleApplyingFor)?.roleLabel ?? c.roleApplyingFor;
               const levelLabel = ROLE_TEMPLATES.find(r => r.role === c.roleApplyingFor)?.levels.find(l => l.level === c.levelApplyingFor)?.levelLabel;

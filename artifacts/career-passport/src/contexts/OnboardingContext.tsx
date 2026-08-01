@@ -61,10 +61,11 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     id: "panel-interviews",
-    page: null,
-    target: null,
+    page: "/candidates",
+    target: "candidates-list",
     title: "Panel Interviews Made Simple",
-    body: "Open any candidate and click 'Invite panel' to email tokenized links to any interviewer — inside or outside your company. Each panelist fills out their own scoring form with no login required. Links expire in 7 days and automatic reminders go out 2 days before expiry. You can also resend a fresh link at any time from the candidate page.",
+    body: "Open any candidate here and click 'Invite panel' to email tokenized links to any interviewer — inside or outside your company. Each panelist fills out their own scoring form with no login required. Links expire in 7 days, automatic reminders go out 2 days before expiry, and you can resend a fresh link at any time.",
+    placement: "top",
   },
   {
     id: "integrations",
