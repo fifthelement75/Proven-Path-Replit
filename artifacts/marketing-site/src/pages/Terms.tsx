@@ -153,10 +153,10 @@ const SECTIONS: Section[] = [
           "AI-powered development plans",
           "Public profile page",
           "Priority support",
-          "14-day free trial available",
+           "7-day free trial available",
         ],
       },
-      { kind: "p", text: "Team Plan ($29/user/month, billed annually):" },
+      { kind: "p", text: "Team Plan ($29/user/month, billed monthly):" },
       {
         kind: "ul",
         items: [
@@ -186,7 +186,7 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Subscriptions are billed in advance on a monthly or annual basis",
+          "Professional and Team subscriptions are billed monthly in advance",
           "Payment is due immediately upon subscription",
           "We accept credit cards, PayPal, and invoicing (Enterprise only)",
           "All fees are in USD unless otherwise stated",
@@ -214,7 +214,7 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Professional Plan includes a 14-day free trial",
+          "Professional Plan includes a 7-day free trial",
           "You will not be charged during the trial period",
           "Your subscription begins automatically after the trial unless cancelled",
           "Only one free trial per user",
@@ -225,7 +225,6 @@ const SECTIONS: Section[] = [
         kind: "ul",
         items: [
           "Monthly Subscriptions: No refunds for partial months",
-          "Annual Subscriptions: Pro-rated refunds available within 30 days of purchase",
           "Enterprise Subscriptions: Refund terms specified in your contract",
           "Refunds are processed within 10 business days",
         ],
@@ -236,7 +235,6 @@ const SECTIONS: Section[] = [
         kind: "ul",
         items: [
           "Monthly subscriptions: Access continues until the end of the billing period",
-          "Annual subscriptions: Access continues until the end of the annual term",
           "No refunds for unused time (except as specified in Section 5.4)",
           "To cancel: Go to Account Settings → Billing → Cancel Subscription",
         ],

@@ -1,3 +1,4 @@
 - [career-passport auth & session expiry](career-passport-auth.md) — route guards check token presence not validity; expired JWTs 401 silently; use apiFetch for auto login-redirect.
 - [db schema changes](db-schema-changes.md) — drizzle-kit push hangs on promo_codes drift prompt; apply DDL via psql/db-sandbox + keep schema barrel in sync.
 - [api-server build vs typecheck](api-server-build.md) — tsc "no exported member" on @workspace/db barrel exports are stale-dist false positives; esbuild reads source, verify at runtime.
+- [Stripe seat entitlements](stripe-seat-entitlements.md) — paid access requires a recognized Stripe price/product; cap employee creation at the subscription item quantity.

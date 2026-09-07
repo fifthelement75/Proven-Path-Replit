@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, companiesTable, employeesTable, reviewsTable, feedbackTable, devPlansTable, devPlanSkillsTable, peerReviewsTable } from "@workspace/db";
 import { eq, count, sql, inArray } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get("/companies/me", requireAuth, async (req, res): Promise<void> => {
   res.json({ id: company.id, name: company.name, email: company.email, createdAt: company.createdAt.toISOString(), employeeCount: Number(cnt) });
 });
 
-router.get("/companies/me/health", requireAuth, async (req, res): Promise<void> => {
+router.get("/companies/me/health", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
 
   const employees = await db.select({ id: employeesTable.id }).from(employeesTable).where(eq(employeesTable.companyId, companyId));
@@ -101,7 +102,7 @@ router.get("/companies/me/health", requireAuth, async (req, res): Promise<void> 
   });
 });
 
-router.get("/companies/me/activity", requireAuth, async (req, res): Promise<void> => {
+router.get("/companies/me/activity", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
 
   const employees = await db.select({ id: employeesTable.id }).from(employeesTable).where(eq(employeesTable.companyId, companyId));
@@ -178,7 +179,7 @@ router.get("/companies/me/activity", requireAuth, async (req, res): Promise<void
   res.json(activities);
 });
 
-router.get("/companies/me/employee-summaries", requireAuth, async (req, res): Promise<void> => {
+router.get("/companies/me/employee-summaries", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
 
   const employees = await db.select({
@@ -322,7 +323,7 @@ function sectionHeader(title: string): string {
   return `\n${title}\n`;
 }
 
-router.get("/companies/me/export", requireAdmin, async (req, res): Promise<void> => {
+router.get("/companies/me/export", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
 
   const employees = await db

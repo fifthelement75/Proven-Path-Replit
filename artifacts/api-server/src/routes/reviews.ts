@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { canAccessEmployee, managerCanAccessEmployee } from "../lib/access";
 import { CreateReviewBody, UpdateReviewBody, ListReviewsParams, CreateReviewParams, GetReviewParams, UpdateReviewParams } from "@workspace/api-zod";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
@@ -59,7 +60,7 @@ function formatReview(r: typeof reviewsTable.$inferSelect, reviewerName: string 
   };
 }
 
-router.get("/employees/:employeeId/reviews", requireAuth, async (req, res): Promise<void> => {
+router.get("/employees/:employeeId/reviews", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = ListReviewsParams.safeParse(req.params);
   if (!params.success) {
@@ -90,7 +91,7 @@ router.get("/employees/:employeeId/reviews", requireAuth, async (req, res): Prom
   res.json(reviews.map(r => formatReview(r, r.reviewerId ? reviewers[r.reviewerId] ?? null : null)));
 });
 
-router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Promise<void> => {
+router.post("/employees/:employeeId/reviews", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = CreateReviewParams.safeParse(req.params);
   if (!params.success) {
@@ -147,7 +148,7 @@ router.post("/employees/:employeeId/reviews", requireAuth, async (req, res): Pro
   res.status(201).json(formatReview(review));
 });
 
-router.get("/employees/:employeeId/reviews/:reviewId", requireAuth, async (req, res): Promise<void> => {
+router.get("/employees/:employeeId/reviews/:reviewId", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = GetReviewParams.safeParse(req.params);
   if (!params.success) {
@@ -174,7 +175,7 @@ router.get("/employees/:employeeId/reviews/:reviewId", requireAuth, async (req, 
   res.json(formatReview(review));
 });
 
-router.patch("/employees/:employeeId/reviews/:reviewId", requireAuth, async (req, res): Promise<void> => {
+router.patch("/employees/:employeeId/reviews/:reviewId", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = UpdateReviewParams.safeParse(req.params);
   if (!params.success) {

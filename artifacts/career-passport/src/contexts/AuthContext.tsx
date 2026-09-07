@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
-import { getUser, getToken, setToken, setUser, removeToken, type User } from "@/lib/auth";
+import { getUser, getToken, setToken, setUser, removeToken, type User, type SubscriptionStatus } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
@@ -15,6 +15,9 @@ interface AuthContextValue {
   login: (token: string, user: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  subscription: SubscriptionStatus | null;
+  isTeamPlan: boolean;
+  refreshSubscription: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -22,6 +25,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(getUser);
   const [token, setTokenState] = useState<string | null>(getToken);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const prevRoleRef = useRef<string | null>(getUser()?.role ?? null);
 
   const login = useCallback((newToken: string, newUser: User) => {
@@ -29,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
     setTokenState(newToken);
     setUserState(newUser);
+    setSubscription(null);
     prevRoleRef.current = newUser.role;
   }, []);
 
@@ -36,8 +41,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     removeToken();
     setTokenState(null);
     setUserState(null);
+    setSubscription(null);
     prevRoleRef.current = null;
   }, []);
+
+  const refreshSubscription = useCallback(async () => {
+    if (!token) {
+      setSubscription(null);
+      return;
+    }
+    try {
+      const res = await apiFetch("/stripe/subscription");
+      if (!res.ok) return;
+      const status = (await res.json()) as SubscriptionStatus;
+      // Older subscriptions used "pro"; the UI uses the canonical
+      // professional/team plan vocabulary.
+      setSubscription({ ...status, plan: status.plan === "pro" ? "professional" : status.plan });
+    } catch {
+      // Keep the last known status during a transient network failure.
+    }
+  }, [token]);
+
+  useEffect(() => {
+    refreshSubscription();
+  }, [refreshSubscription]);
 
   // Refresh the current user (including their access role) from the server on
   // mount and then every 60 seconds while the session is active. This ensures
@@ -93,7 +120,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      login,
+      logout,
+      isAuthenticated: !!token,
+      subscription,
+      isTeamPlan: subscription?.plan === "team",
+      refreshSubscription,
+    }}>
       {children}
     </AuthContext.Provider>
   );

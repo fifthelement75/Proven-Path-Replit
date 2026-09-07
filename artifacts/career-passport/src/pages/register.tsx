@@ -21,11 +21,12 @@ export default function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [planParam, setPlanParam] = useState<string | null>(null);
+  const [planParam, setPlanParam] = useState<"professional" | "team">("professional");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setPlanParam(params.get("plan"));
+    const plan = params.get("plan");
+    setPlanParam(plan === "team" ? "team" : "professional");
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -54,21 +55,21 @@ export default function RegisterPage() {
       // Persist token before any authenticated calls.
       login(data.token, data.user);
 
-      if (planParam === "pro") {
-        // Kick off Stripe checkout immediately.
-        try {
-          const co = await fetch(getApiUrl("/stripe/checkout"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.token}` },
-          });
-          const coData = await co.json();
-          if (co.ok && coData.url) {
-            window.location.href = coData.url;
-            return;
-          }
-        } catch {
-          // Fall through to welcome popup.
+      // Kick off checkout for the selected canonical plan immediately.
+      try {
+        const co = await fetch(getApiUrl("/stripe/checkout"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.token}` },
+          body: JSON.stringify({ plan: planParam, quantity: planParam === "team" ? 10 : 1 }),
+        });
+        const coData = await co.json();
+        if (co.ok && coData.url) {
+          window.location.href = coData.url;
+          return;
         }
+        setError(coData.error || "Your account was created, but checkout could not start. Visit Billing to try again.");
+      } catch {
+        setError("Your account was created, but checkout could not start. Visit Billing to try again.");
       }
 
       // Stash trial info so the layout shows the welcome dialog on the next page
@@ -127,9 +128,7 @@ export default function RegisterPage() {
             <img src={logoUrl} alt="Proven Path" className="h-12 mx-auto pt-[0px] pb-[0px] mb-[28px]" />
             <CardTitle className="text-2xl">Create your company account</CardTitle>
             <CardDescription>
-              {planParam === "pro"
-                ? "Sign up and we'll take you straight to checkout for the Pro plan."
-                : "Start your 7-day free trial — no credit card required."}
+              {`Sign up and we'll take you straight to checkout for the ${planParam === "team" ? "Team" : "Professional"} plan.`}
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -183,7 +182,7 @@ export default function RegisterPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
               <Button type="submit" className="w-full" disabled={loading || !agreed}>
-                {loading ? "Creating account..." : planParam === "pro" ? "Create account & continue to checkout" : "Create account"}
+                {loading ? "Creating account..." : "Create account & continue to checkout"}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 Already have an account?{" "}

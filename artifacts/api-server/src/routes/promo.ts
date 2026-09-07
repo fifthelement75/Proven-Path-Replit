@@ -114,14 +114,15 @@ router.post("/promo/apply", requireAuth, async (req, res): Promise<void> => {
         .where(eq(companiesTable.id, company.id));
     }
 
-    const { getProMonthlyPriceId } = await import("./stripeHelpers");
-    const priceId = await getProMonthlyPriceId();
+    const { getMonthlyPriceId } = await import("./stripeHelpers");
+    const plan = "professional";
+    const priceId = await getMonthlyPriceId(plan);
 
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
-      items: [{ price: priceId }],
+      items: [{ price: priceId, quantity: 1 }],
       trial_period_days: 30,
-      metadata: { companyId: String(company.id) },
+      metadata: { companyId: String(company.id), plan, quantity: "1" },
       payment_settings: { save_default_payment_method: "on_subscription" },
       trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
     });
@@ -135,7 +136,7 @@ router.post("/promo/apply", requireAuth, async (req, res): Promise<void> => {
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscription.id,
         subscriptionStatus: "trialing",
-        plan: "pro",
+        plan,
         trialEndsAt: trialEnd,
       })
       .where(eq(companiesTable.id, company.id));

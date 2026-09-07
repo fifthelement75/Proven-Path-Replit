@@ -138,7 +138,7 @@ export default function LoginPage() {
               </Button>
               <p className="text-sm text-muted-foreground text-center pb-[0px] pt-[20px]">
                 Don't have an account?{" "}
-                <Link href="/register">
+                <Link href="/register?plan=professional">
                   <span className="text-primary hover:underline cursor-pointer">Register</span>
                 </Link>
               </p>

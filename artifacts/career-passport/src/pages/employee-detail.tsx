@@ -1837,9 +1837,10 @@ export default function EmployeeDetailPage() {
   const employeeId = parseInt(params.id!);
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const { user } = useAuthContext();
+  const { user, isTeamPlan } = useAuthContext();
   const isAdmin = user?.role === "admin";
   const canEvaluate = user?.role === "admin" || user?.role === "manager";
+  const canManageTeam = isTeamPlan && canEvaluate;
   const [reviewOpen, setReviewOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1933,7 +1934,7 @@ export default function EmployeeDetailPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <Link href="/employees" className="mt-2 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            <Link href={isTeamPlan ? "/employees" : "/employees/me"} className="mt-2 text-muted-foreground hover:text-foreground transition-colors shrink-0">
               <ArrowLeft size={20} />
             </Link>
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
@@ -1956,8 +1957,8 @@ export default function EmployeeDetailPage() {
           <div className="flex flex-wrap gap-2">
             {isAdmin && <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>Edit</Button>}
             {canEvaluate && <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>Share profile</Button>}
-            {canEvaluate && <Button variant="outline" size="sm" onClick={() => setFeedbackOpen(true)}>Log feedback</Button>}
-            {canEvaluate && <Button size="sm" onClick={() => setReviewOpen(true)}>Add review</Button>}
+            {canManageTeam && <Button variant="outline" size="sm" onClick={() => setFeedbackOpen(true)}>Log feedback</Button>}
+            {canManageTeam && <Button size="sm" onClick={() => setReviewOpen(true)}>Add review</Button>}
           </div>
         </div>
 
@@ -1965,16 +1966,16 @@ export default function EmployeeDetailPage() {
           <Card><CardContent className="pt-3 pb-3"><div className="text-xs text-muted-foreground">Email</div><div className="text-sm font-medium truncate">{employee.email}</div></CardContent></Card>
           <Card><CardContent className="pt-3 pb-3"><div className="text-xs text-muted-foreground">Start date</div><div className="text-sm font-medium">{employee.startDate}</div></CardContent></Card>
           <Card><CardContent className="pt-3 pb-3"><div className="text-xs text-muted-foreground">Manager</div><div className="text-sm font-medium">{employee.managerName || "—"}</div></CardContent></Card>
-          <Card><CardContent className="pt-3 pb-3"><div className="text-xs text-muted-foreground">Reviews</div><div className="text-sm font-medium">{employee.reviewCount}</div></CardContent></Card>
+          {isTeamPlan && <Card><CardContent className="pt-3 pb-3"><div className="text-xs text-muted-foreground">Reviews</div><div className="text-sm font-medium">{employee.reviewCount}</div></CardContent></Card>}
         </div>
 
         <Tabs defaultValue="overview">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback ({feedback.length})</TabsTrigger>
-            <TabsTrigger value="peer-reviews">Peer Reviews</TabsTrigger>
+            {isTeamPlan && <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>}
+            {isTeamPlan && <TabsTrigger value="feedback">Feedback ({feedback.length})</TabsTrigger>}
+            {isTeamPlan && <TabsTrigger value="peer-reviews">Peer Reviews</TabsTrigger>}
             <TabsTrigger value="devplan">Dev Plan</TabsTrigger>
           </TabsList>
 
@@ -2034,7 +2035,7 @@ export default function EmployeeDetailPage() {
             }
           </TabsContent>
 
-          <TabsContent value="reviews" className="mt-4 space-y-3">
+          {isTeamPlan && <TabsContent value="reviews" className="mt-4 space-y-3">
             {loadingReviews ? <Skeleton className="h-32 w-full" /> : reviews.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">No reviews yet.</CardContent></Card>
             ) : reviews.map((review) => (
@@ -2085,9 +2086,9 @@ export default function EmployeeDetailPage() {
                 </CardContent>
               </Card>
             ))}
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="feedback" className="mt-4 space-y-3">
+          {isTeamPlan && <TabsContent value="feedback" className="mt-4 space-y-3">
             {loadingFeedback ? <Skeleton className="h-32 w-full" /> : feedback.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">No feedback sessions logged yet.</CardContent></Card>
             ) : feedback.map((entry) => (
@@ -2098,11 +2099,11 @@ export default function EmployeeDetailPage() {
                 onResponded={() => queryClient.invalidateQueries({ queryKey: ["feedback", employeeId] })}
               />
             ))}
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent value="peer-reviews" className="mt-4">
+          {isTeamPlan && <TabsContent value="peer-reviews" className="mt-4">
             <PeerReviewsTab employeeId={employeeId} employeeName={employee.name} />
-          </TabsContent>
+          </TabsContent>}
 
           <TabsContent value="devplan" className="mt-4">
             <DevPlanTab employeeId={employeeId} />
@@ -2127,10 +2128,10 @@ export default function EmployeeDetailPage() {
       </div>
 
       {isAdmin && <EditEmployeeDialog open={editOpen} onClose={() => setEditOpen(false)} employee={employee} />}
-      {canEvaluate && <AddReviewDialog open={reviewOpen} onClose={() => setReviewOpen(false)} employeeId={employeeId} employeeEmail={employee.email ?? ""} employeeName={employee.name} />}
-      {canEvaluate && <AddFeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} employeeId={employeeId} />}
+      {canManageTeam && <AddReviewDialog open={reviewOpen} onClose={() => setReviewOpen(false)} employeeId={employeeId} employeeEmail={employee.email ?? ""} employeeName={employee.name} />}
+      {canManageTeam && <AddFeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} employeeId={employeeId} />}
       {canEvaluate && <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} employeeId={employeeId} />}
-      {canEvaluate && <RequestPeerReviewDialog open={peerOpen} onClose={() => setPeerOpen(false)} employeeId={employeeId} employeeName={employee.name} />}
+      {canManageTeam && <RequestPeerReviewDialog open={peerOpen} onClose={() => setPeerOpen(false)} employeeId={employeeId} employeeName={employee.name} />}
     </Layout>
   );
 }

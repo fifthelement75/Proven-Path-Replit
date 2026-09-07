@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -10,6 +10,7 @@ export const companiesTable = pgTable("companies", {
   profilePhotoUrl: text("profile_photo_url"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeSeatQuantity: integer("stripe_seat_quantity"),
   subscriptionStatus: text("subscription_status"),
   plan: text("plan").notNull().default("trial"),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),

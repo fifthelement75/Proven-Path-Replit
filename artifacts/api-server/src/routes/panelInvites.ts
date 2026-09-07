@@ -11,7 +11,7 @@ import {
 import { eq, and, desc } from "drizzle-orm";
 import crypto from "crypto";
 import { requireAuth } from "../middlewares/auth";
-import { requireActivePlan } from "../middlewares/requireActivePlan";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 import { sendPanelInviteEmail, getPanelAssessmentLink } from "../lib/email";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { logger } from "../lib/logger";
@@ -24,7 +24,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // ---------------------------------------------------------------------------
 // Authenticated: create panel invites (admin/manager)
 // ---------------------------------------------------------------------------
-router.post("/candidates/:id/panel-invites", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
+router.post("/candidates/:id/panel-invites", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, userId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -120,7 +120,7 @@ router.post("/candidates/:id/panel-invites", requireAuth, requireActivePlan, asy
 // ---------------------------------------------------------------------------
 // Authenticated: list panel invites for a candidate
 // ---------------------------------------------------------------------------
-router.get("/candidates/:id/panel-invites", requireAuth, async (req, res): Promise<void> => {
+router.get("/candidates/:id/panel-invites", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -150,7 +150,7 @@ router.get("/candidates/:id/panel-invites", requireAuth, async (req, res): Promi
 // ---------------------------------------------------------------------------
 // Authenticated: resend a pending invite (refreshes the 7-day expiry)
 // ---------------------------------------------------------------------------
-router.post("/candidates/:id/panel-invites/:inviteId/resend", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
+router.post("/candidates/:id/panel-invites/:inviteId/resend", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, userId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -220,7 +220,7 @@ router.post("/candidates/:id/panel-invites/:inviteId/resend", requireAuth, requi
 // ---------------------------------------------------------------------------
 // Authenticated: delete a pending invite
 // ---------------------------------------------------------------------------
-router.delete("/candidates/:id/panel-invites/:inviteId", requireAuth, async (req, res): Promise<void> => {
+router.delete("/candidates/:id/panel-invites/:inviteId", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -363,7 +363,7 @@ router.post("/panel-assessment/:token/submit", async (req, res): Promise<void> =
 // ---------------------------------------------------------------------------
 // Authenticated: get / generate the AI panel summary
 // ---------------------------------------------------------------------------
-router.get("/candidates/:id/panel-summary", requireAuth, async (req, res): Promise<void> => {
+router.get("/candidates/:id/panel-summary", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -384,7 +384,7 @@ router.get("/candidates/:id/panel-summary", requireAuth, async (req, res): Promi
   });
 });
 
-router.post("/candidates/:id/panel-summary/generate", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
+router.post("/candidates/:id/panel-summary/generate", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 

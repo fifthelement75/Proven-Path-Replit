@@ -64,13 +64,13 @@ export function Header() {
 
           <div className="hidden md:flex items-center gap-4">
             <a
-              href="/app/register"
+               href="/app/register?plan=professional"
               className="text-sm font-medium text-gray-600 hover:text-gray-900"
             >
               Sign Up
             </a>
-            <Link href="/contact">
-              <Button>Book a Demo</Button>
+            <Link href="/pricing">
+              <Button>View plans</Button>
             </Link>
           </div>
 
@@ -109,13 +109,13 @@ export function Header() {
             </Link>
             <div className="h-px bg-gray-200 my-2" />
             <a
-              href="/app/register"
+               href="/app/register?plan=professional"
               className="text-base font-medium text-gray-900 px-3 py-3 hover:bg-gray-50 rounded-md"
             >
               Sign Up
             </a>
-            <Link href="/contact" className="w-full mt-1">
-              <Button className="w-full h-12 text-base">Book a Demo</Button>
+            <Link href="/pricing" className="w-full mt-1">
+              <Button className="w-full h-12 text-base">View plans</Button>
             </Link>
           </div>
         </>

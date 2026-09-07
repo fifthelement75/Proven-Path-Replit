@@ -44,10 +44,17 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
   return <Component />;
 }
 
-function ManagerRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, user } = useAuthContext();
+function AdminTeamRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, user, isTeamPlan } = useAuthContext();
   if (!isAuthenticated) return <Redirect to="/login" />;
-  if (user?.role !== "admin" && user?.role !== "manager") return <Redirect to="/employees/me" />;
+  if (!isTeamPlan || user?.role !== "admin") return <Redirect to="/employees/me" />;
+  return <Component />;
+}
+
+function ManagerTeamRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, user, isTeamPlan } = useAuthContext();
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (!isTeamPlan || (user?.role !== "admin" && user?.role !== "manager")) return <Redirect to="/employees/me" />;
   return <Component />;
 }
 
@@ -68,14 +75,14 @@ function Router() {
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/login" component={() => <PublicOnlyRoute component={LoginPage} />} />
       <Route path="/register" component={() => <PublicOnlyRoute component={RegisterPage} />} />
-      <Route path="/dashboard" component={() => <AdminRoute component={DashboardPage} />} />
-      <Route path="/employees" component={() => <ManagerRoute component={EmployeesPage} />} />
+      <Route path="/dashboard" component={() => <AdminTeamRoute component={DashboardPage} />} />
+      <Route path="/employees" component={() => <ManagerTeamRoute component={EmployeesPage} />} />
       <Route path="/employees/me" component={() => <PrivateRoute component={MyProfileRedirect} />} />
       <Route path="/employees/:id" component={() => <PrivateRoute component={EmployeeDetailPage} />} />
-      <Route path="/settings" component={() => <AdminRoute component={SettingsPage} />} />
+      <Route path="/settings" component={() => <AdminTeamRoute component={SettingsPage} />} />
       <Route path="/billing" component={() => <AdminRoute component={BillingPage} />} />
-      <Route path="/candidates" component={() => <AdminRoute component={CandidatesPage} />} />
-      <Route path="/candidates/:id" component={() => <AdminRoute component={CandidateDetailPage} />} />
+      <Route path="/candidates" component={() => <AdminTeamRoute component={CandidatesPage} />} />
+      <Route path="/candidates/:id" component={() => <AdminTeamRoute component={CandidateDetailPage} />} />
       <Route path="/share/:token" component={SharePage} />
       <Route path="/peer-review/:token" component={PeerReviewPage} />
       <Route path="/self-reflection/:token" component={SelfReflectionPage} />

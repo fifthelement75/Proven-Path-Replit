@@ -4,26 +4,21 @@ import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { getUncachableStripeClient } from "../lib/stripeClient";
 import { logger } from "../lib/logger";
-import { getProMonthlyPriceId } from "./stripeHelpers";
+import { getMonthlyPriceId, validateCheckoutSelection } from "./stripeHelpers";
+import { canonicalPlan, hasActiveAccess } from "../lib/entitlements";
 
 const router = Router();
 
 const ALLOWED_HOST_SUFFIXES = [".replit.dev", ".replit.app", ".provenpath.app", "provenpath.app", "localhost"];
 
 function getBaseUrl(req: any): string {
-  // Prefer an explicitly configured public origin (deployment), so Stripe return URLs
-  // don't depend on attacker-controllable Host / X-Forwarded-* headers.
   const configured = process.env.APP_PUBLIC_URL;
   if (configured) return configured.replace(/\/$/, "");
 
   const rawHost = String(req.get("host") || "");
   const host = rawHost.split(":")[0];
-  const isAllowed = ALLOWED_HOST_SUFFIXES.some(
-    (s) => host === s || host.endsWith(s),
-  );
-  if (!isAllowed) {
-    throw new Error(`Refusing to build Stripe return URL for untrusted host: ${rawHost}`);
-  }
+  const isAllowed = ALLOWED_HOST_SUFFIXES.some((s) => host === s || host.endsWith(s));
+  if (!isAllowed) throw new Error(`Refusing to build Stripe return URL for untrusted host: ${rawHost}`);
   const proto = req.get("x-forwarded-proto") || req.protocol || "https";
   return `${proto}://${rawHost}`;
 }
@@ -43,6 +38,11 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
   const auth = req.auth!;
   if (auth.role !== "admin") {
     res.status(403).json({ error: "Only company admins can manage billing" });
+    return;
+  }
+  const selection = validateCheckoutSelection(req.body);
+  if (!selection.data) {
+    res.status(400).json({ error: selection.error });
     return;
   }
 
@@ -65,25 +65,24 @@ router.post("/stripe/checkout", requireAuth, async (req, res): Promise<void> => 
       await db.update(companiesTable).set({ stripeCustomerId: customerId }).where(eq(companiesTable.id, company.id));
     }
 
-    const priceId = await getProMonthlyPriceId();
+    const { plan, quantity } = selection.data;
+    const priceId = await getMonthlyPriceId(plan);
     const baseUrl = getBaseUrl(req);
-    const successUrl = `${baseUrl}/billing?checkout=success`;
-    const cancelUrl = `${baseUrl}/billing?checkout=cancel`;
-
+    const metadata = { companyId: String(company.id), plan, quantity: String(quantity) };
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: { companyId: String(company.id) },
-      subscription_data: { metadata: { companyId: String(company.id) } },
+      line_items: [{ price: priceId, quantity }],
+      success_url: `${baseUrl}/billing?checkout=success`,
+      cancel_url: `${baseUrl}/billing?checkout=cancel`,
+      metadata,
+      subscription_data: { metadata },
       allow_promotion_codes: true,
     });
 
     res.json({ url: session.url });
   } catch (err: any) {
-    logger.error({ err: err?.message || err }, "Failed to create stripe checkout session");
+    req.log?.error({ err: err?.message || err }, "Failed to create stripe checkout session");
     res.status(500).json({ error: err?.message || "Failed to create checkout session" });
   }
 });
@@ -101,14 +100,13 @@ router.post("/stripe/portal", requireAuth, async (req, res): Promise<void> => {
       return;
     }
     const stripe = await getUncachableStripeClient();
-    const baseUrl = getBaseUrl(req);
     const session = await stripe.billingPortal.sessions.create({
       customer: company.stripeCustomerId,
-      return_url: `${baseUrl}/billing`,
+      return_url: `${getBaseUrl(req)}/billing`,
     });
     res.json({ url: session.url });
   } catch (err: any) {
-    logger.error({ err: err?.message || err }, "Failed to create stripe portal session");
+    req.log?.error({ err: err?.message || err }, "Failed to open stripe portal");
     res.status(500).json({ error: err?.message || "Failed to open billing portal" });
   }
 });
@@ -126,14 +124,16 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
     ? Math.max(0, Math.ceil((company.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
   const subscriptionActive = company.subscriptionStatus === "active" || company.subscriptionStatus === "trialing";
+  const plan = canonicalPlan(company.plan);
   res.json({
-    plan: company.plan,
+    plan,
+    seatQuantity: company.stripeSeatQuantity,
     subscriptionStatus: company.subscriptionStatus,
     trialEndsAt: company.trialEndsAt,
     trialActive,
     trialDaysRemaining,
-    hasActiveAccess: subscriptionActive || trialActive,
-    subscriptionActive,
+    hasActiveAccess: hasActiveAccess(company),
+    subscriptionActive: subscriptionActive && (plan === "professional" || plan === "team"),
   });
 });
 

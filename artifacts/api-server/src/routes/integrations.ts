@@ -4,6 +4,8 @@ import { db, integrationConnectionsTable, syncKeysTable, employeesTable } from "
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
+import { assertEmployeeSeat, requireTeamEntitlement } from "../lib/entitlements";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
@@ -34,7 +36,7 @@ function isCategory(value: unknown): value is Category {
   return typeof value === "string" && (CATEGORIES as readonly string[]).includes(value);
 }
 
-router.get("/integrations", requireAuth, async (req, res): Promise<void> => {
+router.get("/integrations", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   try {
     const connections = await db
       .select()
@@ -47,7 +49,7 @@ router.get("/integrations", requireAuth, async (req, res): Promise<void> => {
   }
 });
 
-router.post("/integrations/connect", requireAuth, async (req, res): Promise<void> => {
+router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const auth = req.auth!;
   if (auth.role !== "admin") {
     res.status(403).json({ message: "Only company admins can manage integrations." });
@@ -104,7 +106,7 @@ router.post("/integrations/connect", requireAuth, async (req, res): Promise<void
   }
 });
 
-router.post("/integrations/disconnect", requireAuth, async (req, res): Promise<void> => {
+router.post("/integrations/disconnect", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const auth = req.auth!;
   if (auth.role !== "admin") {
     res.status(403).json({ message: "Only company admins can manage integrations." });
@@ -138,7 +140,7 @@ router.post("/integrations/disconnect", requireAuth, async (req, res): Promise<v
 // Inbound sync API key management (admin, JWT-authenticated)
 // ---------------------------------------------------------------------------
 
-router.get("/integrations/sync-key", requireAuth, async (req, res): Promise<void> => {
+router.get("/integrations/sync-key", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const auth = req.auth!;
   if (auth.role !== "admin") {
     res.status(403).json({ message: "Only company admins can manage the sync key." });
@@ -161,7 +163,7 @@ router.get("/integrations/sync-key", requireAuth, async (req, res): Promise<void
   }
 });
 
-router.post("/integrations/sync-key", requireAuth, async (req, res): Promise<void> => {
+router.post("/integrations/sync-key", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const auth = req.auth!;
   if (auth.role !== "admin") {
     res.status(403).json({ message: "Only company admins can manage the sync key." });
@@ -186,7 +188,7 @@ router.post("/integrations/sync-key", requireAuth, async (req, res): Promise<voi
   }
 });
 
-router.delete("/integrations/sync-key", requireAuth, async (req, res): Promise<void> => {
+router.delete("/integrations/sync-key", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const auth = req.auth!;
   if (auth.role !== "admin") {
     res.status(403).json({ message: "Only company admins can manage the sync key." });
@@ -278,6 +280,11 @@ router.post("/integrations/sync/employees", async (req, res): Promise<void> => {
     return;
   }
   const companyId = keyRow.companyId;
+  const team = await requireTeamEntitlement(db, companyId);
+  if (team !== "ok") {
+    res.status(403).json({ message: "Employee sync is available on the Team plan.", code: "team_plan_required" });
+    return;
+  }
 
   const parsed = parseSyncEmployeesBody(req.body);
   if ("error" in parsed) {
@@ -331,18 +338,23 @@ router.post("/integrations/sync/employees", async (req, res): Promise<void> => {
           errors.push({ email, reason: `New employee missing required field(s): ${missing.join(", ")}` });
           continue;
         }
-        const [inserted] = await db
-          .insert(employeesTable)
-          .values({
-            companyId,
-            name: rec.name!,
-            email,
-            role: title!,
-            department: rec.department!,
-            level: rec.level!,
-            startDate: rec.startDate!,
-          })
-          .returning({ id: employeesTable.id });
+        let inserted: { id: number };
+        try {
+          [inserted] = await db.transaction(async (tx) => {
+            await assertEmployeeSeat(tx, companyId);
+            return tx.insert(employeesTable).values({
+              companyId, name: rec.name!, email, role: title!,
+              department: rec.department!, level: rec.level!, startDate: rec.startDate!,
+            }).returning({ id: employeesTable.id });
+          });
+        } catch (err) {
+          const code = (err as { code?: string }).code;
+          if (code === "professional_seat_limit" || code === "team_seat_limit" || code === "invalid_seat_quantity" || code === "active_plan_required") {
+            errors.push({ email, reason: (err as Error).message });
+            continue;
+          }
+          throw err;
+        }
         byEmail.set(emailKey, inserted.id);
         created++;
       }

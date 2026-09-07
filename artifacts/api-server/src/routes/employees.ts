@@ -5,6 +5,8 @@ import { requireAuth } from "../middlewares/auth";
 import { canAccessEmployee } from "../lib/access";
 import { sendRoleChangeEmail } from "../lib/email";
 import { logger } from "../lib/logger";
+import { assertEmployeeSeat } from "../lib/entitlements";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 import {
   CreateEmployeeBody, UpdateEmployeeBody, GetEmployeeParams,
   UpdateEmployeeParams, DeleteEmployeeParams, ListEmployeesQueryParams,
@@ -71,7 +73,7 @@ router.get("/employees/me", requireAuth, async (req, res): Promise<void> => {
   });
 });
 
-router.get("/employees", requireAuth, async (req, res): Promise<void> => {
+router.get("/employees", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const auth = req.auth!;
   const { companyId, role, employeeId } = auth;
 
@@ -160,7 +162,7 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { managerId, userRole, ...rest } = parsed.data;
+  const { managerId, ...rest } = parsed.data;
   if (managerId != null) {
     const managerCheck = await db.select({ id: employeesTable.id }).from(employeesTable)
       .where(and(eq(employeesTable.id, managerId), eq(employeesTable.companyId, companyId))).limit(1);
@@ -169,7 +171,22 @@ router.post("/employees", requireAuth, async (req, res): Promise<void> => {
       return;
     }
   }
-  const [emp] = await db.insert(employeesTable).values({ ...rest, companyId, managerId: managerId ?? null, ...(userRole ? { userRole } : {}) }).returning();
+  let emp: typeof employeesTable.$inferSelect;
+  try {
+    [emp] = await db.transaction(async (tx) => {
+      await assertEmployeeSeat(tx, companyId);
+      return tx.insert(employeesTable)
+        .values({ ...rest, companyId, managerId: managerId ?? null })
+        .returning();
+    });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "professional_seat_limit" || code === "team_seat_limit" || code === "invalid_seat_quantity" || code === "active_plan_required") {
+      res.status(403).json({ error: (err as Error).message, code });
+      return;
+    }
+    throw err;
+  }
   res.status(201).json({
     ...emp,
     managerName: null,

@@ -12,6 +12,7 @@ import crypto from "crypto";
 import { requireManagerOrAdmin } from "../middlewares/auth";
 import { managerCanAccessEmployee } from "../lib/access";
 import { sendSelfReflectionEmail, getSelfReflectionLink } from "../lib/email";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
@@ -47,7 +48,7 @@ function clampScore(v: unknown): number | null {
   return Math.max(1, Math.min(5, Math.round(n)));
 }
 
-router.get("/employees/:id/self-reflection-requests", requireManagerOrAdmin, async (req, res): Promise<void> => {
+router.get("/employees/:id/self-reflection-requests", requireManagerOrAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   if (isNaN(employeeId)) { res.status(400).json({ error: "Invalid employee id" }); return; }
@@ -74,7 +75,7 @@ router.get("/employees/:id/self-reflection-requests", requireManagerOrAdmin, asy
   })));
 });
 
-router.post("/employees/:id/self-reflection-requests", requireManagerOrAdmin, async (req, res): Promise<void> => {
+router.post("/employees/:id/self-reflection-requests", requireManagerOrAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, userId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   if (isNaN(employeeId)) { res.status(400).json({ error: "Invalid employee id" }); return; }
@@ -146,7 +147,7 @@ router.post("/employees/:id/self-reflection-requests", requireManagerOrAdmin, as
   });
 });
 
-router.delete("/employees/:id/self-reflection-requests/:requestId", requireManagerOrAdmin, async (req, res): Promise<void> => {
+router.delete("/employees/:id/self-reflection-requests/:requestId", requireManagerOrAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   const requestId = parseInt(req.params.requestId);
@@ -169,7 +170,7 @@ router.delete("/employees/:id/self-reflection-requests/:requestId", requireManag
   res.json({ success: true });
 });
 
-router.post("/employees/:id/self-reflection-requests/:requestId/nudge", requireManagerOrAdmin, async (req, res): Promise<void> => {
+router.post("/employees/:id/self-reflection-requests/:requestId/nudge", requireManagerOrAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const employeeId = parseInt(req.params.id);
   const requestId = parseInt(req.params.requestId);

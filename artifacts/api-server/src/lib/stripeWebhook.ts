@@ -2,6 +2,7 @@ import { db, companiesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { getStripeSync, getUncachableStripeClient } from "./stripeClient";
 import { logger } from "./logger";
+import { getTrustedSubscriptionSelection } from "../routes/stripeHelpers";
 
 export async function processStripeWebhook(rawBody: Buffer, signature: string): Promise<void> {
   const stripeSync = await getStripeSync();
@@ -41,7 +42,7 @@ async function syncCompanyFromEvent(event: any): Promise<void> {
     customerId = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
     if (session.subscription) {
       const subId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
-      subscription = await stripe.subscriptions.retrieve(subId);
+      subscription = await stripe.subscriptions.retrieve(subId, { expand: ["items.data.price.product"] });
     }
   } else {
     subscription = event.data.object;
@@ -69,13 +70,24 @@ async function syncCompanyFromEvent(event: any): Promise<void> {
     updates.stripeSubscriptionId = subscription.id;
     updates.subscriptionStatus = subscription.status;
     if (subscription.status === "active" || subscription.status === "trialing") {
-      updates.plan = "pro";
+      const selection = await getTrustedSubscriptionSelection(subscription);
+      // Metadata identifies the company, but Stripe's actual price/product is
+      // the source of truth for access level and paid seat quantity.
+      if (selection) {
+        updates.plan = selection.plan;
+        updates.stripeSeatQuantity = selection.quantity;
+      } else {
+        updates.plan = "free";
+        updates.stripeSeatQuantity = null;
+        logger.warn({ companyId, subscriptionId: subscription.id }, "Active Stripe subscription has no recognized paid plan");
+      }
     } else if (
       subscription.status === "canceled" ||
       subscription.status === "incomplete_expired" ||
       subscription.status === "unpaid"
     ) {
       updates.plan = "free";
+      updates.stripeSeatQuantity = null;
     }
   }
 
@@ -98,11 +110,32 @@ async function handleInvoicePaymentSucceeded(event: any): Promise<void> {
   if (!customerId) return;
   const companyId = await getCompanyByCustomerId(customerId);
   if (!companyId) return;
+  const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+  if (!subscriptionId) {
+    logger.warn({ companyId, invoiceId: invoice.id }, "Paid invoice has no subscription");
+    return;
+  }
+  const stripe = await getUncachableStripeClient();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, { expand: ["items.data.price.product"] });
+  const selection = await getTrustedSubscriptionSelection(subscription);
+  if (!selection) {
+    await db
+      .update(companiesTable)
+      .set({ subscriptionStatus: subscription.status ?? "active", plan: "free", stripeSeatQuantity: null })
+      .where(eq(companiesTable.id, companyId));
+    logger.warn({ companyId, subscriptionId }, "Paid invoice subscription has no recognized paid plan");
+    return;
+  }
   await db
     .update(companiesTable)
-    .set({ subscriptionStatus: "active", plan: "pro" })
+    .set({
+      stripeSubscriptionId: subscription.id,
+      subscriptionStatus: "active",
+      plan: selection.plan,
+      stripeSeatQuantity: selection.quantity,
+    })
     .where(eq(companiesTable.id, companyId));
-  logger.info({ companyId }, "invoice.payment_succeeded — subscription set to active");
+  logger.info({ companyId, plan: selection.plan, quantity: selection.quantity }, "invoice.payment_succeeded — subscription set to active");
 }
 
 async function handleInvoicePaymentFailed(event: any): Promise<void> {

@@ -6,6 +6,8 @@ import crypto from "crypto";
 import { requireAdmin, signToken } from "../middlewares/auth";
 import { sendInvitationEmail, getInviteLink } from "../lib/email";
 import { logger } from "../lib/logger";
+import { assertEmployeeSeat, requireTeamEntitlement } from "../lib/entitlements";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
@@ -23,7 +25,7 @@ function effectiveStatus(inv: { status: string; expiresAt: Date | null }): strin
 }
 
 // ---- Admin: create an invitation -------------------------------------------
-router.post("/invitations", requireAdmin, async (req, res): Promise<void> => {
+router.post("/invitations", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, employeeId, userId } = req.auth!;
 
   const email = String(req.body?.email || "").trim().toLowerCase();
@@ -120,7 +122,7 @@ router.post("/invitations", requireAdmin, async (req, res): Promise<void> => {
 });
 
 // ---- Admin: list invitations -----------------------------------------------
-router.get("/invitations", requireAdmin, async (req, res): Promise<void> => {
+router.get("/invitations", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const rows = await db
     .select()
@@ -143,7 +145,7 @@ router.get("/invitations", requireAdmin, async (req, res): Promise<void> => {
 });
 
 // ---- Admin: revoke a pending invitation ------------------------------------
-router.delete("/invitations/:id", requireAdmin, async (req, res): Promise<void> => {
+router.delete("/invitations/:id", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) {
@@ -241,34 +243,46 @@ router.post("/invitations/accept/:token", async (req, res): Promise<void> => {
     return;
   }
 
-  // Atomically claim the invitation so it can only be accepted once.
-  const claimed = await db
-    .update(invitationsTable)
-    .set({ status: "accepted", acceptedAt: new Date() })
-    .where(and(eq(invitationsTable.id, inv.id), eq(invitationsTable.status, "pending")))
-    .returning({ id: invitationsTable.id });
-  if (claimed.length === 0) {
-    res.status(409).json({ error: "This invitation has already been accepted. Please log in instead." });
-    return;
-  }
-
   const passwordHash = await bcrypt.hash(password, 10);
   const today = new Date().toISOString().slice(0, 10);
-
-  const [emp] = await db
-    .insert(employeesTable)
-    .values({
-      companyId: inv.companyId,
-      name,
-      email: inv.email,
-      passwordHash,
-      userRole: inv.userRole,
-      role: "Team Member",
-      department: "General",
-      level: "Mid",
-      startDate: today,
-    })
-    .returning();
+  let emp: typeof employeesTable.$inferSelect;
+  try {
+    [emp] = await db.transaction(async (tx) => {
+      const team = await requireTeamEntitlement(tx, inv.companyId);
+      if (team !== "ok") {
+        const error = new Error("This invitation requires an active Team plan.");
+        (error as Error & { code?: string }).code = "team_plan_required";
+        throw error;
+      }
+      const claimed = await tx.update(invitationsTable).set({ status: "accepted", acceptedAt: new Date() })
+        .where(and(eq(invitationsTable.id, inv.id), eq(invitationsTable.status, "pending")))
+        .returning({ id: invitationsTable.id });
+      if (!claimed.length) {
+        const error = new Error("This invitation has already been accepted. Please log in instead.");
+        (error as Error & { code?: string }).code = "invite_claimed";
+        throw error;
+      }
+      // Team invitations currently cannot consume a Professional seat, but the
+      // check remains here to keep this creation boundary safe if plans change.
+      await assertEmployeeSeat(tx, inv.companyId);
+      return tx.insert(employeesTable).values({
+        companyId: inv.companyId, name, email: inv.email, passwordHash,
+        userRole: inv.userRole, role: "Team Member", department: "General",
+        level: "Mid", startDate: today,
+      }).returning();
+    });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "team_plan_required" || code === "professional_seat_limit" || code === "team_seat_limit" || code === "invalid_seat_quantity" || code === "active_plan_required") {
+      res.status(403).json({ error: (err as Error).message, code });
+      return;
+    }
+    if (code === "invite_claimed") {
+      res.status(409).json({ error: (err as Error).message });
+      return;
+    }
+    throw err;
+  }
 
   const [company] = await db.select({ name: companiesTable.name }).from(companiesTable).where(eq(companiesTable.id, inv.companyId)).limit(1);
 

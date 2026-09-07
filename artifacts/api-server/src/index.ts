@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { startTrialReminderScheduler } from "./lib/trialReminders";
 import { startPanelInviteReminderScheduler } from "./lib/panelInviteReminders";
 import { ensurePanelInviteSchema } from "./lib/ensurePanelInviteSchema";
+import { ensureBillingSchema } from "./lib/ensureBillingSchema";
 
 const rawPort = process.env["PORT"];
 
@@ -50,6 +51,7 @@ async function main(): Promise<void> {
   // Guarantee the schema exists before accepting any API traffic.
   try {
     await ensurePanelInviteSchema();
+    await ensureBillingSchema();
   } catch (err) {
     logger.error({ err }, "Failed to ensure panel invite schema");
     process.exit(1);

@@ -10,7 +10,7 @@ export default function Pricing() {
   useDocumentMeta({
     title: "Pricing — Proven Path | Performance Management for Growing Teams",
     description:
-      "Simple, transparent pricing for HR teams of every size. Start with a 7-day free trial of Proven Path Pro at $9.99/month — no credit card required.",
+       "Simple monthly pricing for professionals and teams. Choose Professional at $9.99/month or Team at $29 per user/month with a 10-seat minimum.",
     ogImage: "opengraph.jpg",
     canonicalPath: "/pricing",
   });
@@ -26,7 +26,7 @@ export default function Pricing() {
     },
     {
       q: "What payment methods do you accept?",
-      a: "Credit card, PayPal, invoice (Enterprise)"
+       a: "Credit card"
     },
     {
       q: "Can I cancel anytime?",
@@ -35,22 +35,6 @@ export default function Pricing() {
   ];
 
   const tiers = [
-    {
-      name: "Free",
-      price: "$0",
-      period: "/month",
-      tagline: "Try the personal experience",
-      features: [
-        "Basic Proven Path profile",
-        "Self-assessment tools",
-        "3 verified references",
-        "Career timeline view"
-      ],
-      cta: "Get Started Free",
-      link: "/app/register",
-      external: true,
-      popular: false
-    },
     {
       name: "Professional",
       price: "$9.99",
@@ -65,7 +49,7 @@ export default function Pricing() {
         "Priority support"
       ],
       cta: "Start 7-day Free Trial",
-      link: "/app/register?plan=pro",
+       link: "/app/register?plan=professional",
       external: true,
       popular: false
     },
@@ -73,7 +57,7 @@ export default function Pricing() {
       name: "Team",
       price: "$29",
       period: "/user/month",
-      sub: "(billed annually, min 10 users)",
+       sub: "(monthly, minimum 10 users)",
       tagline: "For growing HR teams",
       features: [
         "Interview scoring module",
@@ -84,28 +68,11 @@ export default function Pricing() {
         "AI development plans",
         "Email support"
       ],
-      cta: "Book a Demo",
-      link: "/contact",
+       cta: "Start Team plan",
+       link: "/app/register?plan=team",
+       external: true,
       popular: true
     },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "Pricing",
-      tagline: "For complex orgs and HRIS-led rollouts",
-      features: [
-        "Everything in Team, plus:",
-        "HRIS integrations (BambooHR, Workday, Gusto)",
-        "SSO & advanced security (built on SOC 2-compliant infrastructure)",
-        "Dedicated account manager",
-        "Custom workflows & permissions",
-        "API access",
-        "SLA guarantee"
-      ],
-      cta: "Contact Sales",
-      link: "/contact",
-      popular: false
-    }
   ];
 
   return (
@@ -143,7 +110,7 @@ export default function Pricing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-24">
             {tiers.map((tier, i) => (
               <div 
                 key={i} 

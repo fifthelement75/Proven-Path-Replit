@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, Sparkles, AlertTriangle, Loader2, Tag, XCircle } from "lucide-react";
+import { CheckCircle2, Sparkles, AlertTriangle, Loader2, Tag, XCircle, Minus, Plus } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { getToken, type SubscriptionStatus } from "@/lib/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -17,11 +17,13 @@ function authHeaders(): Record<string, string> {
 }
 
 export default function BillingPage() {
-  const { user } = useAuthContext();
+  const { user, refreshSubscription } = useAuthContext();
   const { toast } = useToast();
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<"professional" | "team">("professional");
+  const [teamQuantity, setTeamQuantity] = useState(10);
 
   const [promoCode, setPromoCode] = useState("");
   const [promoState, setPromoState] = useState<"idle" | "validating" | "valid" | "applying" | "applied" | "error">("idle");
@@ -33,7 +35,12 @@ export default function BillingPage() {
     setLoading(true);
     try {
       const res = await fetch(getApiUrl("/stripe/subscription"), { headers: authHeaders() });
-      if (res.ok) setStatus(await res.json());
+      if (res.ok) {
+        const next = await res.json() as SubscriptionStatus;
+        const canonical = { ...next, plan: next.plan === "pro" ? "professional" : next.plan };
+        setStatus(canonical);
+        setSelectedPlan(canonical.plan === "team" ? "team" : "professional");
+      }
     } finally {
       setLoading(false);
     }
@@ -46,6 +53,7 @@ export default function BillingPage() {
     if (checkout === "success") {
       toast({ title: "Subscription active", description: "Thanks! Your subscription is now active." });
       window.history.replaceState({}, "", window.location.pathname);
+      refreshSubscription();
     } else if (checkout === "cancel") {
       toast({ title: "Checkout cancelled", description: "You can subscribe any time.", variant: "default" });
       window.history.replaceState({}, "", window.location.pathname);
@@ -114,6 +122,10 @@ export default function BillingPage() {
       const res = await fetch(getApiUrl("/stripe/checkout"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          plan: selectedPlan,
+          quantity: selectedPlan === "team" ? teamQuantity : 1,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) {
@@ -147,6 +159,8 @@ export default function BillingPage() {
   const alreadySubscribed = status?.subscriptionActive || status?.trialActive;
   const promoApplied = promoState === "applied";
   const promoValid = promoState === "valid";
+  const canStartCheckout = !status?.subscriptionActive && !promoApplied;
+  const isPromoApplying = () => promoState === "applying";
 
   return (
     <Layout>
@@ -188,7 +202,9 @@ export default function BillingPage() {
                   <Alert>
                     <CheckCircle2 className="h-4 w-4" />
                     <AlertTitle>Subscription active</AlertTitle>
-                    <AlertDescription>You have full access to every feature on Proven Path.</AlertDescription>
+                    <AlertDescription>
+                      Your {status.plan === "team" ? "Team" : "Professional"} subscription is active.
+                    </AlertDescription>
                   </Alert>
                 ) : status?.trialActive ? (
                   <Alert>
@@ -214,15 +230,70 @@ export default function BillingPage() {
                     <Button onClick={openPortal} disabled={working}>
                       {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Manage subscription"}
                     </Button>
-                  ) : !promoApplied ? (
-                    <Button onClick={startCheckout} disabled={working}>
-                      {working ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                      Subscribe — $9.99 / month
-                    </Button>
                   ) : null}
                 </div>
               </CardContent>
             </Card>
+
+            {canStartCheckout && (
+              <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Choose a plan</CardTitle>
+                  <CardDescription>Select the monthly subscription that fits how you use Proven Path.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlan("professional")}
+                    className={`rounded-lg border p-4 text-left transition-colors ${selectedPlan === "professional" ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:border-primary/50"}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold">Professional</span>
+                      {selectedPlan === "professional" && <Badge>Selected</Badge>}
+                    </div>
+                    <p className="mt-2 text-2xl font-bold">$9.99<span className="text-sm font-normal text-muted-foreground"> / month</span></p>
+                    <p className="mt-2 text-sm text-muted-foreground">1 seat · For your profile, references, development plans, public profile, and coaching insights.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlan("team")}
+                    className={`rounded-lg border p-4 text-left transition-colors ${selectedPlan === "team" ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:border-primary/50"}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold">Team</span>
+                      {selectedPlan === "team" && <Badge>Selected</Badge>}
+                    </div>
+                    <p className="mt-2 text-2xl font-bold">$29<span className="text-sm font-normal text-muted-foreground"> / user / month</span></p>
+                    <p className="mt-2 text-sm text-muted-foreground">For interviews, 360° feedback, analytics, manager tools, and team management.</p>
+                  </button>
+                  {selectedPlan === "team" && (
+                    <div className="md:col-span-2 flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+                      <div>
+                        <p className="font-medium">Team seats</p>
+                        <p className="text-sm text-muted-foreground">Minimum 10 seats · ${teamQuantity * 29}/month</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="icon" aria-label="Remove team seat" onClick={() => setTeamQuantity(q => Math.max(10, q - 1))} disabled={teamQuantity === 10}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center font-semibold" aria-live="polite">{teamQuantity}</span>
+                        <Button type="button" variant="outline" size="icon" aria-label="Add team seat" onClick={() => setTeamQuantity(q => q + 1)}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="md:col-span-2">
+                    <Button onClick={startCheckout} disabled={working} className="w-full sm:w-auto">
+                      {working ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Continue with {selectedPlan === "team" ? `Team — ${teamQuantity} seats` : "Professional — $9.99 / month"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              </>
+            )}
 
             {!alreadySubscribed && !promoApplied && (
               <Card>
@@ -250,10 +321,10 @@ export default function BillingPage() {
                       <>
                         <Button
                           onClick={handleApplyPromo}
-                          disabled={promoState === "applying"}
+                          disabled={isPromoApplying()}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
                         >
-                          {promoState === "applying" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Activate"}
+                          {isPromoApplying() ? <Loader2 className="h-4 w-4 animate-spin" /> : "Activate"}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={resetPromo} className="shrink-0">
                           <XCircle className="h-4 w-4 text-muted-foreground" />
@@ -289,17 +360,24 @@ export default function BillingPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>What's included with Pro</CardTitle>
+                <CardTitle>{status?.plan === "team" ? "What's included with Team" : "What's included with Professional"}</CardTitle>
               </CardHeader>
               <CardContent className="grid sm:grid-cols-2 gap-3 text-sm">
-                {[
-                  "AI development plans",
-                  "Candidate interview scoring",
-                  "360° peer reviews",
-                  "Self-reflection requests",
-                  "Unlimited verified references",
-                  "Priority email support",
-                ].map((f) => (
+                {(status?.plan === "team"
+                  ? [
+                    "Everything in Professional",
+                    "Interview and panel assessments",
+                    "Peer and 360° feedback",
+                    "Company and team analytics",
+                    "Manager tools, skill matrices, career ladders, and employee management",
+                  ]
+                  : [
+                    "Individual Proven Path profile",
+                    "Unlimited verified references and sharing",
+                    "AI development plans",
+                    "Public profile and coaching insights",
+                  ]
+                ).map((f) => (
                   <div key={f} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     <span>{f}</span>
@@ -316,7 +394,8 @@ export default function BillingPage() {
 
 function PlanBadge({ status }: { status: SubscriptionStatus | null }) {
   if (!status) return null;
-  if (status.subscriptionActive) return <Badge className="bg-emerald-500 hover:bg-emerald-500">Pro</Badge>;
-  if (status.trialActive) return <Badge variant="secondary">Trial</Badge>;
+  const planName = status.plan === "team" ? "Team" : "Professional";
+  if (status.subscriptionActive) return <Badge className="bg-emerald-500 hover:bg-emerald-500">{planName}</Badge>;
+  if (status.trialActive) return <Badge variant="secondary">{planName} trial</Badge>;
   return <Badge variant="destructive">Expired</Badge>;
 }

@@ -2,11 +2,11 @@ import { Router } from "express";
 import { db, candidateProfilesTable, interviewAssessmentsTable, employeesTable, reviewsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
-import { requireActivePlan } from "../middlewares/requireActivePlan";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
-router.get("/candidates", requireAuth, async (req, res): Promise<void> => {
+router.get("/candidates", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -29,7 +29,7 @@ router.get("/candidates", requireAuth, async (req, res): Promise<void> => {
   res.json(withAssessmentCounts);
 });
 
-router.post("/candidates", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
+router.post("/candidates", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -46,7 +46,7 @@ router.post("/candidates", requireAuth, requireActivePlan, async (req, res): Pro
   res.status(201).json({ ...candidate, createdAt: candidate.createdAt.toISOString(), updatedAt: candidate.updatedAt.toISOString(), assessmentCount: 0 });
 });
 
-router.get("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
+router.get("/candidates/:id", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -82,7 +82,7 @@ router.get("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
+router.patch("/candidates/:id", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -109,7 +109,7 @@ router.patch("/candidates/:id", requireAuth, async (req, res): Promise<void> => 
   res.json({ ...updated, createdAt: updated.createdAt.toISOString(), updatedAt: updated.updatedAt.toISOString() });
 });
 
-router.delete("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
+router.delete("/candidates/:id", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin") { res.status(403).json({ error: "Admin access required" }); return; }
 
@@ -124,7 +124,7 @@ router.delete("/candidates/:id", requireAuth, async (req, res): Promise<void> =>
   res.sendStatus(204);
 });
 
-router.post("/candidates/:id/assessments", requireAuth, requireActivePlan, async (req, res): Promise<void> => {
+router.post("/candidates/:id/assessments", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, userId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -161,7 +161,7 @@ router.post("/candidates/:id/assessments", requireAuth, requireActivePlan, async
   res.status(201).json({ ...assessment, createdAt: assessment.createdAt.toISOString(), updatedAt: assessment.updatedAt.toISOString() });
 });
 
-router.get("/candidates/:id/assessments", requireAuth, async (req, res): Promise<void> => {
+router.get("/candidates/:id/assessments", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin" && role !== "manager") { res.status(403).json({ error: "Access denied" }); return; }
 
@@ -179,7 +179,7 @@ router.get("/candidates/:id/assessments", requireAuth, async (req, res): Promise
   res.json(assessments.map(a => ({ ...a, createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString() })));
 });
 
-router.post("/candidates/:id/import-to-employee", requireAuth, async (req, res): Promise<void> => {
+router.post("/candidates/:id/import-to-employee", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId, role } = req.auth!;
   if (role !== "admin") { res.status(403).json({ error: "Admin access required" }); return; }
 

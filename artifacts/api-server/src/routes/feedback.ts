@@ -3,6 +3,7 @@ import { db, feedbackTable, employeesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { CreateFeedbackBody, ListFeedbackParams, CreateFeedbackParams, RespondToFeedbackParams, RespondToFeedbackBody } from "@workspace/api-zod";
+import { requireTeamPlan } from "../middlewares/requireActivePlan";
 
 const router = Router();
 
@@ -23,7 +24,7 @@ function formatEntry(f: typeof feedbackTable.$inferSelect, managerName: string |
   };
 }
 
-router.get("/employees/:employeeId/feedback", requireAuth, async (req, res): Promise<void> => {
+router.get("/employees/:employeeId/feedback", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = ListFeedbackParams.safeParse(req.params);
   if (!params.success) {
@@ -48,7 +49,7 @@ router.get("/employees/:employeeId/feedback", requireAuth, async (req, res): Pro
   res.json(entries.map(e => formatEntry(e, e.managerId ? managerNames[e.managerId] ?? null : null)));
 });
 
-router.post("/employees/:employeeId/feedback", requireAuth, async (req, res): Promise<void> => {
+router.post("/employees/:employeeId/feedback", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = CreateFeedbackParams.safeParse(req.params);
   if (!params.success) {
@@ -79,7 +80,7 @@ router.post("/employees/:employeeId/feedback", requireAuth, async (req, res): Pr
   res.status(201).json(formatEntry(entry, null));
 });
 
-router.post("/employees/:employeeId/feedback/:feedbackId/respond", requireAuth, async (req, res): Promise<void> => {
+router.post("/employees/:employeeId/feedback/:feedbackId/respond", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
   const params = RespondToFeedbackParams.safeParse(req.params);
   if (!params.success) {

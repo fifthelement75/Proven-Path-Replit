@@ -152,7 +152,7 @@ function NotificationBell({ userId }: { userId: number }) {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { user, logout } = useAuthContext();
+  const { user, logout, isTeamPlan } = useAuthContext();
   const [location] = useLocation();
   const queryClient = useQueryClient();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -202,21 +202,21 @@ export function Layout({ children }: LayoutProps) {
     queryClient.clear();
   }
 
-  const adminNavItems = [
+  const adminNavItems = isTeamPlan ? [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/employees", label: "Employees" },
     { href: "/candidates", label: "Interviews" },
     { href: "/settings", label: "Settings" },
-  ];
+  ] : [];
 
   const employeeNavItems = myProfile
     ? [{ href: `/employees/${myProfile.id}`, label: "My Profile" }]
     : [];
 
-  const managerNavItems = [
+  const managerNavItems = isTeamPlan ? [
     { href: "/employees", label: "Employees" },
     ...(myProfile ? [{ href: `/employees/${myProfile.id}`, label: "My Profile" }] : []),
-  ];
+  ] : [];
 
   const navItems = isAdmin ? adminNavItems : isManager ? managerNavItems : employeeNavItems;
 
