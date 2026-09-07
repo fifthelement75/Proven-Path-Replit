@@ -52,4 +52,9 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
+
+[userenv.development]
 APP_PUBLIC_URL = "https://220e4db0-58b9-458c-9428-0f4942d241bb-00-3n7dytrbhvbth-0cfvm8ha.picard.replit.dev"
+
+[userenv.production]
+APP_PUBLIC_URL = "https://provenpath.app"
