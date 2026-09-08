@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { trackEvent } from "@/lib/analytics";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -51,6 +52,10 @@ export default function Contact() {
       }
 
       setStatus("success");
+      trackEvent("demo_requested", {
+        location: "contact_page",
+        team_size: teamSize || "not_provided",
+      });
       setFirstName("");
       setLastName("");
       setEmail("");

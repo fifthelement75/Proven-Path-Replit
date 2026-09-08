@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Pricing() {
   useDocumentMeta({
@@ -148,7 +149,14 @@ export default function Pricing() {
                 </div>
                 
                 {tier.external ? (
-                  <a href={tier.link} className="w-full">
+                  <a
+                    href={tier.link}
+                    className="w-full"
+                    onClick={() => trackEvent("plan_selected", {
+                      plan: tier.name.toLowerCase(),
+                      location: "pricing_page",
+                    })}
+                  >
                     <Button
                       className="w-full h-12"
                       variant={tier.popular ? "default" : "outline"}

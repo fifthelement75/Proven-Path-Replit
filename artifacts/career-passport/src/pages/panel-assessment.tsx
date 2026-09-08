@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { getApiUrl } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import {
   ROLE_TEMPLATES, OVERALL_RECOMMENDATIONS, SCORE_LABELS,
   getTemplate, getAllSkillsForTemplate,
@@ -83,7 +84,11 @@ export default function PanelAssessmentPage() {
       if (!res.ok) throw new Error((await res.json()).error || "Failed to submit assessment");
       return res.json();
     },
-    onSuccess: () => { setError(""); setSubmitted(true); },
+    onSuccess: () => {
+      trackEvent("panel_assessment_submitted", { scored_skill_count: scoredCount });
+      setError("");
+      setSubmitted(true);
+    },
     onError: (err: Error) => setError(err.message),
   });
 

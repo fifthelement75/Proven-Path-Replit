@@ -10,6 +10,7 @@ import { getApiUrl } from "@/lib/api";
 import { getToken, type SubscriptionStatus } from "@/lib/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { trackEvent } from "@/lib/analytics";
 
 function authHeaders(): Record<string, string> {
   const token = getToken();
@@ -51,6 +52,17 @@ export default function BillingPage() {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
     if (checkout === "success") {
+      let checkoutData: { plan?: string; quantity?: number } = {};
+      try {
+        checkoutData = JSON.parse(sessionStorage.getItem("pp_pending_checkout") || "{}");
+        sessionStorage.removeItem("pp_pending_checkout");
+      } catch {
+        // The success event is still useful without optional dimensions.
+      }
+      trackEvent("checkout_completed", {
+        plan: checkoutData.plan || "unknown",
+        quantity: checkoutData.quantity || 0,
+      });
       toast({ title: "Subscription active", description: "Thanks! Your subscription is now active." });
       window.history.replaceState({}, "", window.location.pathname);
       refreshSubscription();
@@ -131,6 +143,17 @@ export default function BillingPage() {
       if (!res.ok || !data.url) {
         toast({ title: "Could not start checkout", description: data.error || "Try again later", variant: "destructive" });
         return;
+      }
+      const quantity = selectedPlan === "team" ? teamQuantity : 1;
+      trackEvent("checkout_started", {
+        plan: selectedPlan,
+        quantity,
+        location: "billing_page",
+      });
+      try {
+        sessionStorage.setItem("pp_pending_checkout", JSON.stringify({ plan: selectedPlan, quantity }));
+      } catch {
+        // Checkout should continue even if storage is unavailable.
       }
       window.location.href = data.url;
     } finally {

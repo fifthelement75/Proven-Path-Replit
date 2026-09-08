@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getApiUrl } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 
 interface ReviewRequest {
   requestId: number;
@@ -154,7 +155,10 @@ export default function PeerReviewPage() {
       }
       return res.json();
     },
-    onSuccess: () => setSubmitted(true),
+    onSuccess: () => {
+      trackEvent("peer_review_submitted");
+      setSubmitted(true);
+    },
     onError: (err: Error) => setSubmitError(err.message),
   });
 

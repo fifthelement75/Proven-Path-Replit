@@ -21,6 +21,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BEHAVIORAL_SKILL_CATEGORIES, BEHAVIORAL_SKILL_BY_KEY } from "@/lib/behavioral-skills";
+import { trackEvent } from "@/lib/analytics";
 
 interface ReviewItem {
   id: number;
@@ -227,6 +228,11 @@ function RequestPeerReviewDialog({ open, onClose, employeeId, employeeName }: { 
       return res.json();
     },
     onSuccess: (data) => {
+      trackEvent("peer_reviews_requested", {
+        request_count: data.length,
+        delivered_count: data.filter((result: { emailSent: boolean }) => result.emailSent).length,
+        expiration_days: expiresIn === "never" ? 0 : Number(expiresIn),
+      });
       setCreated(data.map((r: { peerEmail: string; token: string; emailSent: boolean; emailError?: string }) => ({
         peerEmail: r.peerEmail,
         token: r.token,

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { trackEvent } from "@/lib/analytics";
 import {
   ROLE_TEMPLATES, CANDIDATE_STATUSES, OVERALL_RECOMMENDATIONS, SCORE_LABELS,
   getTemplate, getAllSkillsForTemplate,
@@ -319,6 +320,10 @@ function InvitePanelDialog({
     onSuccess: (data: Array<{ email: string; emailSent: boolean; emailError?: string }>) => {
       setError("");
       setResults(data);
+      trackEvent("panel_invites_sent", {
+        invite_count: data.length,
+        delivered_count: data.filter((result) => result.emailSent).length,
+      });
       queryClient.invalidateQueries({ queryKey: ["panel-invites", candidateId] });
     },
     onError: (err: Error) => setError(err.message),

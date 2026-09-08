@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getApiUrl } from "@/lib/api";
 import logoUrl from "@assets/ProvenPath_Logo_1777766690823.png";
 import sideImage from "@assets/windows-hNiNxhUfCfQ-unsplash_1777767280797.jpg";
+import { trackEvent } from "@/lib/analytics";
 
 export default function RegisterPage() {
   const { login } = useAuthContext();
@@ -54,6 +55,7 @@ export default function RegisterPage() {
       }
       // Persist token before any authenticated calls.
       login(data.token, data.user);
+      trackEvent("registration_completed", { plan: planParam });
 
       // Kick off checkout for the selected canonical plan immediately.
       try {
@@ -64,6 +66,17 @@ export default function RegisterPage() {
         });
         const coData = await co.json();
         if (co.ok && coData.url) {
+          const quantity = planParam === "team" ? 10 : 1;
+          trackEvent("checkout_started", {
+            plan: planParam,
+            quantity,
+            location: "registration",
+          });
+          try {
+            sessionStorage.setItem("pp_pending_checkout", JSON.stringify({ plan: planParam, quantity }));
+          } catch {
+            // Checkout should continue even if storage is unavailable.
+          }
           window.location.href = coData.url;
           return;
         }
