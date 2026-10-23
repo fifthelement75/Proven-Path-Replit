@@ -58,3 +58,27 @@ APP_PUBLIC_URL = "https://220e4db0-58b9-458c-9428-0f4942d241bb-00-3n7dytrbhvbth-
 
 [userenv.production]
 APP_PUBLIC_URL = "https://provenpath.app"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 18522
+externalPort = 3002
+
+[[ports]]
+localPort = 21209
+externalPort = 3000
+
+[[ports]]
+localPort = 21940
+externalPort = 3001
+
+[[ports]]
+localPort = 23852
+externalPort = 80
