@@ -4,3 +4,4 @@
 - [Stripe seat entitlements](stripe-seat-entitlements.md) — paid access requires a recognized Stripe price/product; cap employee creation at the subscription item quantity.
 - [Dependency remediation](dependency-remediation.md) — security overrides need compatible bounds and re-auditing; avoid accidental major upgrades.
 - [Meeting provider scope](meeting-integrations.md) — retain multiple distinct meeting tools; keep HRIS and ATS single-provider unless requested otherwise.
+- [Customer integrations](customer-integrations.md) — every company chooses and authorizes its own listed tools; developer connections must not become shared customer credentials.
