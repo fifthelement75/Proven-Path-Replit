@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getApiUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 function authHeaders(): Record<string, string> {
   const token = getToken();
@@ -13,10 +14,12 @@ function authHeaders(): Record<string, string> {
 
 export default function MyProfileRedirect() {
   const [, navigate] = useLocation();
+  const { user, isTeamPlan, isSubscriptionLoaded } = useAuthContext();
 
   const { data: profile, isLoading, error } = useQuery<{ id: number } | null>({
     queryKey: ["employees", "me"],
     retry: false,
+    enabled: !!user && user.role !== "admin",
     queryFn: async () => {
       const res = await fetch(getApiUrl("/employees/me"), { headers: authHeaders() });
       if (res.status === 404) return null;
@@ -26,12 +29,17 @@ export default function MyProfileRedirect() {
   });
 
   useEffect(() => {
+    if (user?.role === "admin") {
+      if (!isSubscriptionLoaded) return;
+      navigate(isTeamPlan ? "/dashboard" : "/billing", { replace: true });
+      return;
+    }
     if (profile?.id) {
       navigate(`/employees/${profile.id}`, { replace: true });
     }
-  }, [profile, navigate]);
+  }, [user?.role, isSubscriptionLoaded, isTeamPlan, profile, navigate]);
 
-  if (isLoading) {
+  if (user?.role === "admin" || isLoading) {
     return (
       <Layout>
         <div className="space-y-4">

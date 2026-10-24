@@ -16,6 +16,7 @@ interface AuthContextValue {
   logout: () => void;
   isAuthenticated: boolean;
   subscription: SubscriptionStatus | null;
+  isSubscriptionLoaded: boolean;
   isTeamPlan: boolean;
   refreshSubscription: () => Promise<void>;
 }
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(getUser);
   const [token, setTokenState] = useState<string | null>(getToken);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [isSubscriptionLoaded, setIsSubscriptionLoaded] = useState(false);
   const prevRoleRef = useRef<string | null>(getUser()?.role ?? null);
 
   const login = useCallback((newToken: string, newUser: User) => {
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokenState(newToken);
     setUserState(newUser);
     setSubscription(null);
+    setIsSubscriptionLoaded(false);
     prevRoleRef.current = newUser.role;
   }, []);
 
@@ -42,23 +45,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokenState(null);
     setUserState(null);
     setSubscription(null);
+    setIsSubscriptionLoaded(true);
     prevRoleRef.current = null;
   }, []);
 
   const refreshSubscription = useCallback(async () => {
     if (!token) {
       setSubscription(null);
+      setIsSubscriptionLoaded(true);
       return;
     }
     try {
       const res = await apiFetch("/stripe/subscription");
-      if (!res.ok) return;
+      if (!res.ok) {
+        setIsSubscriptionLoaded(true);
+        return;
+      }
       const status = (await res.json()) as SubscriptionStatus;
       // Older subscriptions used "pro"; the UI uses the canonical
       // professional/team plan vocabulary.
       setSubscription({ ...status, plan: status.plan === "pro" ? "professional" : status.plan });
+      setIsSubscriptionLoaded(true);
     } catch {
       // Keep the last known status during a transient network failure.
+      setIsSubscriptionLoaded(true);
     }
   }, [token]);
 
@@ -127,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isAuthenticated: !!token,
       subscription,
+      isSubscriptionLoaded,
       isTeamPlan: subscription?.plan === "team",
       refreshSubscription,
     }}>
