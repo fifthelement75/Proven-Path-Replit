@@ -15,6 +15,7 @@ export function canonicalPlan(plan: string | null | undefined): CanonicalPlan {
 }
 
 export function hasActiveAccess(company: typeof companiesTable.$inferSelect): boolean {
+  if (company.complimentaryTeamAccess === true) return true;
   const trialActive = (company.trialEndsAt?.getTime() ?? 0) > Date.now();
   const plan = canonicalPlan(company.plan);
   const paidActive = (company.subscriptionStatus === "active" || company.subscriptionStatus === "trialing")
@@ -23,11 +24,13 @@ export function hasActiveAccess(company: typeof companiesTable.$inferSelect): bo
 }
 
 export function isTeamEntitled(company: typeof companiesTable.$inferSelect): boolean {
+  if (company.complimentaryTeamAccess === true) return true;
   // An active trial exposes the Team experience; a paid company must be Team.
   return hasActiveAccess(company) && (canonicalPlan(company.plan) === "team" || canonicalPlan(company.plan) === "trial");
 }
 
 export function employeeSeatLimit(company: typeof companiesTable.$inferSelect): number | null {
+  if (company.complimentaryTeamAccess === true) return Number.POSITIVE_INFINITY;
   if ((company.trialEndsAt?.getTime() ?? 0) > Date.now()) return Number.POSITIVE_INFINITY;
   if (!hasActiveAccess(company)) return null;
   const plan = canonicalPlan(company.plan);

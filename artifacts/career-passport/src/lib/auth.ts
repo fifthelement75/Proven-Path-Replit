@@ -16,6 +16,8 @@ export interface User {
 
 export interface SubscriptionStatus {
   plan: string;
+  complimentaryAccess?: boolean;
+  teamAccess?: boolean;
   subscriptionStatus: string | null;
   trialEndsAt: string | null;
   trialActive: boolean;

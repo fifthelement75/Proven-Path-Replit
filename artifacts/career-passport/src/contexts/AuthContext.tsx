@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!token,
       subscription,
       isSubscriptionLoaded,
-      isTeamPlan: subscription?.plan === "team",
+      isTeamPlan: subscription?.teamAccess ?? (subscription?.plan === "team"),
       refreshSubscription,
     }}>
       {children}

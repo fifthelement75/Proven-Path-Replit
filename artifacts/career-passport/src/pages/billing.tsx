@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Link } from "wouter";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -179,10 +180,10 @@ export default function BillingPage() {
     }
   }
 
-  const alreadySubscribed = status?.subscriptionActive || status?.trialActive;
+  const alreadySubscribed = status?.complimentaryAccess || status?.subscriptionActive || status?.trialActive;
   const promoApplied = promoState === "applied";
   const promoValid = promoState === "valid";
-  const canStartCheckout = !status?.subscriptionActive && !promoApplied;
+  const canStartCheckout = !status?.complimentaryAccess && !status?.subscriptionActive && !promoApplied;
   const isPromoApplying = () => promoState === "applying";
 
   return (
@@ -208,7 +209,16 @@ export default function BillingPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {promoApplied ? (
+                {status?.complimentaryAccess ? (
+                  <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <AlertTitle>Complimentary Team access</AlertTitle>
+                    <AlertDescription>
+                      Your company has full Team access, including employee profiles and AI features.
+                      No paid subscription is required.
+                    </AlertDescription>
+                  </Alert>
+                ) : promoApplied ? (
                   <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                     <AlertTitle>Promo code applied!</AlertTitle>
@@ -249,6 +259,11 @@ export default function BillingPage() {
                 )}
 
                 <div className="flex flex-wrap gap-3 pt-2">
+                  {status?.complimentaryAccess && (
+                    <Button asChild>
+                      <Link href="/dashboard">Open dashboard</Link>
+                    </Button>
+                  )}
                   {status?.subscriptionActive ? (
                     <Button onClick={openPortal} disabled={working}>
                       {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Manage subscription"}
@@ -417,6 +432,7 @@ export default function BillingPage() {
 
 function PlanBadge({ status }: { status: SubscriptionStatus | null }) {
   if (!status) return null;
+  if (status.complimentaryAccess) return <Badge className="bg-emerald-500 hover:bg-emerald-500">Complimentary Team</Badge>;
   const planName = status.plan === "team" ? "Team" : "Professional";
   if (status.subscriptionActive) return <Badge className="bg-emerald-500 hover:bg-emerald-500">{planName}</Badge>;
   if (status.trialActive) return <Badge variant="secondary">{planName} trial</Badge>;

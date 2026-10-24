@@ -12,6 +12,19 @@ function company(overrides: Record<string, unknown> = {}) {
 }
 
 describe("plan entitlements", () => {
+  it("grants explicitly complimentary companies Team access without a subscription or trial", () => {
+    const complimentary = company({ plan: "trial", complimentaryTeamAccess: true });
+    expect(hasActiveAccess(complimentary)).toBe(true);
+    expect(isTeamEntitled(complimentary)).toBe(true);
+    expect(employeeSeatLimit(complimentary)).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it("does not bypass billing merely because an account is an admin or a trial exists", () => {
+    const expired = company({ plan: "trial", complimentaryTeamAccess: false });
+    expect(hasActiveAccess(expired)).toBe(false);
+    expect(isTeamEntitled(expired)).toBe(false);
+    expect(employeeSeatLimit(expired)).toBeNull();
+  });
   it("normalizes the historical pro value without treating unknown plans as paid", () => {
     expect(canonicalPlan("pro")).toBe("professional");
     expect(canonicalPlan("enterprise")).toBe("free");

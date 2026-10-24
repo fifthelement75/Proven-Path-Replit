@@ -5,7 +5,7 @@ import { requireAuth } from "../middlewares/auth";
 import { getUncachableStripeClient } from "../lib/stripeClient";
 import { logger } from "../lib/logger";
 import { getMonthlyPriceId, validateCheckoutSelection } from "./stripeHelpers";
-import { canonicalPlan, hasActiveAccess } from "../lib/entitlements";
+import { canonicalPlan, hasActiveAccess, isTeamEntitled } from "../lib/entitlements";
 
 const router = Router();
 
@@ -127,6 +127,8 @@ router.get("/stripe/subscription", requireAuth, async (req, res): Promise<void> 
   const plan = canonicalPlan(company.plan);
   res.json({
     plan,
+    complimentaryAccess: company.complimentaryTeamAccess === true,
+    teamAccess: isTeamEntitled(company),
     seatQuantity: company.stripeSeatQuantity,
     subscriptionStatus: company.subscriptionStatus,
     trialEndsAt: company.trialEndsAt,
