@@ -692,24 +692,26 @@ function TeamCard({ onInvite }: { onInvite?: () => void }) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-start sm:items-center sm:justify-between gap-2 flex-col sm:flex-row">
-          <div>
-            <CardTitle className="text-base">
-                <button
-                  type="button"
-                  aria-expanded={expanded}
-                  aria-controls={contentId}
-                  onClick={() => setExpanded(value => !value)}
-                  className="flex items-center gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} aria-hidden="true" />
-                  Team members
-                  {!membersLoading && <Badge variant="secondary">{members.length}</Badge>}
-                </button>
-            </CardTitle>
-            <CardDescription className="text-sm">
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={contentId}
+            onClick={() => setExpanded(value => !value)}
+            className="w-full min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="flex items-center gap-2 text-base font-semibold">
+              <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} aria-hidden="true" />
+              <span>Team members</span>
+              {!membersLoading && (
+                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">
+                  {members.length}
+                </span>
+              )}
+            </span>
+            <span className="mt-1 block text-sm text-muted-foreground">
               People with access to your organization, and pending invitations.
-            </CardDescription>
-          </div>
+            </span>
+          </button>
           {isAdmin && onInvite && (
             <Button onClick={onInvite} className="shrink-0">Invite user</Button>
           )}
