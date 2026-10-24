@@ -16,3 +16,11 @@ The Replit Pipedream catalog connector's standard REST API key does not authoriz
 **Why:** These are separate Pipedream API surfaces; connecting the catalog integration alone cannot enable customer account linking.
 
 **How to apply:** Check Connect configuration separately. Do not repeatedly propose the standard Pipedream integration to resolve missing Connect credentials; request required credentials through the secure secrets flow.
+
+## Direct customer API credentials
+
+When a provider is absent from the broker catalog, customer-provisioned credentials may be stored encrypted with company/provider/environment/connection binding. Do not fall back to the workspace owner's credentials.
+
+**Why:** Otter Enterprise and provisioned iCIMS integration accounts can support customer-specific direct API access even without a Pipedream catalog listing.
+
+**How to apply:** Require a real read-only health check and explain account prerequisites. Do not imply that local disconnect globally revokes a vendor API key, or that a working customer-specific adapter has vendor Marketplace certification.

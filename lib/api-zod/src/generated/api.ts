@@ -37,6 +37,39 @@ export const AuthorizeIntegrationProviderResponse = zod.object({
 })
 
 
+export const saveCustomerCredentialBodyAccountLabelMax = 120;
+
+export const saveCustomerCredentialBodyApiKeyMax = 4096;
+
+export const saveCustomerCredentialBodyCustomerIdRegExp = new RegExp('^[1-9][0-9]{0,11}$');
+export const saveCustomerCredentialBodyUsernameMax = 500;
+
+export const saveCustomerCredentialBodyPasswordMax = 4096;
+
+
+
+export const SaveCustomerCredentialBody = zod.object({
+  "provider": zod.enum(['otter', 'icims']),
+  "consent": zod.literal(true),
+  "accountLabel": zod.string().max(saveCustomerCredentialBodyAccountLabelMax).optional(),
+  "apiKey": zod.string().min(1).max(saveCustomerCredentialBodyApiKeyMax).optional(),
+  "customerId": zod.string().regex(saveCustomerCredentialBodyCustomerIdRegExp).optional(),
+  "username": zod.string().min(1).max(saveCustomerCredentialBodyUsernameMax).optional(),
+  "password": zod.string().min(1).max(saveCustomerCredentialBodyPasswordMax).optional()
+})
+
+export const SaveCustomerCredentialResponse = zod.object({
+  "connection": zod.object({
+  "id": zod.int(),
+  "category": zod.string(),
+  "provider": zod.string(),
+  "status": zod.string(),
+  "accountLabel": zod.string().nullable(),
+  "connectedAt": zod.string()
+})
+})
+
+
 export const verifyIntegrationConnectionBodyAccountLabelMax = 120;
 
 
@@ -78,7 +111,9 @@ export const GetIntegrationCatalogResponse = zod.object({
   "environment": zod.string(),
   "providers": zod.array(zod.object({
   "provider": zod.string(),
-  "available": zod.boolean()
+  "available": zod.boolean(),
+  "authorizationMethod": zod.enum(['pipedream', 'customer_credentials']).optional(),
+  "requirements": zod.string().optional()
 }))
 })
 

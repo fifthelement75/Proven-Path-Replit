@@ -55,6 +55,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/IntegrationAuthorization" }
+  /integrations/credentials:
+    post:
+      operationId: saveCustomerCredential
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerCredentialInput" }
+      responses:
+        "200":
+          description: Customer credential encrypted after a successful live read-only health check
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationConnectionResult" }
   /integrations/connect:
     post:
       operationId: verifyIntegrationConnection
@@ -894,6 +910,17 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    CustomerCredentialInput:
+      type: object
+      required: [provider, consent]
+      properties:
+        provider: { type: string, enum: [otter, icims] }
+        consent: { type: boolean, enum: [true] }
+        accountLabel: { type: string, maxLength: 120 }
+        apiKey: { type: string, minLength: 1, maxLength: 4096, writeOnly: true }
+        customerId: { type: string, pattern: "^[1-9][0-9]{0,11}$" }
+        username: { type: string, minLength: 1, maxLength: 500, writeOnly: true }
+        password: { type: string, minLength: 1, maxLength: 4096, writeOnly: true }
     IntegrationSelectionInput:
       type: object
       required: [category, provider]
@@ -941,6 +968,8 @@ components:
       properties:
         provider: { type: string }
         available: { type: boolean }
+        authorizationMethod: { type: string, enum: [pipedream, customer_credentials] }
+        requirements: { type: string }
     IntegrationCatalog:
       type: object
       required: [environment, providers]

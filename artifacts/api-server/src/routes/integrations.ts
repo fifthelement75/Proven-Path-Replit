@@ -7,6 +7,9 @@ import { logger } from "../lib/logger";
 import { assertEmployeeSeat, requireTeamEntitlement } from "../lib/entitlements";
 import { requireTeamPlan } from "../middlewares/requireActivePlan";
 import { createAuthorization, listCompanyAccounts, verifyAccount, pdRequest, projectPath, connectEnvironment, IntegrationError } from "../lib/pipedreamConnect";
+import { SaveCustomerCredentialBody } from "@workspace/api-zod";
+import { CUSTOMER_PROVIDERS, isCustomerProvider, saveCustomerCredential, verifyCustomerAccount } from "../lib/customerCredentials";
+import { integrationCredentialsTable } from "@workspace/db";
 
 const router = Router();
 
@@ -48,7 +51,8 @@ router.get("/integrations", requireAuth, requireTeamPlan, async (req, res): Prom
       let status = "needs_authorization";
       if (connection.brokerAccountId && connection.brokerEnvironment === connectEnvironment()) {
         try {
-          await verifyAccount(req.auth!.companyId, connection.provider, connection.brokerAccountId);
+          if (isCustomerProvider(connection.provider)) await verifyCustomerAccount(req.auth!.companyId, connection.provider, connection.brokerAccountId);
+          else await verifyAccount(req.auth!.companyId, connection.provider, connection.brokerAccountId);
           status = "connected";
         } catch (err) {
           status = err instanceof IntegrationError && [403,404,409].includes(err.status)
@@ -64,6 +68,20 @@ router.get("/integrations", requireAuth, requireTeamPlan, async (req, res): Prom
   }
 });
 
+router.post("/integrations/credentials", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
+  res.set("Cache-Control", "no-store");
+  if (req.auth!.role !== "admin") { res.status(403).json({ message: "Only company admins can authorize tools." }); return; }
+  const parsed = SaveCustomerCredentialBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ message: "Provide supported customer API credentials and confirm company authorization." }); return; }
+  try {
+    const connection = await saveCustomerCredential(req.auth!.companyId, parsed.data.provider, parsed.data);
+    res.json({ connection });
+  } catch (err) {
+    res.status(err instanceof IntegrationError ? err.status : 502)
+      .json({ message: err instanceof IntegrationError ? err.message : "Could not verify and securely save this connection." });
+  }
+});
+
 router.post("/integrations/authorize", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
   if (req.auth!.role !== "admin") { res.status(403).json({ message: "Only company admins can authorize tools." }); return; }
   const { category, provider } = req.body ?? {};
@@ -72,6 +90,9 @@ router.post("/integrations/authorize", requireAuth, requireTeamPlan, async (req,
   }
   try {
     res.set("Cache-Control", "no-store");
+    if (isCustomerProvider(provider)) {
+      res.status(409).json({ message: CUSTOMER_PROVIDERS[provider].requirements }); return;
+    }
     res.json(await createAuthorization(req.auth!.companyId, provider));
   } catch (err) {
     res.status(err instanceof IntegrationError ? err.status : 502)
@@ -108,6 +129,9 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
   const label = accountLabel?.trim() ? accountLabel.trim().slice(0, 120) : null;
 
   try {
+    if (isCustomerProvider(provider)) {
+      res.status(409).json({ message: "Use the customer API credential form to verify this provider." }); return;
+    }
     const accounts = await listCompanyAccounts(auth.companyId, provider);
     const account = accounts.filter((a: any) => a.healthy && !a.dead)
       .sort((a: any, b: any) => String(b.updated_at).localeCompare(String(a.updated_at)))[0];
@@ -146,6 +170,8 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
       })
       .returning();
 
+    // A single-provider ATS replacement must not retain a previous direct credential.
+    await db.delete(integrationCredentialsTable).where(eq(integrationCredentialsTable.connectionId, connection.id));
     logger.info({ companyId: auth.companyId, category, provider }, "Integration connected");
     res.json({ connection });
   } catch (err: any) {
@@ -178,6 +204,9 @@ router.post("/integrations/disconnect", requireAuth, requireTeamPlan, async (req
       provider ? eq(integrationConnectionsTable.provider, provider) : undefined,
     ));
     for (const row of rows) {
+      // Direct providers have no documented API-key revocation endpoint. Deleting
+      // the connection cascades its encrypted credential; the admin revokes at vendor.
+      if (isCustomerProvider(row.provider)) continue;
       if (!row.brokerAccountId) continue;
       if (row.brokerEnvironment !== connectEnvironment()) {
         res.status(409).json({ message: "This connection belongs to a different Connect environment. Switch environments before revoking it." });

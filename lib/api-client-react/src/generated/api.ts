@@ -34,6 +34,7 @@ import type {
   CreateFeedbackBody,
   CreateReviewBody,
   CreateShareLinkBody,
+  CustomerCredentialInput,
   DevPlan,
   DevPlanSkill,
   Employee,
@@ -269,6 +270,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAuthorizeIntegrationProviderMutationOptions(options), queryClient);
+    }
+
+export const getSaveCustomerCredentialUrl = () => {
+
+
+
+
+  return `/api/integrations/credentials`
+}
+
+export const saveCustomerCredential = async (customerCredentialInput: CustomerCredentialInput, options?: Parameters<typeof customFetch>[1]): Promise<IntegrationConnectionResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IntegrationConnectionResult>(getSaveCustomerCredentialUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(customerCredentialInput)
+  }
+);}
+
+
+
+
+
+export const getSaveCustomerCredentialMutationKey = () => ['saveCustomerCredential'] as const;
+
+export const getSaveCustomerCredentialMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveCustomerCredential>>, TError,SaveCustomerCredentialMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveCustomerCredential>>, TError,SaveCustomerCredentialMutationVariables, TContext> => {
+
+const mutationKey = getSaveCustomerCredentialMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveCustomerCredential>>, SaveCustomerCredentialMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveCustomerCredential(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveCustomerCredentialMutationResult = NonNullable<Awaited<ReturnType<typeof saveCustomerCredential>>>
+    export type SaveCustomerCredentialMutationBody = BodyType<CustomerCredentialInput>
+    export type SaveCustomerCredentialMutationError = ErrorType<unknown>
+    export type SaveCustomerCredentialMutationVariables = {data: BodyType<CustomerCredentialInput>}
+
+    export const useSaveCustomerCredential = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveCustomerCredential>>, TError,SaveCustomerCredentialMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof saveCustomerCredential>>,
+        TError,
+        SaveCustomerCredentialMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveCustomerCredentialMutationOptions(options), queryClient);
     }
 
 export const getVerifyIntegrationConnectionUrl = () => {

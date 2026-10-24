@@ -5,6 +5,38 @@
  * Career Passport API specification
  * OpenAPI spec version: 0.1.0
  */
+export type CustomerCredentialInputProvider = typeof CustomerCredentialInputProvider[keyof typeof CustomerCredentialInputProvider];
+
+
+export const CustomerCredentialInputProvider = {
+  otter: 'otter',
+  icims: 'icims',
+} as const;
+
+export interface CustomerCredentialInput {
+  provider: CustomerCredentialInputProvider;
+  consent: true;
+  /** @maxLength 120 */
+  accountLabel?: string;
+  /**
+     * @minLength 1
+     * @maxLength 4096
+     */
+  apiKey?: string;
+  /** @pattern ^[1-9][0-9]{0,11}$ */
+  customerId?: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  username?: string;
+  /**
+     * @minLength 1
+     * @maxLength 4096
+     */
+  password?: string;
+}
+
 export type IntegrationSelectionInputCategory = typeof IntegrationSelectionInputCategory[keyof typeof IntegrationSelectionInputCategory];
 
 
@@ -57,9 +89,19 @@ export interface IntegrationDisconnectResult {
   success: boolean;
 }
 
+export type IntegrationProviderAvailabilityAuthorizationMethod = typeof IntegrationProviderAvailabilityAuthorizationMethod[keyof typeof IntegrationProviderAvailabilityAuthorizationMethod];
+
+
+export const IntegrationProviderAvailabilityAuthorizationMethod = {
+  pipedream: 'pipedream',
+  customer_credentials: 'customer_credentials',
+} as const;
+
 export interface IntegrationProviderAvailability {
   provider: string;
   available: boolean;
+  authorizationMethod?: IntegrationProviderAvailabilityAuthorizationMethod;
+  requirements?: string;
 }
 
 export interface IntegrationCatalog {

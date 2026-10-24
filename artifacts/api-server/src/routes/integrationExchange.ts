@@ -12,6 +12,7 @@ import {
   connectEnvironment, verifyAccount, IntegrationError, pdRequest,
 } from "../lib/pipedreamConnect";
 import { getExchangeActions, validateActionProps, executeExchangeAction, extractExchangeRows, normalizeExchangeRow } from "../lib/integrationActions";
+import { CUSTOMER_PROVIDERS, isCustomerProvider, customerCredentialsReady, verifyCustomerAccount, customerActions, executeCustomerRead } from "../lib/customerCredentials";
 import { logger } from "../lib/logger";
 import { RunIntegrationExchangeBody, ImportIntegrationRecordBody } from "@workspace/api-zod";
 
@@ -34,7 +35,10 @@ async function connectionFor(companyId: number, id: unknown, verify = true) {
   ));
   if (!row) throw new IntegrationError(404, "Connection not found.");
   if (!row.brokerAccountId || row.brokerEnvironment !== connectEnvironment()) throw new IntegrationError(409, "Authorize this tool in the current Connect environment first.");
-  if (verify) await verifyAccount(companyId, row.provider, row.brokerAccountId);
+  if (verify) {
+    if (isCustomerProvider(row.provider)) await verifyCustomerAccount(companyId, row.provider, row.brokerAccountId);
+    else await verifyAccount(companyId, row.provider, row.brokerAccountId);
+  }
   return row;
 }
 
@@ -42,12 +46,16 @@ router.get("/integrations/exchange/catalog", async (_req, res) => {
   try {
     const providers = ["workday","bamboohr","adp","rippling","gusto","greenhouse","lever","ashby","icims","fireflies","granola","otter","notion"];
     const availability = await Promise.all(providers.map(async provider => {
+      if (isCustomerProvider(provider)) return {
+        provider, available: customerCredentialsReady(), authorizationMethod: "customer_credentials",
+        requirements: customerCredentialsReady() ? CUSTOMER_PROVIDERS[provider].requirements : "Customer credential encryption is not configured.",
+      };
       try {
         await pdRequest(`/apps/${provider}`);
-        return { provider, available: true };
+        return { provider, available: true, authorizationMethod: "pipedream" };
       } catch (err) {
-        if (err instanceof IntegrationError && err.status === 404) return { provider, available: false };
-        throw err;
+        return { provider, available: false, authorizationMethod: "pipedream",
+          requirements: err instanceof IntegrationError ? err.message : "Provider authorization is temporarily unavailable." };
       }
     }));
     res.json({ environment: connectEnvironment(), providers: availability });
@@ -80,7 +88,7 @@ router.get("/integrations/exchange/sources", async (req, res) => {
 router.get("/integrations/exchange/:id", async (req, res) => {
   try {
     const connection = await connectionFor(req.auth!.companyId, req.params.id);
-    const actions = await getExchangeActions(connection.provider);
+    const actions = isCustomerProvider(connection.provider) ? customerActions[connection.provider] : await getExchangeActions(connection.provider);
     const runs = await db.select({
       id: integrationRunsTable.id, actionKey: integrationRunsTable.actionKey, direction: integrationRunsTable.direction,
       status: integrationRunsTable.status, message: integrationRunsTable.message, createdAt: integrationRunsTable.createdAt,
@@ -99,7 +107,7 @@ router.post("/integrations/exchange/:id/run", async (req, res) => {
     if (!parsed.success) throw new IntegrationError(400, "Provide an operation key, valid request UUID, and action fields.");
     const { key, props, confirmWrite, requestId } = parsed.data;
     if (typeof requestId !== "string" || !/^[a-f0-9-]{36}$/i.test(requestId)) throw new IntegrationError(400, "A unique request ID is required.");
-    const action = (await getExchangeActions(connection.provider)).find(a => a.key === key);
+    const action = (isCustomerProvider(connection.provider) ? customerActions[connection.provider] : await getExchangeActions(connection.provider)).find(a => a.key === key);
     if (!action) throw new IntegrationError(400, "This operation is not enabled for the selected tool.");
     if (action.write && confirmWrite !== true) throw new IntegrationError(400, "Confirm the write to the external tool first.");
     const validatedProps = validateActionProps(action, props);
@@ -118,7 +126,9 @@ router.post("/integrations/exchange/:id/run", async (req, res) => {
       }); return;
     }
     runId = created.id;
-    const result = await executeExchangeAction(companyId, connection.brokerAccountId!, action, validatedProps);
+    const result = isCustomerProvider(connection.provider)
+      ? await executeCustomerRead(companyId, connection.provider, connection.brokerAccountId!, action.key, validatedProps)
+      : await executeExchangeAction(companyId, connection.brokerAccountId!, action, validatedProps);
     const serialized = JSON.stringify(result);
     if (serialized.length > 1000000) throw new IntegrationError(413, "The provider returned too much data. Request a smaller page.");
     const [run] = await db.update(integrationRunsTable).set({ status: "succeeded", result })

@@ -5,8 +5,11 @@
  * Career Passport API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { IntegrationProviderAvailabilityAuthorizationMethod } from './integrationProviderAvailabilityAuthorizationMethod';
 
 export interface IntegrationProviderAvailability {
   provider: string;
   available: boolean;
+  authorizationMethod?: IntegrationProviderAvailabilityAuthorizationMethod;
+  requirements?: string;
 }

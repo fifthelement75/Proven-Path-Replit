@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getToken } from "@/lib/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { IntegrationExchange } from "@/components/integration-exchange";
+import { CustomerCredentialDialog } from "@/components/customer-credential-dialog";
 import type { IntegrationConnection as Connection, IntegrationCatalog } from "@workspace/api-client-react";
 
 type IntegrationOption = { value: string; label: string };
@@ -56,6 +57,7 @@ function IntegrationCard({
   const [busy, setBusy] = useState(false);
   const [authorization, setAuthorization] = useState<{ provider: string; label: string; authorizationUrl: string } | null>(null);
   const [exchange, setExchange] = useState<Connection | null>(null);
+  const [customerAuthorization, setCustomerAuthorization] = useState<{provider: "otter" | "icims"; label: string} | null>(null);
   const { toast } = useToast();
   const catalog = useQuery({
     queryKey: ["integration-platform-catalog"],
@@ -103,6 +105,9 @@ function IntegrationCard({
 
   async function handleAuthorize(provider = selected, label = accountLabel) {
     if (!provider) { toast({ title: "Select a provider first", variant: "destructive" }); return; }
+    if (provider === "otter" || provider === "icims") {
+      setCustomerAuthorization({ provider, label: label.trim() }); return;
+    }
     setBusy(true);
     try {
       const res = await apiFetch("/integrations/authorize", {
@@ -118,7 +123,8 @@ function IntegrationCard({
   }
 
   async function handleDisconnect(connection: Connection) {
-    if (!window.confirm(`Disconnect ${connection.provider} and revoke this account in Pipedream? Imported employee, candidate and meeting records will remain in Proven Path. Exchange history for this connection will be removed.`)) return;
+    const direct = connection.provider === "otter" || connection.provider === "icims";
+    if (!window.confirm(`Disconnect ${connection.provider}? ${direct ? "The encrypted credential will be removed from Proven Path. Revoke the API credential in the provider to invalidate it everywhere." : "This account will be revoked in Pipedream."} Imported employee, candidate and meeting records will remain in Proven Path. Exchange history for this connection will be removed.`)) return;
     setBusy(true);
     try {
       const res = await apiFetch("/integrations/disconnect", {
@@ -161,7 +167,7 @@ function IntegrationCard({
         {catalog.isError && <p role="alert" className="text-sm text-red-700">{(catalog.error as Error).message}</p>}
         {catalog.data && <p className="text-xs text-muted-foreground">Connect environment: {catalog.data.environment}. Authorization is separate from data synchronization.</p>}
         {catalog.data?.providers.some(p => !p.available && options.some(o => o.value === p.provider)) &&
-          <p className="text-xs text-amber-800">Tools marked “Custom connector required” are not available through Pipedream Connect. They are not functional connections yet.</p>}
+          <p className="text-xs text-amber-800">Tools marked “Unavailable” cannot currently authorize an account. Check the provider’s setup requirements or try again later.</p>}
         {connections.map(connection => (
           <div key={connection.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm">
@@ -195,11 +201,12 @@ function IntegrationCard({
                 <SelectContent>
                   {availableOptions.map((o) => (
                     <SelectItem key={o.value} value={o.value} disabled={catalog.data?.providers.find(p => p.provider === o.value)?.available === false}>
-                      {o.label}{catalog.data?.providers.find(p => p.provider === o.value)?.available === false ? " — Custom connector required" : ""}
+                      {o.label}{catalog.data?.providers.find(p => p.provider === o.value)?.available === false ? " — Unavailable" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selected && catalog.data?.providers.find(p => p.provider === selected)?.requirements && <p className="text-xs text-muted-foreground sm:max-w-xs">{catalog.data.providers.find(p => p.provider === selected)?.requirements}</p>}
               <Input
                 value={accountLabel}
                 onChange={(e) => setAccountLabel(e.target.value)}
@@ -223,6 +230,12 @@ function IntegrationCard({
           </div>
         </div>}
       </CardContent>
+      {customerAuthorization && <CustomerCredentialDialog
+        provider={customerAuthorization.provider} label={customerAuthorization.label}
+        requirements={catalog.data?.providers.find(p => p.provider === customerAuthorization.provider)?.requirements}
+        onClose={() => setCustomerAuthorization(null)}
+        onConnected={() => { setSelected(""); setAccountLabel(""); onChanged(); }}
+      />}
       {exchange && <IntegrationExchange connection={exchange} onClose={() => setExchange(null)} />}
     </Card>
   );

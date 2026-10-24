@@ -98,7 +98,7 @@ describe("multiple meeting intelligence connections", () => {
 
   it("disconnects only the selected provider and refuses category-wide meeting deletion", async () => {
     await connect("fireflies");
-    await connect("otter");
+    await connect("granola");
     const missingProvider = await request(app).post("/integrations/disconnect")
       .auth(tokens[0], { type: "bearer" }).send({ category: "meeting" });
     expect(missingProvider.status).toBe(400);
@@ -106,7 +106,7 @@ describe("multiple meeting intelligence connections", () => {
     const disconnected = await request(app).post("/integrations/disconnect")
       .auth(tokens[0], { type: "bearer" }).send({ category: "meeting", provider: "fireflies" });
     expect(disconnected.status).toBe(200);
-    expect((await list()).map(c => c.provider)).toEqual(["otter"]);
+    expect((await list()).map(c => c.provider)).toEqual(["granola"]);
   });
 
   it("scopes connection changes to the authenticated company", async () => {
