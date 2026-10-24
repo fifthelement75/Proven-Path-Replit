@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, timestamp, unique } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, serial, integer, timestamp, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const integrationConnectionsTable = pgTable(
   "integration_connections",
@@ -14,10 +15,14 @@ export const integrationConnectionsTable = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
-    companyCategoryUnique: unique("integration_connections_company_category_unique").on(
+    companyCategoryProviderUnique: unique("integration_connections_company_category_provider_unique").on(
       table.companyId,
       table.category,
+      table.provider,
     ),
+    singleProviderCategoryUnique: uniqueIndex("integration_connections_single_provider_category_unique")
+      .on(table.companyId, table.category)
+      .where(sql`${table.category} <> 'meeting'`),
   }),
 );
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import { db, integrationConnectionsTable, syncKeysTable, employeesTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
 import { assertEmployeeSeat, requireTeamEntitlement } from "../lib/entitlements";
@@ -71,6 +71,10 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
     return;
   }
 
+  if (accountLabel !== undefined && typeof accountLabel !== "string") {
+    res.status(400).json({ message: "Account label must be text." });
+    return;
+  }
   const label = accountLabel?.trim() ? accountLabel.trim().slice(0, 120) : null;
 
   try {
@@ -87,7 +91,10 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
         updatedAt: now,
       })
       .onConflictDoUpdate({
-        target: [integrationConnectionsTable.companyId, integrationConnectionsTable.category],
+        target: category === "meeting"
+          ? [integrationConnectionsTable.companyId, integrationConnectionsTable.category, integrationConnectionsTable.provider]
+          : [integrationConnectionsTable.companyId, integrationConnectionsTable.category],
+        targetWhere: category === "meeting" ? undefined : sql`${integrationConnectionsTable.category} <> 'meeting'`,
         set: {
           provider,
           status: "connected",
@@ -113,9 +120,13 @@ router.post("/integrations/disconnect", requireAuth, requireTeamPlan, async (req
     return;
   }
 
-  const { category } = req.body as { category?: string };
+  const { category, provider } = req.body as { category?: string; provider?: string };
   if (!isCategory(category)) {
     res.status(400).json({ message: "Invalid integration category." });
+    return;
+  }
+  if ((category === "meeting" || provider !== undefined) && (!provider || !PROVIDERS[category].includes(provider))) {
+    res.status(400).json({ message: "Specify a valid provider to disconnect." });
     return;
   }
 
@@ -126,6 +137,7 @@ router.post("/integrations/disconnect", requireAuth, requireTeamPlan, async (req
         and(
           eq(integrationConnectionsTable.companyId, auth.companyId),
           eq(integrationConnectionsTable.category, category),
+          provider ? eq(integrationConnectionsTable.provider, provider) : undefined,
         ),
       );
     logger.info({ companyId: auth.companyId, category }, "Integration disconnected");

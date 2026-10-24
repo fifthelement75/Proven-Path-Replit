@@ -3,3 +3,4 @@
 - [api-server build vs typecheck](api-server-build.md) — tsc "no exported member" on @workspace/db barrel exports are stale-dist false positives; esbuild reads source, verify at runtime.
 - [Stripe seat entitlements](stripe-seat-entitlements.md) — paid access requires a recognized Stripe price/product; cap employee creation at the subscription item quantity.
 - [Dependency remediation](dependency-remediation.md) — security overrides need compatible bounds and re-auditing; avoid accidental major upgrades.
+- [Meeting provider scope](meeting-integrations.md) — retain multiple distinct meeting tools; keep HRIS and ATS single-provider unless requested otherwise.

@@ -32,7 +32,7 @@ interface IntegrationCardProps {
   options: IntegrationOption[];
   placeholder: string;
   labelPlaceholder: string;
-  connection?: Connection;
+  connections: Connection[];
   onChanged: () => void;
 }
 
@@ -55,7 +55,7 @@ function IntegrationCard({
   options,
   placeholder,
   labelPlaceholder,
-  connection,
+  connections,
   onChanged,
 }: IntegrationCardProps) {
   const [selected, setSelected] = useState("");
@@ -63,9 +63,8 @@ function IntegrationCard({
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
 
-  const connectedOption = connection
-    ? options.find((o) => o.value === connection.provider)
-    : undefined;
+  const availableOptions = options.filter(o => !connections.some(c => c.provider === o.value));
+  const canAdd = connections.length === 0 || (category === "meeting" && availableOptions.length > 0);
 
   async function handleConnect() {
     if (!selected) {
@@ -99,20 +98,20 @@ function IntegrationCard({
     }
   }
 
-  async function handleDisconnect() {
+  async function handleDisconnect(connection: Connection) {
     setBusy(true);
     try {
       const res = await apiFetch("/integrations/disconnect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category }),
+        body: JSON.stringify({ category, provider: connection.provider }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast({ title: "Could not disconnect", description: data.message || "Please try again.", variant: "destructive" });
         return;
       }
-      toast({ title: "Disconnected", description: `${connectedOption?.label ?? "Integration"} has been disconnected.` });
+      toast({ title: "Disconnected", description: `${options.find(o => o.value === connection.provider)?.label ?? "Integration"} has been disconnected.` });
       onChanged();
     } catch (err) {
       if (err instanceof UnauthorizedError) return;
@@ -130,30 +129,31 @@ function IntegrationCard({
             <CardTitle className="text-base">{title}</CardTitle>
             <CardDescription className="text-sm">{description}</CardDescription>
           </div>
-          {connection && (
+          {connections.length > 0 && (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
               <CheckCircle2 size={13} />
-              Connected
+              {connections.length > 1 ? `${connections.length} connected` : "Connected"}
             </span>
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        {connection ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <CardContent className="space-y-4">
+        {connections.map(connection => (
+          <div key={connection.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm">
-              <p className="font-medium text-foreground">{connectedOption?.label ?? connection.provider}</p>
+              <p className="font-medium text-foreground">{options.find(o => o.value === connection.provider)?.label ?? connection.provider}</p>
               <p className="text-muted-foreground">
                 {connection.accountLabel ? `${connection.accountLabel} · ` : ""}
                 Connected {formatDate(connection.connectedAt)}
               </p>
             </div>
-            <Button onClick={handleDisconnect} variant="outline" disabled={busy} className="shrink-0">
+            <Button onClick={() => handleDisconnect(connection)} variant="outline" disabled={busy} className="shrink-0" aria-label={`Disconnect ${options.find(o => o.value === connection.provider)?.label ?? connection.provider}`}>
               {busy ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : null}
               Disconnect
             </Button>
           </div>
-        ) : (
+        ))}
+        {canAdd && (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-3 sm:flex-row flex-1">
               <Select value={selected} onValueChange={setSelected}>
@@ -161,7 +161,7 @@ function IntegrationCard({
                   <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
                 <SelectContent>
-                  {options.map((o) => (
+                  {availableOptions.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
                       {o.label}
                     </SelectItem>
@@ -889,7 +889,7 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const byCategory = (category: string) => connections.find((c) => c.category === category);
+  const byCategory = (category: string) => connections.filter((c) => c.category === category);
 
   return (
     <Layout>
@@ -922,7 +922,7 @@ export default function SettingsPage() {
                 options={HRIS_OPTIONS}
                 placeholder="Select HRIS provider..."
                 labelPlaceholder="Account or workspace (optional)"
-                connection={byCategory("hris")}
+                connections={byCategory("hris")}
                 onChanged={loadConnections}
               />
             </div>
@@ -936,7 +936,7 @@ export default function SettingsPage() {
                 options={ATS_OPTIONS}
                 placeholder="Select ATS provider..."
                 labelPlaceholder="Account or workspace (optional)"
-                connection={byCategory("ats")}
+                connections={byCategory("ats")}
                 onChanged={loadConnections}
               />
             </div>
@@ -951,11 +951,11 @@ export default function SettingsPage() {
               <IntegrationCard
                 category="meeting"
                 title="Meeting Intelligence"
-                description="Auto-import 1:1 notes and action items from your meeting tool."
+                description="Connect multiple meeting tools for 1:1 notes and action items."
                 options={MEETING_OPTIONS}
                 placeholder="Select meeting tool..."
                 labelPlaceholder="Account or workspace (optional)"
-                connection={byCategory("meeting")}
+                connections={byCategory("meeting")}
                 onChanged={loadConnections}
               />
             </div>
