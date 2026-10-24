@@ -5,3 +5,5 @@
 - [Dependency remediation](dependency-remediation.md) — security overrides need compatible bounds and re-auditing; avoid accidental major upgrades.
 - [Meeting provider scope](meeting-integrations.md) — retain multiple distinct meeting tools; keep HRIS and ATS single-provider unless requested otherwise.
 - [Customer integrations](customer-integrations.md) — every company chooses and authorizes its own listed tools; developer connections must not become shared customer credentials.
+- [Integration data safety](integration-data-safety.md) — authorization differs from syncing; review imports, confirm writes, and retain deduplication identity across reconnects.
+- [API generation](api-generation.md) — source spec must preserve validator repairs; generation must match React Query v5 and avoid ambiguous legacy exports.

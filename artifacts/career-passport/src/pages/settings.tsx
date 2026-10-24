@@ -13,17 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getToken } from "@/lib/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { IntegrationExchange } from "@/components/integration-exchange";
+import type { IntegrationConnection as Connection, IntegrationCatalog } from "@workspace/api-client-react";
 
 type IntegrationOption = { value: string; label: string };
-
-interface Connection {
-  id: number;
-  category: string;
-  provider: string;
-  status: string;
-  accountLabel: string | null;
-  connectedAt: string;
-}
 
 interface IntegrationCardProps {
   category: string;
@@ -61,22 +54,31 @@ function IntegrationCard({
   const [selected, setSelected] = useState("");
   const [accountLabel, setAccountLabel] = useState("");
   const [busy, setBusy] = useState(false);
+  const [authorization, setAuthorization] = useState<{ provider: string; label: string; authorizationUrl: string } | null>(null);
+  const [exchange, setExchange] = useState<Connection | null>(null);
   const { toast } = useToast();
+  const catalog = useQuery({
+    queryKey: ["integration-platform-catalog"],
+    queryFn: async () => {
+      const res = await apiFetch("/integrations/exchange/catalog");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Could not check integration availability.");
+      return data as IntegrationCatalog;
+    },
+    staleTime: 60000, retry: false,
+  });
 
   const availableOptions = options.filter(o => !connections.some(c => c.provider === o.value));
   const canAdd = connections.length === 0 || (category === "meeting" && availableOptions.length > 0);
 
   async function handleConnect() {
-    if (!selected) {
-      toast({ title: "Select a provider first", variant: "destructive" });
-      return;
-    }
+    if (!authorization) return;
     setBusy(true);
     try {
       const res = await apiFetch("/integrations/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, provider: selected, accountLabel: accountLabel.trim() || undefined }),
+        body: JSON.stringify({ category, provider: authorization.provider, accountLabel: authorization.label || undefined }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -85,10 +87,11 @@ function IntegrationCard({
       }
       toast({
         title: "Connected",
-        description: `${options.find((o) => o.value === selected)?.label} is now connected.`,
+        description: `${options.find((o) => o.value === authorization.provider)?.label} authorization has been verified. Open Data exchange to read or send supported data.`,
       });
       setSelected("");
       setAccountLabel("");
+      setAuthorization(null);
       onChanged();
     } catch (err) {
       if (err instanceof UnauthorizedError) return;
@@ -98,7 +101,24 @@ function IntegrationCard({
     }
   }
 
+  async function handleAuthorize(provider = selected, label = accountLabel) {
+    if (!provider) { toast({ title: "Select a provider first", variant: "destructive" }); return; }
+    setBusy(true);
+    try {
+      const res = await apiFetch("/integrations/authorize", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, provider }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Could not start authorization.");
+      setAuthorization({ provider, label: label.trim(), authorizationUrl: data.authorizationUrl });
+    } catch (err) {
+      if (!(err instanceof UnauthorizedError)) toast({ title: "Authorization unavailable", description: (err as Error).message, variant: "destructive" });
+    } finally { setBusy(false); }
+  }
+
   async function handleDisconnect(connection: Connection) {
+    if (!window.confirm(`Disconnect ${connection.provider} and revoke this account in Pipedream? Imported employee, candidate and meeting records will remain in Proven Path. Exchange history for this connection will be removed.`)) return;
     setBusy(true);
     try {
       const res = await apiFetch("/integrations/disconnect", {
@@ -129,28 +149,40 @@ function IntegrationCard({
             <CardTitle className="text-base">{title}</CardTitle>
             <CardDescription className="text-sm">{description}</CardDescription>
           </div>
-          {connections.length > 0 && (
+          {connections.some(c => c.status === "connected") && (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
               <CheckCircle2 size={13} />
-              {connections.length > 1 ? `${connections.length} connected` : "Connected"}
+              {connections.filter(c => c.status === "connected").length} authorized
             </span>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {catalog.isError && <p role="alert" className="text-sm text-red-700">{(catalog.error as Error).message}</p>}
+        {catalog.data && <p className="text-xs text-muted-foreground">Connect environment: {catalog.data.environment}. Authorization is separate from data synchronization.</p>}
+        {catalog.data?.providers.some(p => !p.available && options.some(o => o.value === p.provider)) &&
+          <p className="text-xs text-amber-800">Tools marked “Custom connector required” are not available through Pipedream Connect. They are not functional connections yet.</p>}
         {connections.map(connection => (
           <div key={connection.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm">
               <p className="font-medium text-foreground">{options.find(o => o.value === connection.provider)?.label ?? connection.provider}</p>
               <p className="text-muted-foreground">
                 {connection.accountLabel ? `${connection.accountLabel} · ` : ""}
-                Connected {formatDate(connection.connectedAt)}
+                {connection.status === "connected" ? `Authorized ${formatDate(connection.connectedAt)}`
+                  : connection.status === "verification_unavailable" ? "Connection verification is temporarily unavailable. Open Data exchange to retry."
+                  : "Authorization required — authorize your company’s account to enable API access."}
               </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" disabled={busy} onClick={() => connection.status !== "needs_authorization" ? setExchange(connection) : handleAuthorize(connection.provider, connection.accountLabel ?? "")}>
+                {connection.status !== "needs_authorization" ? "Data exchange" : "Authorize"}
+              </Button>
+              {connection.status === "connected" && <Button variant="ghost" disabled={busy} onClick={() => handleAuthorize(connection.provider, connection.accountLabel ?? "")}>Reauthorize</Button>}
             <Button onClick={() => handleDisconnect(connection)} variant="outline" disabled={busy} className="shrink-0" aria-label={`Disconnect ${options.find(o => o.value === connection.provider)?.label ?? connection.provider}`}>
               {busy ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : null}
               Disconnect
             </Button>
+            </div>
           </div>
         ))}
         {canAdd && (
@@ -162,8 +194,8 @@ function IntegrationCard({
                 </SelectTrigger>
                 <SelectContent>
                   {availableOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
+                    <SelectItem key={o.value} value={o.value} disabled={catalog.data?.providers.find(p => p.provider === o.value)?.available === false}>
+                      {o.label}{catalog.data?.providers.find(p => p.provider === o.value)?.available === false ? " — Custom connector required" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -172,16 +204,26 @@ function IntegrationCard({
                 value={accountLabel}
                 onChange={(e) => setAccountLabel(e.target.value)}
                 placeholder={labelPlaceholder}
+                maxLength={120}
                 className="flex-1"
               />
             </div>
-            <Button onClick={handleConnect} variant="outline" disabled={busy} className="shrink-0">
+            <Button onClick={() => handleAuthorize()} variant="outline" disabled={busy || catalog.isPending || catalog.isError} className="shrink-0">
               {busy ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <Plug size={15} className="mr-1.5" />}
-              Connect
+              Authorize
             </Button>
           </div>
         )}
+        {authorization && <div className="space-y-3 rounded-md border bg-slate-50 p-3">
+          <p className="text-sm">Authorize {options.find(o => o.value === authorization.provider)?.label} for your company in the secure provider flow, then return here and verify. This link expires in 10 minutes.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline"><a href={authorization.authorizationUrl} target="_blank" rel="noopener noreferrer">Open secure authorization</a></Button>
+            <Button disabled={busy} onClick={handleConnect}>Verify connection</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setAuthorization(null)}>Cancel</Button>
+          </div>
+        </div>}
       </CardContent>
+      {exchange && <IntegrationExchange connection={exchange} onClose={() => setExchange(null)} />}
     </Card>
   );
 }

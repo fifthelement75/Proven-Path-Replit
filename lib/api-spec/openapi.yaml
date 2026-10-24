@@ -24,8 +24,159 @@ tags:
     description: AI Development plan operations
   - name: share
     description: Share link operations
+  - name: integrations
+    description: Company-scoped authorization and admin-reviewed provider data exchange
 
 paths:
+  /integrations:
+    get:
+      operationId: listIntegrationConnections
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Company connections, including selections requiring authorization
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationConnectionList" }
+  /integrations/authorize:
+    post:
+      operationId: authorizeIntegrationProvider
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntegrationSelectionInput" }
+      responses:
+        "200":
+          description: Short-lived company-scoped authorization link
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationAuthorization" }
+  /integrations/connect:
+    post:
+      operationId: verifyIntegrationConnection
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntegrationSelectionInput" }
+      responses:
+        "200":
+          description: Provider authorization verified against the company identity
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationConnectionResult" }
+  /integrations/disconnect:
+    post:
+      operationId: disconnectIntegrationProvider
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntegrationSelectionInput" }
+      responses:
+        "200":
+          description: Account revoked and local connection removed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationDisconnectResult" }
+  /integrations/exchange/catalog:
+    get:
+      operationId: getIntegrationCatalog
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Live provider availability in the configured Connect project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationCatalog" }
+  /integrations/exchange/sources:
+    get:
+      operationId: getIntegrationExchangeSources
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Up to 500 records of each type, scoped to the admin's company
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExchangeSources" }
+  /integrations/exchange/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: getIntegrationExchange
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Verified connection operations and recent exchange history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExchangeDetails" }
+  /integrations/exchange/{id}/run:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: runIntegrationExchange
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExchangeOperationInput" }
+      responses:
+        "200":
+          description: Persisted operation outcome; uncertain writes are not automatically retried
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExchangeResult" }
+        "202":
+          description: This request ID is already running
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExchangeResult" }
+  /integrations/exchange/{id}/runs/{runId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+      - { name: runId, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: getIntegrationExchangeResult
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Company-scoped persisted result and normalized rows
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExchangeResult" }
+  /integrations/exchange/{id}/import:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: importIntegrationRecord
+      tags: [integrations]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExchangeImportInput" }
+      responses:
+        "200":
+          description: Record imported once, or the existing import returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExchangeImportResult" }
   /healthz:
     get:
       operationId: healthCheck
@@ -737,7 +888,175 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    IntegrationSelectionInput:
+      type: object
+      required: [category, provider]
+      properties:
+        category: { type: string, enum: [hris, ats, meeting] }
+        provider: { type: string }
+        accountLabel: { type: string, maxLength: 120 }
+    IntegrationAuthorization:
+      type: object
+      required: [authorizationUrl, expiresAt, environment]
+      properties:
+        authorizationUrl: { type: string, format: uri }
+        expiresAt: { type: string }
+        environment: { type: string, enum: [development, production] }
+    IntegrationConnection:
+      type: object
+      required: [id, category, provider, status, accountLabel, connectedAt]
+      properties:
+        id: { type: integer }
+        category: { type: string }
+        provider: { type: string }
+        status: { type: string }
+        accountLabel: { type: [string, "null"] }
+        connectedAt: { type: string }
+    IntegrationConnectionList:
+      type: object
+      required: [connections]
+      properties:
+        connections:
+          type: array
+          items: { $ref: "#/components/schemas/IntegrationConnection" }
+    IntegrationConnectionResult:
+      type: object
+      required: [connection]
+      properties:
+        connection: { $ref: "#/components/schemas/IntegrationConnection" }
+    IntegrationDisconnectResult:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+    IntegrationProviderAvailability:
+      type: object
+      required: [provider, available]
+      properties:
+        provider: { type: string }
+        available: { type: boolean }
+    IntegrationCatalog:
+      type: object
+      required: [environment, providers]
+      properties:
+        environment: { type: string }
+        providers:
+          type: array
+          items: { $ref: "#/components/schemas/IntegrationProviderAvailability" }
+    ExchangeSource:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: [string, "null"] }
+        role: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+    ExchangeSources:
+      type: object
+      required: [employees, candidates, meetings]
+      properties:
+        employees:
+          type: array
+          items: { $ref: "#/components/schemas/ExchangeSource" }
+        candidates:
+          type: array
+          items: { $ref: "#/components/schemas/ExchangeSource" }
+        meetings:
+          type: array
+          items: { $ref: "#/components/schemas/ExchangeSource" }
+    ExchangeProperty:
+      type: object
+      required: [name, label, type]
+      properties:
+        name: { type: string }
+        label: { type: string }
+        type: { type: string }
+        optional: { type: boolean }
+        description: { type: string }
+    ProviderAction:
+      type: object
+      required: [key, name, write, props]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        write: { type: boolean }
+        props:
+          type: array
+          items: { $ref: "#/components/schemas/ExchangeProperty" }
+    ExchangeRun:
+      type: object
+      required: [id, actionKey, direction, status, createdAt]
+      properties:
+        id: { type: integer }
+        actionKey: { type: string }
+        direction: { type: string, enum: [inbound, outbound] }
+        status: { type: string, enum: [running, succeeded, needs_review] }
+        createdAt: { type: string }
+        message: { type: [string, "null"] }
+        result: {}
+    ExchangeDetails:
+      type: object
+      required: [actions, runs, environment]
+      properties:
+        environment: { type: string }
+        actions:
+          type: array
+          items: { $ref: "#/components/schemas/ProviderAction" }
+        runs:
+          type: array
+          items: { $ref: "#/components/schemas/ExchangeRun" }
+    ExchangeRow:
+      type: object
+      required: [remoteId]
+      properties:
+        remoteId: { type: [string, "null"] }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        department: { type: string }
+        level: { type: string }
+        startDate: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        actionItems: { type: string }
+        date: { type: string }
+    ExchangeResult:
+      type: object
+      required: [run, rows]
+      properties:
+        run: { $ref: "#/components/schemas/ExchangeRun" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/ExchangeRow" }
+    ExchangeOperationInput:
+      type: object
+      required: [requestId, key, props]
+      properties:
+        requestId: { type: string, format: uuid }
+        key: { type: string }
+        props: { type: object, additionalProperties: true }
+        confirmWrite: { type: boolean }
+    ExchangeImportInput:
+      type: object
+      required: [runId, index]
+      properties:
+        runId: { type: integer }
+        index: { type: integer, minimum: 0 }
+        employeeId: { type: integer }
+        defaults: { type: object, additionalProperties: { type: string } }
+    ExchangeImportResult:
+      type: object
+      required: [localId, alreadyImported]
+      properties:
+        localId: { type: integer }
+        alreadyImported: { type: boolean }
     HealthStatus:
       type: object
       properties:
@@ -1025,6 +1344,9 @@ components:
     CreateEmployeeBody:
       type: object
       properties:
+        userRole:
+          type: string
+          enum: ["admin", "manager", "employee"]
         name:
           type: string
         email:

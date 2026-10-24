@@ -9,6 +9,8 @@ export const integrationConnectionsTable = pgTable(
     category: text("category").notNull(),
     provider: text("provider").notNull(),
     status: text("status").notNull().default("connected"),
+    brokerAccountId: text("broker_account_id"),
+    brokerEnvironment: text("broker_environment"),
     accountLabel: text("account_label"),
     connectedAt: timestamp("connected_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,4 +1,5 @@
 export * from "./companies";
+export * from "./integrationExchange";
 export * from "./employees";
 export * from "./reviews";
 export * from "./feedback";

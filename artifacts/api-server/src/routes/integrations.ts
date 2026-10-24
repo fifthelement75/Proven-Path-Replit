@@ -6,6 +6,7 @@ import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
 import { assertEmployeeSeat, requireTeamEntitlement } from "../lib/entitlements";
 import { requireTeamPlan } from "../middlewares/requireActivePlan";
+import { createAuthorization, listCompanyAccounts, verifyAccount, pdRequest, projectPath, connectEnvironment, IntegrationError } from "../lib/pipedreamConnect";
 
 const router = Router();
 
@@ -42,10 +43,39 @@ router.get("/integrations", requireAuth, requireTeamPlan, async (req, res): Prom
       .select()
       .from(integrationConnectionsTable)
       .where(eq(integrationConnectionsTable.companyId, req.auth!.companyId));
-    res.json({ connections });
+    res.set("Cache-Control", "no-store");
+    const verified = await Promise.all(connections.map(async connection => {
+      let status = "needs_authorization";
+      if (connection.brokerAccountId && connection.brokerEnvironment === connectEnvironment()) {
+        try {
+          await verifyAccount(req.auth!.companyId, connection.provider, connection.brokerAccountId);
+          status = "connected";
+        } catch (err) {
+          status = err instanceof IntegrationError && [403,404,409].includes(err.status)
+            ? "needs_authorization" : "verification_unavailable";
+        }
+      }
+      return { ...connection, status };
+    }));
+    res.json({ connections: verified });
   } catch (err: any) {
     logger.error({ err }, "integrations/list error");
     res.status(500).json({ message: "Could not load integrations." });
+  }
+});
+
+router.post("/integrations/authorize", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
+  if (req.auth!.role !== "admin") { res.status(403).json({ message: "Only company admins can authorize tools." }); return; }
+  const { category, provider } = req.body ?? {};
+  if (!isCategory(category) || !PROVIDERS[category].includes(provider)) {
+    res.status(400).json({ message: "Invalid integration provider." }); return;
+  }
+  try {
+    res.set("Cache-Control", "no-store");
+    res.json(await createAuthorization(req.auth!.companyId, provider));
+  } catch (err) {
+    res.status(err instanceof IntegrationError ? err.status : 502)
+      .json({ message: err instanceof IntegrationError ? err.message : "Could not start provider authorization." });
   }
 });
 
@@ -78,6 +108,13 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
   const label = accountLabel?.trim() ? accountLabel.trim().slice(0, 120) : null;
 
   try {
+    const accounts = await listCompanyAccounts(auth.companyId, provider);
+    const account = accounts.filter((a: any) => a.healthy && !a.dead)
+      .sort((a: any, b: any) => String(b.updated_at).localeCompare(String(a.updated_at)))[0];
+    if (!account) {
+      res.status(409).json({ message: "No authorized account found. Complete provider authorization, then verify the connection." });
+      return;
+    }
     const now = new Date();
     const [connection] = await db
       .insert(integrationConnectionsTable)
@@ -86,6 +123,8 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
         category,
         provider,
         status: "connected",
+        brokerAccountId: account.id,
+        brokerEnvironment: connectEnvironment(),
         accountLabel: label,
         connectedAt: now,
         updatedAt: now,
@@ -98,6 +137,8 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
         set: {
           provider,
           status: "connected",
+          brokerAccountId: account.id,
+          brokerEnvironment: connectEnvironment(),
           accountLabel: label,
           connectedAt: now,
           updatedAt: now,
@@ -108,8 +149,8 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
     logger.info({ companyId: auth.companyId, category, provider }, "Integration connected");
     res.json({ connection });
   } catch (err: any) {
-    logger.error({ err }, "integrations/connect error");
-    res.status(500).json({ message: "Could not connect integration." });
+    logger.error({ companyId: auth.companyId, provider }, "integrations/connect error");
+    res.status(err instanceof IntegrationError ? err.status : 500).json({ message: err instanceof IntegrationError ? err.message : "Could not connect integration." });
   }
 });
 
@@ -131,6 +172,28 @@ router.post("/integrations/disconnect", requireAuth, requireTeamPlan, async (req
   }
 
   try {
+    const rows = await db.select().from(integrationConnectionsTable).where(and(
+      eq(integrationConnectionsTable.companyId, auth.companyId),
+      eq(integrationConnectionsTable.category, category),
+      provider ? eq(integrationConnectionsTable.provider, provider) : undefined,
+    ));
+    for (const row of rows) {
+      if (!row.brokerAccountId) continue;
+      if (row.brokerEnvironment !== connectEnvironment()) {
+        res.status(409).json({ message: "This connection belongs to a different Connect environment. Switch environments before revoking it." });
+        return;
+      }
+      try {
+        // Check ownership even when an account is unhealthy. Revocation must still work.
+        const account = await pdRequest(projectPath(`/accounts/${encodeURIComponent(row.brokerAccountId)}?include_credentials=false`));
+        if (account.external_id !== `provenpath:company:${auth.companyId}` || account.app?.name_slug !== row.provider) {
+          throw new IntegrationError(403, "Account ownership could not be verified.");
+        }
+        await pdRequest(projectPath(`/accounts/${encodeURIComponent(row.brokerAccountId)}`), "DELETE");
+      } catch (err) {
+        if (!(err instanceof IntegrationError && err.status === 404)) throw err;
+      }
+    }
     await db
       .delete(integrationConnectionsTable)
       .where(
@@ -143,8 +206,8 @@ router.post("/integrations/disconnect", requireAuth, requireTeamPlan, async (req
     logger.info({ companyId: auth.companyId, category }, "Integration disconnected");
     res.json({ success: true });
   } catch (err: any) {
-    logger.error({ err }, "integrations/disconnect error");
-    res.status(500).json({ message: "Could not disconnect integration." });
+    logger.error({ companyId: auth.companyId, provider }, "integrations/disconnect error");
+    res.status(err instanceof IntegrationError ? err.status : 500).json({ message: err instanceof IntegrationError ? err.message : "Could not disconnect integration." });
   }
 });
 
