@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -625,6 +625,8 @@ function InviteUserDialog({ open, onClose }: { open: boolean; onClose: () => voi
 }
 
 function TeamCard({ onInvite }: { onInvite?: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const contentId = useId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
@@ -691,7 +693,19 @@ function TeamCard({ onInvite }: { onInvite?: () => void }) {
       <CardHeader className="pb-3">
         <div className="flex items-start sm:items-center sm:justify-between gap-2 flex-col sm:flex-row">
           <div>
-            <CardTitle className="text-base">Team members</CardTitle>
+            <CardTitle className="text-base">
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={contentId}
+                  onClick={() => setExpanded(value => !value)}
+                  className="flex items-center gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} aria-hidden="true" />
+                  Team members
+                  {!membersLoading && <Badge variant="secondary">{members.length}</Badge>}
+                </button>
+            </CardTitle>
             <CardDescription className="text-sm">
               People with access to your organization, and pending invitations.
             </CardDescription>
@@ -701,6 +715,7 @@ function TeamCard({ onInvite }: { onInvite?: () => void }) {
           )}
         </div>
       </CardHeader>
+      <div id={contentId} hidden={!expanded}>
       <CardContent className="space-y-6">
         <div>
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
@@ -840,6 +855,7 @@ function TeamCard({ onInvite }: { onInvite?: () => void }) {
           </div>
         )}
       </CardContent>
+      </div>
     </Card>
   );
 }
