@@ -23,3 +23,18 @@ id = "OTlYSWlFYWC3i4zgm0Y1H"
 uri = "file://attached_assets/banners/provenpath-banner.jpg"
 type = "image"
 title = "ProvenPath Product Banner (1600×900)"
+logical_id = "76306256-9c36-4307-af81-3fe8a611131f"
+
+[[outputs]]
+id = "gCpXNyvQGm-v9heX_YKiB"
+uri = "file://docs/performance-review-process.pdf"
+type = "pdf"
+title = "Proven Path Performance Review Process (PDF)"
+description = "Downloadable guide to the current review workflow, scoring math, peer feedback scale, product limits, and a Claude Skill adaptation brief."
+logical_id = "e1586245-0c14-4430-bd22-ec168b39f912"
+content_hash = "sha256:d39176805227008ba58608db77c5446a46a7223d300ab4f8e5b310a7eb4a47c4"
+size = 99849
+mtime_ms = 1793281514521
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:220e4db0-58b9-458c-9428-0f4942d241bb/e1586245-0c14-4430-bd22-ec168b39f912/96a4e044-645f-474b-946d-9602de4a3361"
+storage_version_token = "1793281530287754"
+content_type = "application/pdf"

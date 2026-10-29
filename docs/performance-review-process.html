@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proven Path Performance Review Process</title>
+<style>
+  @page { size: Letter; margin: 0.68in; }
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #172033; background: #fff; font: 10pt/1.55 Arial, Helvetica, sans-serif; }
+  main { max-width: 8in; margin: 0 auto; }
+  header { padding: 0 0 18px; margin-bottom: 22px; border-bottom: 3px solid #1768d1; }
+  .eyebrow { color: #1768d1; font-size: 9pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  h1 { margin: 8px 0 3px; color: #10284b; font-size: 28pt; line-height: 1.12; }
+  .subtitle { margin: 0; color: #52627a; font-size: 12pt; }
+  .date { margin: 8px 0 0; color: #66758c; font-size: 9pt; }
+  h2 { margin: 24px 0 8px; padding-bottom: 5px; border-bottom: 1px solid #d8e1ed; color: #123768; font-size: 16pt; page-break-after: avoid; }
+  h3 { margin: 15px 0 5px; color: #214e83; font-size: 11.5pt; page-break-after: avoid; }
+  p { margin: 6px 0 9px; }
+  ul, ol { margin: 5px 0 10px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; font-size: 9pt; page-break-inside: avoid; }
+  th { background: #eaf2fc; color: #173c6d; text-align: left; }
+  th, td { padding: 7px 8px; border: 1px solid #d5deea; vertical-align: top; }
+  tr { page-break-inside: avoid; }
+  .callout { margin: 12px 0; padding: 10px 12px; border-left: 4px solid #1768d1; background: #f0f6ff; }
+  .warning { border-color: #bd6b0b; background: #fff8ec; }
+  .formula { margin: 10px 0; padding: 11px 14px; border: 1px solid #cad8ec; border-radius: 7px; background: #f5f8fc; color: #123768; font-weight: 700; text-align: center; }
+  .small { color: #596980; font-size: 9pt; }
+  .skill { padding: 2px 0 2px 14px; border-left: 3px solid #d8e1ed; }
+  .skill h3 { margin-top: 12px; }
+  strong { color: #152d50; }
+  footer { margin-top: 28px; padding-top: 8px; border-top: 1px solid #d8e1ed; color: #69778b; font-size: 8.5pt; }
+  @media print { h2 { page-break-after: avoid; } a { color: inherit; text-decoration: none; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">Proven Path · Internal Process Guide</div>
+  <h1>Performance Review Process</h1>
+  <p class="subtitle">How the scoring framework works — and how to adapt it into a Claude Skill</p>
+  <p class="date">Implementation reference: October 2026</p>
+</header>
+
+<h2>Purpose and scope</h2>
+<p>This guide explains the performance-review features currently implemented in Proven Path. It describes the product; it is not a company policy, legal opinion, or recommendation to use a score as the sole basis for employment decisions. Teams adopting it should define role expectations, review cadence, evidence standards, and decision policies.</p>
+
+<h2>Process at a glance</h2>
+<ol>
+  <li><strong>Choose the employee and review period.</strong> Each review has an employee and a free-text period. The interface suggests a month for manager reviews and a year-based label for self-reflections, but the period is not a centrally configured cycle.</li>
+  <li><strong>Collect perspectives.</strong> Admins/managers can enter a manager review, send a self-reflection link, and invite peers. These are distinct records and distinct perspectives.</li>
+  <li><strong>Review scores and evidence.</strong> The profile shows review entries, competency trends, comments, peer response counts, and recommendations. It does not perform formal calibration or consensus.</li>
+  <li><strong>Set goals and development actions.</strong> Reviews can capture strengths, growth areas, and goals. A separate AI development-plan feature can use reviews, check-in feedback, and peer reviews to suggest four to six development skills. The plan is not a score or decision.</li>
+</ol>
+<p>Regular feedback/check-ins (such as 1:1s, performance check-ins, project debriefs, and career conversations) are separate. They capture what went well, growth areas, action items, and next steps; they do not affect the review score.</p>
+
+<h2>The numeric scoring framework</h2>
+<h3>Five core competencies</h3>
+<table>
+<thead><tr><th>Competency</th><th>What is being rated</th></tr></thead>
+<tbody>
+<tr><td>Technical</td><td>Role-relevant technical or craft capability</td></tr>
+<tr><td>Communication</td><td>Communication effectiveness</td></tr>
+<tr><td>Problem solving</td><td>Analysis and resolution of problems</td></tr>
+<tr><td>Teamwork</td><td>Collaboration and contribution to the team</td></tr>
+<tr><td>Leadership</td><td>Leadership and influence appropriate to the role</td></tr>
+</tbody>
+</table>
+<p>The manager form describes the scale as <strong>1 (needs work) to 5 (exceptional)</strong>. It does not define 2, 3, or 4. Do not invent official meanings for those values; teams should define observable, role-appropriate anchors before using scores consistently.</p>
+<h3>Overall score calculation</h3>
+<div class="formula">Overall = sum of entered core scores ÷ number of entered core scores</div>
+<ul>
+  <li>All five competencies have equal weight.</li>
+  <li>A blank competency is omitted from both the sum and the divisor; it is not zero.</li>
+  <li>If no core score is present, the overall score is empty.</li>
+  <li>The result can be fractional and appears to one decimal place in the review list.</li>
+</ul>
+<div class="callout"><strong>Example:</strong> Technical 4, Communication 3, Problem solving 5, Teamwork 4, Leadership blank → (4 + 3 + 5 + 4) ÷ 4 = <strong>4.0</strong>.</div>
+<p>This is the score for one review entry, not a weighted combination of manager, self, and peer input. Behavioral scores, written comments, goals, and promotion recommendations do not change the formula.</p>
+
+<h3>Optional behavioral skills</h3>
+<p>Manager reviews and self-reflections may include optional 1–5 ratings for:</p>
+<ul>
+  <li><strong>Project and team management:</strong> personal planning and delivery; track-level planning and delivery; solution-driven/proactive behavior; team leadership.</li>
+  <li><strong>Collaboration:</strong> persuasion and influence; creative thinking; flexibility.</li>
+  <li><strong>Design strategy:</strong> decision making; constraint management.</li>
+  <li><strong>Communication:</strong> verbal/written communication; focused communication; leading group conversations; interpersonal/team communication.</li>
+</ul>
+<p>Behavioral scores are stored and displayed separately. They do <strong>not</strong> contribute to the overall score or core competency averages.</p>
+
+<h2>Peer review scale and interpretation</h2>
+<p>Peer reviews use a categorical scale for nine behaviors. They are not numeric 1–5 ratings and are not included in the core score.</p>
+<table>
+<thead><tr><th>Peer rating</th><th>Meaning shown in the form</th></tr></thead>
+<tbody>
+<tr><td>Needs Improvement</td><td>Not currently effectively using this skill</td></tr>
+<tr><td>Meets Expectations</td><td>Uses this skill effectively with their team</td></tr>
+<tr><td>Often Exceeds</td><td>Applies a wide range of strategies to challenges</td></tr>
+<tr><td>Exceptional</td><td>Models the way for fellow team members and can mentor</td></tr>
+<tr><td>N/A</td><td>Not applicable</td></tr>
+</tbody>
+</table>
+<p>Questions cover project/team management (four behaviors), collaboration (persuasion and cross-functional collaboration), and strategic thinking (business alignment, customer focus, data-informed decisions). Comments are optional. Peers also provide overall strengths, areas to improve, and a promotion recommendation of Yes / No / Unsure. The profile shows counts by category and recommendation; it does not compute a peer average.</p>
+<div class="callout warning"><strong>Privacy and attribution:</strong> Peer invitations go to named email addresses through tokenized links. Although the interface calls responses private/confidential, each response stores the peer email and authorized managers/admins can inspect individual submissions. Do not describe this as anonymous. Tell employees and reviewers who can see responses.</div>
+
+<h2>What the profile's score views mean</h2>
+<ul>
+  <li><strong>Review cards:</strong> manager and self entries shown separately, with period, core ratings, overall score, optional behavioral ratings, comments, goals, and recommendation.</li>
+  <li><strong>Core competency breakdown:</strong> averages each competency across all available review entries, not just one period or one review type.</li>
+  <li><strong>Score history:</strong> plots available overall scores by period, including separate self and manager entries. It does not calculate a cycle consensus or normalize reviewers.</li>
+  <li><strong>Peer results:</strong> categorical counts and written responses, separate from the numeric trend.</li>
+  <li><strong>Recommendations:</strong> categorical judgments, not formulas derived from scores.</li>
+</ul>
+<p>When comparing scores, identify period and review type first. Do not treat small changes as statistically meaningful, compare different roles as if ratings were normalized, or assume the app performed calibration.</p>
+
+<h2>Recommended human review practice</h2>
+<ol>
+  <li>Agree on the review period and role expectations before collecting ratings.</li>
+  <li>Use specific, recent examples tied to each competency—not personality labels or hearsay.</li>
+  <li>Separate observed outcomes from interpretation; note context, scope, dependencies, and opportunity to demonstrate the skill.</li>
+  <li>Treat self-reflection as perspective and context, not a competing score to mechanically average with a manager rating.</li>
+  <li>Read peer feedback as a pattern of evidence. Consider response count, relationship to the work, and opportunities to observe.</li>
+  <li>Discuss strengths, growth areas, and a small number of concrete next-period goals with the employee.</li>
+  <li>Keep promotion and other employment decisions in an accountable human process. A recommendation or arithmetic score is not a decision rule.</li>
+  <li>Follow company policy and applicable law for access, retention, accommodations, and employment decisions.</li>
+</ol>
+
+<h2>Claude Skill adaptation brief</h2>
+<div class="skill">
+  <p><strong>Suggested role:</strong> Help managers prepare fair, evidence-based performance-review drafts using approved competency definitions and scoring anchors. Separate facts, interpretations, and recommendations. Do not invent evidence, infer protected/personal characteristics, or make employment decisions.</p>
+  <h3>Inputs the Skill should request</h3>
+  <ul>
+    <li>Employee role, level, and approved expectations</li>
+    <li>Review period and scope of work</li>
+    <li>Evidence for each competency, with dates/context</li>
+    <li>Employee self-reflection, manager observations, and check-in notes</li>
+    <li>Peer feedback, with approved privacy and attribution rules</li>
+    <li>Approved 1–5 anchors and guidance on N/A</li>
+    <li>Required output format and company approval steps</li>
+  </ul>
+  <p>If evidence or an approved anchor is missing, ask a clarifying question or mark <strong>Not enough evidence</strong>. Never fabricate a score.</p>
+  <h3>Scoring rules to preserve</h3>
+  <ul>
+    <li>Keep the five core competencies distinct and equally weighted only if the team approves that policy.</li>
+    <li>Calculate the mean from entered core ratings only; never treat missing/N/A as zero.</li>
+    <li>Keep behavioral ratings and peer categories separate from the numeric score.</li>
+    <li>Do not blend self, manager, and peer perspectives unless an explicit reviewed method exists.</li>
+    <li>Keep recommendations separate, with written rationale; never derive them from the score.</li>
+  </ul>
+  <h3>Suggested output</h3>
+  <ol>
+    <li>Review period and role context</li>
+    <li>Evidence summary by competency</li>
+    <li>Proposed rating, approved anchor, and evidence for each competency</li>
+    <li>Transparent overall calculation, only when sufficient ratings exist</li>
+    <li>Evidence-backed strengths and growth areas</li>
+    <li>Employee perspective and differing interpretations</li>
+    <li>Two or three specific, measurable goals</li>
+    <li>Evidence gaps/open questions and items requiring human review</li>
+    <li>Note that the draft is not a final employment decision</li>
+  </ol>
+  <h3>Safeguards</h3>
+  <ul>
+    <li>Use only supplied information and approved work-related records.</li>
+    <li>Do not infer disability, health, age, race, religion, gender, family status, or other protected/personal traits.</li>
+    <li>Avoid personality diagnoses, unsupported causal claims, and absolutes such as “always” or “never.”</li>
+    <li>Do not turn a low score into a disciplinary or termination recommendation.</li>
+    <li>Preserve disagreement and uncertainty instead of creating false consensus.</li>
+    <li>Minimize personal data; require a manager to verify facts, ratings, math, and recommendations before sharing.</li>
+  </ul>
+</div>
+
+<h2>Important implementation limits</h2>
+<ul>
+  <li>No formal annual/quarterly cycle, completion threshold, or calibration rules are defined in the product.</li>
+  <li>The manager/self 1–5 scale has endpoint wording only; the middle values need team-defined anchors.</li>
+  <li>Missing core ratings are allowed by the calculation.</li>
+  <li>Core competency chart averages span current review entries and do not isolate a cycle or normalize review types.</li>
+  <li>Peer feedback is categorical, not anonymous, and not part of the overall score.</li>
+  <li>The AI development plan is separate from scoring and should be reviewed by a human.</li>
+</ul>
+<footer>Source note: Prepared from the current Proven Path implementation. Product behavior can change; verify against the live app before adopting these rules as company policy or embedding them in an internal Skill.</footer>
+</main>
+</body>
+</html>
