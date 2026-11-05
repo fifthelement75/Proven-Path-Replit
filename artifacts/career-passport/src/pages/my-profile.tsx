@@ -2,26 +2,21 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getApiUrl } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { apiFetch } from "@/lib/api";
 import { useAuthContext } from "@/contexts/AuthContext";
-
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export default function MyProfileRedirect() {
   const [, navigate] = useLocation();
   const { user, isTeamPlan, isSubscriptionLoaded } = useAuthContext();
 
-  const { data: profile, isLoading, error } = useQuery<{ id: number } | null>({
+  const { data: profile, isLoading, isFetching, error, refetch } = useQuery<{ id: number } | null>({
     queryKey: ["employees", "me"],
     retry: false,
     enabled: !!user && user.role !== "admin",
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/employees/me"), { headers: authHeaders() });
+      const res = await apiFetch("/employees/me");
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to load profile");
       return res.json();
@@ -50,7 +45,23 @@ export default function MyProfileRedirect() {
     );
   }
 
-  if (error || profile === null) {
+  if (error) {
+    return (
+      <Layout>
+        <div className="text-center py-16">
+          <h2 className="text-lg font-semibold mb-2">Unable to load your profile</h2>
+          <p className="text-muted-foreground text-sm mb-4">
+            There was a problem contacting the server. Check your connection and try again.
+          </p>
+          <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+            {isFetching ? "Retrying…" : "Try again"}
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (profile === null) {
     return (
       <Layout>
         <div className="text-center py-16">
