@@ -162,4 +162,68 @@ describe("customer integration data exchange", () => {
     expect(feedback.employeeId).toBe(employeeId);
     expect(feedback.nextSteps).toContain("Discussed next quarter.");
   });
+  it("imports real Fireflies fields once under concurrent retries, updates changes and survives reconnect", async () => {
+    await db.update(integrationConnectionsTable).set({ category: "meeting", provider: "fireflies" })
+      .where(eq(integrationConnectionsTable.id, connectionIds[0]));
+    const source = { data: { transcripts: [{ id: "fireflies-source", title: "Coaching", date: 1793836800000,
+      summary: { overview: "Discussed growth.", action_items: "Draft the plan." } }] } };
+    vi.mocked(executeExchangeAction).mockResolvedValueOnce(source as any);
+    const first = await run();
+    const body = { runId: first.body.run.id, index: 0, employeeId };
+    const results = await Promise.all([
+      auth("post", `${base()}/import`).send(body), auth("post", `${base()}/import`).send(body),
+    ]);
+    expect(results.map(r => r.status)).toEqual([200, 200]);
+    expect(results[0].body.localId).toBe(results[1].body.localId);
+    expect(results.filter(r => r.body.alreadyImported)).toHaveLength(1);
+    const localId = results[0].body.localId;
+    const [note] = await db.select().from(feedbackTable).where(eq(feedbackTable.id, localId));
+    expect(note.employeeId).toBe(employeeId);
+    expect(note.meetingDate).toBe("2026-11-05");
+    expect(note.actionItems).toBe("Draft the plan.");
+    expect(note.nextSteps).toContain("Discussed growth.");
+    const [otherEmployee] = await db.insert(employeesTable).values({
+      companyId: ids[0], name: "Different employee", email: `other-${localId}@example.test`,
+      role: "Engineer", department: "Engineering", level: "Senior", startDate: "2025-01-01",
+    }).returning();
+    expect((await auth("post", `${base()}/import`).send({ ...body, employeeId: otherEmployee.id })).status).toBe(409);
+    await db.delete(integrationConnectionsTable).where(eq(integrationConnectionsTable.id, connectionIds[0]));
+    const [replacement] = await db.insert(integrationConnectionsTable).values({
+      companyId: ids[0], category: "meeting", provider: "fireflies",
+      brokerAccountId: "apn_reconnected", brokerEnvironment: "development",
+    }).returning();
+    connectionIds[0] = replacement.id;
+    vi.mocked(executeExchangeAction).mockResolvedValueOnce(source as any);
+    const reloaded = await run();
+    const repeated = await auth("post", `${base()}/import`).send({ ...body, runId: reloaded.body.run.id });
+    expect(repeated.body).toEqual({ localId, alreadyImported: true });
+    source.data.transcripts[0].summary = { overview: "Updated discussion.", action_items: "" };
+    vi.mocked(executeExchangeAction).mockResolvedValueOnce(source as any);
+    const changed = await run();
+    const updated = await auth("post", `${base()}/import`).send({ ...body, runId: changed.body.run.id });
+    expect(updated.body).toEqual({ localId, alreadyImported: false });
+    const [revised] = await db.select().from(feedbackTable).where(eq(feedbackTable.id, localId));
+    expect(revised.actionItems).toBeNull();
+    expect(revised.nextSteps).toContain("Updated discussion.");
+  });
+  it("refuses imports from a configured-only meeting provider", async () => {
+    await db.update(integrationConnectionsTable).set({
+      category: "meeting", provider: "fireflies", brokerAccountId: null,
+    }).where(eq(integrationConnectionsTable.id, connectionIds[0]));
+    expect((await run()).status).toBe(409);
+    expect((await auth("post", `${base()}/import`).send({ runId: 1, index: 0, employeeId })).status).toBe(409);
+    expect(executeExchangeAction).not.toHaveBeenCalled();
+  });
+  it("does not fabricate a meeting date for an undated source record", async () => {
+    await db.update(integrationConnectionsTable).set({ category: "meeting", provider: "fireflies" })
+      .where(eq(integrationConnectionsTable.id, connectionIds[0]));
+    vi.mocked(executeExchangeAction).mockResolvedValueOnce({
+      data: { transcript: { id: "undated", summary: { overview: "A source note." } } },
+    } as any);
+    const first = await run();
+    const body = { runId: first.body.run.id, index: 0, employeeId };
+    expect((await auth("post", `${base()}/import`).send(body)).status).toBe(422);
+    expect((await auth("post", `${base()}/import`).send({ ...body, defaults: { meetingDate: "2026-02-30" } })).status).toBe(422);
+    expect((await auth("post", `${base()}/import`).send({ ...body, defaults: { meetingDate: "2026-11-05" } })).status).toBe(200);
+  });
 });

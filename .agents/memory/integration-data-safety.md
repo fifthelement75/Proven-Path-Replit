@@ -14,3 +14,9 @@ Use reviewed imports and explicitly confirmed write-backs until source-of-truth 
 **Why:** HRIS/ATS records affect employee identity and employment information, and meeting notes can be sensitive. A generic two-way overwrite is unsafe without per-field ownership.
 
 **How to apply:** Preserve remote-to-local identity mappings across disconnect/reconnect. Update an existing imported record after reviewed source changes instead of duplicating it. Persist uncertain write outcomes and require reconciliation rather than automatically retrying potentially completed writes.
+
+Do not automatically distribute imported meeting notes to everyone named in a transcript; require an admin to select the employee receiving the note.
+
+**Why:** Shared meetings can contain sensitive coaching content. Attendance alone is not consent to attach the entire summary to each employee's feedback history.
+
+**How to apply:** Keep employee assignment explicit and company-scoped. Expanding to multiple employees needs a deliberate per-recipient review flow rather than automatic attendee matching.

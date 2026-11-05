@@ -1,4 +1,5 @@
 import { pdRequest, projectPath, companyExternalId, IntegrationError } from "./pipedreamConnect";
+import { firefliesActions, readFirefliesMeetings } from "./firefliesMeetings";
 
 type Prop = { name: string; type: string; label?: string; description?: string; optional?: boolean; options?: unknown[] };
 export type ExchangeAction = {
@@ -40,6 +41,8 @@ const DIRECT: Record<string, ExchangeAction[]> = {
 const actionCache = new Map<string, { until: number; actions: ExchangeAction[] }>();
 
 export async function getExchangeActions(provider: string): Promise<ExchangeAction[]> {
+  // This adapter reads documented fields directly, independent of registry actions.
+  if (provider === "fireflies") return firefliesActions;
   const key = projectPath(`/${provider}`);
   const entry = actionCache.get(key);
   if (entry && entry.until > Date.now()) return entry.actions;
@@ -94,6 +97,9 @@ export function validateActionProps(action: ExchangeAction, value: unknown) {
 }
 
 export async function executeExchangeAction(companyId: number, accountId: string, action: ExchangeAction, props: Record<string, unknown>) {
+  if (firefliesActions.some(a => a.key === action.key)) {
+    return readFirefliesMeetings(companyId, accountId, action.key, props);
+  }
   if (action.direct) {
     let url: string;
     switch (action.key) {
@@ -146,6 +152,11 @@ export function extractExchangeRows(data: any): Record<string, any>[] {
 }
 
 function text(...values: unknown[]) { return values.find(v => typeof v === "string" && v.trim()) as string | undefined; }
+function meetingDate(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
 export function normalizeExchangeRow(row: Record<string, any>) {
   const id = row.id ?? row.uuid ?? row.employeeId ?? row.associateOID;
   const first = text(row.firstName, row.first_name, row.personal_info?.first_name, row.person?.legalName?.givenName);
@@ -164,6 +175,6 @@ export function normalizeExchangeRow(row: Record<string, any>) {
       row.type && Array.isArray(row[row.type]?.rich_text)
         ? row[row.type].rich_text.map((part: any) => part.plain_text ?? part.text?.content ?? "").join("") : undefined),
     actionItems: text(row.summary?.action_items, row.action_items),
-    date: text(row.created_at, row.createdAt, row.created_time, row.dateString, row.date),
+    date: text(row.dateString, row.date, meetingDate(row.date), row.created_at, row.createdAt, row.created_time),
   };
 }

@@ -10,6 +10,7 @@ import { createAuthorization, listCompanyAccounts, verifyAccount, pdRequest, pro
 import { SaveCustomerCredentialBody } from "@workspace/api-zod";
 import { CUSTOMER_PROVIDERS, isCustomerProvider, saveCustomerCredential, verifyCustomerAccount } from "../lib/customerCredentials";
 import { integrationCredentialsTable } from "@workspace/db";
+import { verifyFirefliesAccess } from "../lib/firefliesMeetings";
 
 const router = Router();
 
@@ -52,7 +53,10 @@ router.get("/integrations", requireAuth, requireTeamPlan, async (req, res): Prom
       if (connection.brokerAccountId && connection.brokerEnvironment === connectEnvironment()) {
         try {
           if (isCustomerProvider(connection.provider)) await verifyCustomerAccount(req.auth!.companyId, connection.provider, connection.brokerAccountId);
-          else await verifyAccount(req.auth!.companyId, connection.provider, connection.brokerAccountId);
+          else {
+            await verifyAccount(req.auth!.companyId, connection.provider, connection.brokerAccountId);
+            if (connection.provider === "fireflies") await verifyFirefliesAccess(req.auth!.companyId, connection.brokerAccountId);
+          }
           status = "connected";
         } catch (err) {
           status = err instanceof IntegrationError && [403,404,409].includes(err.status)
@@ -139,6 +143,8 @@ router.post("/integrations/connect", requireAuth, requireTeamPlan, async (req, r
       res.status(409).json({ message: "No authorized account found. Complete provider authorization, then verify the connection." });
       return;
     }
+    await verifyAccount(auth.companyId, provider, account.id);
+    if (provider === "fireflies") await verifyFirefliesAccess(auth.companyId, account.id);
     const now = new Date();
     const [connection] = await db
       .insert(integrationConnectionsTable)

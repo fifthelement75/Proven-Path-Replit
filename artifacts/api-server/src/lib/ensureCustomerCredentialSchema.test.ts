@@ -14,6 +14,7 @@ vi.mock("./pipedreamConnect", async original => ({
   listCompanyAccounts: vi.fn(async (companyId: number, provider: string) => [{
     id: "apn_migration_test", external_id: `provenpath:company:${companyId}`, app: { name_slug: provider }, healthy: true,
   }]),
+  verifyAccount: vi.fn(async () => ({ healthy: true })),
 }));
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 

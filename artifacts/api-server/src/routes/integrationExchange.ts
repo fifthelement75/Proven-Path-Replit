@@ -179,7 +179,9 @@ router.post("/integrations/exchange/:id/import", async (req, res) => {
       record, defaults: Object.fromEntries(Object.entries(defaults).sort(([a],[b]) => a.localeCompare(b))), employeeId,
     })).digest("hex");
     const result = await db.transaction(async tx => {
-      await tx.execute(sql`select pg_advisory_xact_lock(${companyId}, ${connection.id})`);
+      // Import identity survives disconnect/reconnect; serialize by provider, not
+      // connection ID, so concurrent retries cannot insert duplicate feedback.
+      await tx.execute(sql`select pg_advisory_xact_lock(${companyId}, hashtext(${connection.provider}))`);
       const [existing] = await tx.select().from(integrationImportsTable).where(and(
         eq(integrationImportsTable.companyId, companyId), eq(integrationImportsTable.provider, connection.provider),
         eq(integrationImportsTable.remoteId, record.remoteId!),
@@ -239,7 +241,7 @@ router.post("/integrations/exchange/:id/import", async (req, res) => {
         const values = {
           employeeId, meetingType: "Imported meeting", meetingDate,
           nextSteps: `[Imported from ${connection.provider}] ${record.title ?? "Meeting"}\n\n${summary.slice(0,50000)}`,
-          actionItems: record.actionItems?.slice(0,50000),
+          actionItems: record.actionItems?.slice(0,50000) ?? null,
         };
         const [prior] = existing ? await tx.select().from(feedbackTable).where(eq(feedbackTable.id, existing.localId)) : [];
         if (prior) {

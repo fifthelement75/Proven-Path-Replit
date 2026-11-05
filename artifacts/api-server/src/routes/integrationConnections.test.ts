@@ -6,6 +6,11 @@ import { inArray } from "drizzle-orm";
 import { signToken } from "../middlewares/auth";
 import integrationsRouter from "./integrations";
 import { listCompanyAccounts } from "../lib/pipedreamConnect";
+import { verifyFirefliesAccess } from "../lib/firefliesMeetings";
+
+vi.mock("../lib/firefliesMeetings", () => ({
+  verifyFirefliesAccess: vi.fn(async () => undefined),
+}));
 
 vi.mock("../lib/pipedreamConnect", async importOriginal => {
   const actual = await importOriginal<typeof import("../lib/pipedreamConnect")>();
@@ -71,6 +76,12 @@ async function list(token = tokens[0]) {
 }
 
 describe("multiple meeting intelligence connections", () => {
+  it("does not save an apparently healthy broker account when Fireflies API access fails", async () => {
+    vi.mocked(verifyFirefliesAccess).mockRejectedValueOnce(new Error("provider rejected read"));
+    expect((await connect("fireflies")).status).toBe(500);
+    expect(await list()).toHaveLength(0);
+  });
+
   it("does not mark a provider connected until customer authorization is healthy", async () => {
     vi.mocked(listCompanyAccounts).mockResolvedValueOnce([]);
     const response = await connect("fireflies");

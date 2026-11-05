@@ -191,6 +191,10 @@ export function IntegrationExchange({ connection, onClose }: {
                 <div className="min-w-0 text-sm"><p className="font-medium">{row.name || row.title || row.remoteId || "Record without stable ID"}</p>
                   {row.email && <p className="text-muted-foreground">{row.email}</p>}
                   {row.summary && <p className="text-muted-foreground whitespace-pre-wrap">{row.summary.slice(0,350)}</p>}
+                  {connection.category === "meeting" && <>
+                    <p className="text-xs text-muted-foreground">Meeting date: {row.date?.slice(0,10) || "Missing — enter the actual date above"}</p>
+                    {row.actionItems && <p className="whitespace-pre-wrap"><span className="font-medium">Action items: </span>{row.actionItems.slice(0,1000)}</p>}
+                  </>}
                   <p className="text-xs text-muted-foreground">External ID: {row.remoteId ?? "unavailable"}</p>
                 </div>
                 <Button variant="outline" size="sm" disabled={busy || !row.remoteId || imported[`${last.run.id}:${index}`]}

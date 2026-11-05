@@ -178,6 +178,11 @@ function IntegrationCard({
                   : connection.status === "verification_unavailable" ? "Connection verification is temporarily unavailable. Open Data exchange to retry."
                   : "Authorization required — authorize your company’s account to enable API access."}
               </p>
+              {category === "meeting" && <p className="text-xs text-muted-foreground">
+                {connection.status === "connected"
+                  ? "Manual import available · Background sync off. Review notes and choose an employee in Data exchange."
+                  : "Configured only · Importing is unavailable until authorization can be verified."}
+              </p>}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" disabled={busy} onClick={() => connection.status !== "needs_authorization" ? setExchange(connection) : handleAuthorize(connection.provider, connection.accountLabel ?? "")}>
