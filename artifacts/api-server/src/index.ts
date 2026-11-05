@@ -5,6 +5,8 @@ import { startPanelInviteReminderScheduler } from "./lib/panelInviteReminders";
 import { ensurePanelInviteSchema } from "./lib/ensurePanelInviteSchema";
 import { ensureBillingSchema } from "./lib/ensureBillingSchema";
 import { ensureCustomerCredentialSchema } from "./lib/ensureCustomerCredentialSchema";
+import { ensureIntegrationSyncSchema } from "./lib/ensureIntegrationSyncSchema";
+import { startIntegrationSyncScheduler } from "./lib/integrationSync";
 
 const rawPort = process.env["PORT"];
 
@@ -54,6 +56,7 @@ async function main(): Promise<void> {
     await ensurePanelInviteSchema();
     await ensureBillingSchema();
     await ensureCustomerCredentialSchema();
+    await ensureIntegrationSyncSchema();
   } catch (err) {
     logger.error({ err }, "Failed to ensure required startup schema");
     process.exit(1);
@@ -68,6 +71,7 @@ async function main(): Promise<void> {
     initStripe().catch((e) => logger.error({ err: e }, "initStripe failed"));
     startTrialReminderScheduler();
     startPanelInviteReminderScheduler();
+    startIntegrationSyncScheduler();
   });
 }
 

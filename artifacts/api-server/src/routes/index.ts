@@ -17,6 +17,7 @@ import stripeRouter from "./stripe";
 import promoRouter from "./promo";
 import integrationsRouter from "./integrations";
 import integrationExchangeRouter from "./integrationExchange";
+import integrationSyncRouter from "./integrationSync";
 import invitationsRouter from "./invitations";
 
 const router: IRouter = Router();
@@ -39,6 +40,7 @@ router.use(stripeRouter);
 router.use(promoRouter);
 router.use(integrationsRouter);
 router.use(integrationExchangeRouter);
+router.use(integrationSyncRouter);
 router.use(invitationsRouter);
 
 export default router;

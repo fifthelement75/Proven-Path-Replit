@@ -5,6 +5,126 @@
  * Career Passport API specification
  * OpenAPI spec version: 0.1.0
  */
+export type IntegrationSyncCommandCommand = typeof IntegrationSyncCommandCommand[keyof typeof IntegrationSyncCommandCommand];
+
+
+export const IntegrationSyncCommandCommand = {
+  preview: 'preview',
+  approve: 'approve',
+  disable: 'disable',
+  run: 'run',
+  reconcile: 'reconcile',
+} as const;
+
+export type IntegrationSyncCommandResolution = typeof IntegrationSyncCommandResolution[keyof typeof IntegrationSyncCommandResolution];
+
+
+export const IntegrationSyncCommandResolution = {
+  applied: 'applied',
+  not_applied: 'not_applied',
+} as const;
+
+export type IntegrationSyncFieldOwner = typeof IntegrationSyncFieldOwner[keyof typeof IntegrationSyncFieldOwner];
+
+
+export const IntegrationSyncFieldOwner = {
+  provider: 'provider',
+  local: 'local',
+} as const;
+
+export interface IntegrationSyncField {
+  /** Dotted provider path or normalized field prefixed with $ */
+  source: string;
+  owner: IntegrationSyncFieldOwner;
+}
+
+export type IntegrationSyncConfigPaginationMode = typeof IntegrationSyncConfigPaginationMode[keyof typeof IntegrationSyncConfigPaginationMode];
+
+
+export const IntegrationSyncConfigPaginationMode = {
+  single: 'single',
+  page: 'page',
+  offset: 'offset',
+  cursor: 'cursor',
+} as const;
+
+export type IntegrationSyncConfigProps = { [key: string]: unknown };
+
+export type IntegrationSyncConfigFields = {[key: string]: IntegrationSyncField};
+
+export type IntegrationSyncConfigPagination = {
+  mode: IntegrationSyncConfigPaginationMode;
+  prop?: string;
+  nextPath?: string;
+  /**
+     * @minimum 1
+     * @maximum 250
+     */
+  pageSize?: number;
+};
+
+export type IntegrationSyncConfigOutboundProps = { [key: string]: unknown };
+
+export type IntegrationSyncConfigOutboundFields = {[key: string]: string};
+
+export type IntegrationSyncConfigOutbound = {
+  actionKey: string;
+  props: IntegrationSyncConfigOutboundProps;
+  fields: IntegrationSyncConfigOutboundFields;
+};
+
+export interface IntegrationSyncConfig {
+  actionKey: string;
+  props: IntegrationSyncConfigProps;
+  fields: IntegrationSyncConfigFields;
+  /**
+     * @minimum 15
+     * @maximum 1440
+     */
+  intervalMinutes: number;
+  pagination: IntegrationSyncConfigPagination;
+  updatedAtPath?: string;
+  /** Optional provider input receiving the last completed high-water timestamp as ISO 8601 */
+  updatedSinceProp?: string;
+  outbound?: IntegrationSyncConfigOutbound;
+}
+
+export interface IntegrationSyncCommand {
+  command: IntegrationSyncCommandCommand;
+  config?: IntegrationSyncConfig;
+  previewId?: string;
+  writeId?: number;
+  confirmOutbound?: boolean;
+  resolution?: IntegrationSyncCommandResolution;
+}
+
+export type IntegrationSyncStatusPreviewItem = { [key: string]: unknown };
+
+export type IntegrationSyncStatusCursor = { [key: string]: unknown };
+
+export type IntegrationSyncStatusIssuesItem = { [key: string]: unknown };
+
+export type IntegrationSyncStatusWritesItem = { [key: string]: unknown };
+
+export type IntegrationSyncStatusRunsItem = { [key: string]: unknown };
+
+export interface IntegrationSyncStatus {
+  enabled: boolean;
+  config?: IntegrationSyncConfig;
+  previewId?: string;
+  preview?: IntegrationSyncStatusPreviewItem[];
+  /** @nullable */
+  lastSyncAt?: string | null;
+  /** @nullable */
+  nextSyncAt?: string | null;
+  /** @nullable */
+  message?: string | null;
+  cursor?: IntegrationSyncStatusCursor;
+  issues?: IntegrationSyncStatusIssuesItem[];
+  writes?: IntegrationSyncStatusWritesItem[];
+  runs?: IntegrationSyncStatusRunsItem[];
+}
+
 export type CustomerCredentialInputProvider = typeof CustomerCredentialInputProvider[keyof typeof CustomerCredentialInputProvider];
 
 

@@ -139,13 +139,13 @@ function positivePage(v: unknown) {
   return Number(v);
 }
 
-export function extractExchangeRows(data: any): Record<string, any>[] {
-  if (Array.isArray(data)) return data.filter(x => x && typeof x === "object" && !Array.isArray(x)).slice(0,250);
+export function extractExchangeRows(data: any, limit = 250): Record<string, any>[] {
+  if (Array.isArray(data)) return data.filter(x => x && typeof x === "object" && !Array.isArray(x)).slice(0,limit);
   if (!data || typeof data !== "object") return [];
   for (const key of ["employees", "workers", "candidates", "notes", "opportunities", "transcripts", "transcript", "note", "results", "data"]) {
-    if (Array.isArray(data[key])) return extractExchangeRows(data[key]);
+    if (Array.isArray(data[key])) return extractExchangeRows(data[key], limit);
     if (data[key] && typeof data[key] === "object") {
-      const rows = extractExchangeRows(data[key]); if (rows.length) return rows;
+      const rows = extractExchangeRows(data[key], limit); if (rows.length) return rows;
     }
   }
   return data.id || data.uuid || data.employeeId || data.associateOID ? [data] : [];

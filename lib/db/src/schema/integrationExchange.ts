@@ -26,6 +26,7 @@ export const integrationImportsTable = pgTable("integration_imports", {
   kind: text("kind").notNull(),
   localId: integer("local_id").notNull(),
   payloadHash: text("payload_hash").notNull().default(""),
+  syncBaseline: jsonb("sync_baseline").$type<Record<string, string>>(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => ({

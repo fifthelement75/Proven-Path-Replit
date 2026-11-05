@@ -903,6 +903,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /integrations/sync/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      operationId: getIntegrationSync
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Approved configuration, progress, issues and outbound reconciliation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationSyncStatus" }
+    post:
+      operationId: controlIntegrationSync
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntegrationSyncCommand" }
+      responses:
+        "200":
+          description: Preview or updated sync status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntegrationSyncStatus" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -910,6 +937,65 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    IntegrationSyncCommand:
+      type: object
+      required: [command]
+      properties:
+        command: { type: string, enum: [preview, approve, disable, run, reconcile] }
+        config: { $ref: "#/components/schemas/IntegrationSyncConfig" }
+        previewId: { type: string }
+        writeId: { type: integer }
+        confirmOutbound: { type: boolean }
+        resolution: { type: string, enum: [applied, not_applied] }
+    IntegrationSyncConfig:
+      type: object
+      required: [actionKey, props, fields, intervalMinutes, pagination]
+      properties:
+        actionKey: { type: string }
+        props: { type: object, additionalProperties: true }
+        fields:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/IntegrationSyncField"
+        intervalMinutes: { type: integer, minimum: 15, maximum: 1440 }
+        pagination:
+          type: object
+          required: [mode]
+          properties:
+            mode: { type: string, enum: [single, page, offset, cursor] }
+            prop: { type: string }
+            nextPath: { type: string }
+            pageSize: { type: integer, minimum: 1, maximum: 250 }
+        updatedAtPath: { type: string }
+        updatedSinceProp: { type: string, description: "Optional provider input receiving the last completed high-water timestamp as ISO 8601" }
+        outbound:
+          type: object
+          required: [actionKey, props, fields]
+          properties:
+            actionKey: { type: string }
+            props: { type: object, additionalProperties: true }
+            fields: { type: object, additionalProperties: { type: string } }
+    IntegrationSyncField:
+      type: object
+      required: [source, owner]
+      properties:
+        source: { type: string, description: "Dotted provider path or normalized field prefixed with $" }
+        owner: { type: string, enum: [provider, local] }
+    IntegrationSyncStatus:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        config: { $ref: "#/components/schemas/IntegrationSyncConfig" }
+        previewId: { type: string }
+        preview: { type: array, items: { type: object, additionalProperties: true } }
+        lastSyncAt: { type: ["string", "null"] }
+        nextSyncAt: { type: ["string", "null"] }
+        message: { type: ["string", "null"] }
+        cursor: { type: object, additionalProperties: true }
+        issues: { type: array, items: { type: object, additionalProperties: true } }
+        writes: { type: array, items: { type: object, additionalProperties: true } }
+        runs: { type: array, items: { type: object, additionalProperties: true } }
     CustomerCredentialInput:
       type: object
       required: [provider, consent]

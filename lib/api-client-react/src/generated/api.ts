@@ -55,6 +55,8 @@ import type {
   IntegrationConnectionResult,
   IntegrationDisconnectResult,
   IntegrationSelectionInput,
+  IntegrationSyncCommand,
+  IntegrationSyncStatus,
   ListEmployeesParams,
   LoginBody,
   MarkSkillCompleteBody,
@@ -3615,4 +3617,182 @@ export function useGetPublicProfile<TData = Awaited<ReturnType<typeof getPublicP
 
 
 
+
+export const getGetIntegrationSyncUrl = (id: number,) => {
+
+
+
+
+  return `/api/integrations/sync/${id}`
+}
+
+export const getIntegrationSync = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<IntegrationSyncStatus> => {
+
+  return customFetch<IntegrationSyncStatus>(getGetIntegrationSyncUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIntegrationSyncQueryKey = (id: number,) => {
+    return [
+    `/api/integrations/sync/${id}`
+    ] as const;
+    }
+
+
+export const getGetIntegrationSyncQueryOptions = <TData = Awaited<ReturnType<typeof getIntegrationSync>>, TError = ErrorType<unknown>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIntegrationSync>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIntegrationSyncQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIntegrationSync>>> = ({ signal }) => getIntegrationSync(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIntegrationSync>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetIntegrationSyncQueryResult = NonNullable<Awaited<ReturnType<typeof getIntegrationSync>>>
+export type GetIntegrationSyncQueryError = ErrorType<unknown>
+
+
+export function useGetIntegrationSync<TData = Awaited<ReturnType<typeof getIntegrationSync>>, TError = ErrorType<unknown>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIntegrationSync>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getIntegrationSync>>,
+          TError,
+          Awaited<ReturnType<typeof getIntegrationSync>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetIntegrationSync<TData = Awaited<ReturnType<typeof getIntegrationSync>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIntegrationSync>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getIntegrationSync>>,
+          TError,
+          Awaited<ReturnType<typeof getIntegrationSync>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetIntegrationSync<TData = Awaited<ReturnType<typeof getIntegrationSync>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIntegrationSync>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetIntegrationSync<TData = Awaited<ReturnType<typeof getIntegrationSync>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIntegrationSync>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetIntegrationSyncQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getControlIntegrationSyncUrl = (id: number,) => {
+
+
+
+
+  return `/api/integrations/sync/${id}`
+}
+
+export const controlIntegrationSync = async (id: number,
+    integrationSyncCommand: IntegrationSyncCommand, options?: Parameters<typeof customFetch>[1]): Promise<IntegrationSyncStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IntegrationSyncStatus>(getControlIntegrationSyncUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(integrationSyncCommand)
+  }
+);}
+
+
+
+
+
+export const getControlIntegrationSyncMutationKey = () => ['controlIntegrationSync'] as const;
+
+export const getControlIntegrationSyncMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof controlIntegrationSync>>, TError,ControlIntegrationSyncMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof controlIntegrationSync>>, TError,ControlIntegrationSyncMutationVariables, TContext> => {
+
+const mutationKey = getControlIntegrationSyncMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof controlIntegrationSync>>, ControlIntegrationSyncMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  controlIntegrationSync(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ControlIntegrationSyncMutationResult = NonNullable<Awaited<ReturnType<typeof controlIntegrationSync>>>
+    export type ControlIntegrationSyncMutationBody = BodyType<IntegrationSyncCommand>
+    export type ControlIntegrationSyncMutationError = ErrorType<unknown>
+    export type ControlIntegrationSyncMutationVariables = {id: number;data: BodyType<IntegrationSyncCommand>}
+
+    export const useControlIntegrationSync = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof controlIntegrationSync>>, TError,ControlIntegrationSyncMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof controlIntegrationSync>>,
+        TError,
+        ControlIntegrationSyncMutationVariables,
+        TContext
+      > => {
+      return useMutation(getControlIntegrationSyncMutationOptions(options), queryClient);
+    }
 

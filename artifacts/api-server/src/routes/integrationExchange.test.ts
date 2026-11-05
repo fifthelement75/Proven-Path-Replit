@@ -7,6 +7,7 @@ import { signToken } from "../middlewares/auth";
 import exchangeRouter from "./integrationExchange";
 import { executeExchangeAction } from "../lib/integrationActions";
 import { verifyAccount } from "../lib/pipedreamConnect";
+import { ensureIntegrationSyncSchema } from "../lib/ensureIntegrationSyncSchema";
 
 vi.mock("../lib/pipedreamConnect", async original => ({
   ...await original<typeof import("../lib/pipedreamConnect")>(),
@@ -27,6 +28,7 @@ const ids: number[] = [], tokens: string[] = [];
 let employeeId: number;
 let connectionIds: number[] = [];
 beforeAll(async () => {
+  await ensureIntegrationSyncSchema();
   for (let i = 0; i < 2; i++) {
     const email = `exchange_test_${Date.now()}_${i}@example.test`;
     const [company] = await db.insert(companiesTable).values({

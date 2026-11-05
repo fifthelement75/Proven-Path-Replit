@@ -1,6 +1,6 @@
 import { Router } from "express";
 import crypto from "crypto";
-import { db, integrationConnectionsTable, syncKeysTable, employeesTable } from "@workspace/db";
+import { db, integrationConnectionsTable, integrationSyncTable, syncKeysTable, employeesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
@@ -210,6 +210,10 @@ router.post("/integrations/disconnect", requireAuth, requireTeamPlan, async (req
       provider ? eq(integrationConnectionsTable.provider, provider) : undefined,
     ));
     for (const row of rows) {
+      // Stop local scheduled work first, even if remote revocation later fails.
+      await db.update(integrationSyncTable).set({ enabled: false, nextSyncAt: null, draft: null, previewId: null,
+        message: "Stopped because disconnection was requested." }).where(and(
+        eq(integrationSyncTable.companyId, auth.companyId), eq(integrationSyncTable.connectionId, row.id)));
       // Direct providers have no documented API-key revocation endpoint. Deleting
       // the connection cascades its encrypted credential; the admin revokes at vendor.
       if (isCustomerProvider(row.provider)) continue;

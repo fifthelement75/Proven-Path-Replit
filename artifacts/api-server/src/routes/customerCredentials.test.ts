@@ -1,3 +1,4 @@
+import { ensureIntegrationSyncSchema } from "../lib/ensureIntegrationSyncSchema";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import express from "express";
 import request from "supertest";
@@ -16,6 +17,7 @@ const fakePassword = "test-api-password-not-real";
 const response = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 let fetcher: ReturnType<typeof vi.fn>;
 beforeAll(async () => {
+  await ensureIntegrationSyncSchema();
   vi.stubEnv("SESSION_SECRET", "integration-test-only-session-secret-at-least-32-chars");
   vi.stubEnv("PIPEDREAM_ENVIRONMENT", "development");
   for (let n = 0; n < 2; n++) {

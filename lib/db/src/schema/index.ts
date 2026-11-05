@@ -1,3 +1,4 @@
+export * from "./integrationSync";
 export * from "./companies";
 export * from "./integrationExchange";
 export * from "./integrationCredentials";

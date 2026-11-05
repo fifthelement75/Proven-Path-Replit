@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getToken } from "@/lib/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { IntegrationExchange } from "@/components/integration-exchange";
+import { IntegrationSync, IntegrationSyncSummary } from "@/components/integration-sync";
 import { CustomerCredentialDialog } from "@/components/customer-credential-dialog";
 import type { IntegrationConnection as Connection, IntegrationCatalog } from "@workspace/api-client-react";
 
@@ -57,6 +58,7 @@ function IntegrationCard({
   const [busy, setBusy] = useState(false);
   const [authorization, setAuthorization] = useState<{ provider: string; label: string; authorizationUrl: string } | null>(null);
   const [exchange, setExchange] = useState<Connection | null>(null);
+  const [syncing, setSyncing] = useState<Connection | null>(null);
   const [customerAuthorization, setCustomerAuthorization] = useState<{provider: "otter" | "icims"; label: string} | null>(null);
   const { toast } = useToast();
   const catalog = useQuery({
@@ -183,6 +185,7 @@ function IntegrationCard({
                   ? "Manual import available · Background sync off. Review notes and choose an employee in Data exchange."
                   : "Configured only · Importing is unavailable until authorization can be verified."}
               </p>}
+              {(category === "hris" || category === "ats") && <IntegrationSyncSummary connection={connection} onOpen={() => setSyncing(connection)} />}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" disabled={busy} onClick={() => connection.status !== "needs_authorization" ? setExchange(connection) : handleAuthorize(connection.provider, connection.accountLabel ?? "")}>
@@ -241,6 +244,7 @@ function IntegrationCard({
         onClose={() => setCustomerAuthorization(null)}
         onConnected={() => { setSelected(""); setAccountLabel(""); onChanged(); }}
       />}
+      {syncing && <IntegrationSync connection={syncing} onClose={() => setSyncing(null)} />}
       {exchange && <IntegrationExchange connection={exchange} onClose={() => setExchange(null)} />}
     </Card>
   );

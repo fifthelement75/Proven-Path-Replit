@@ -948,3 +948,140 @@ export const GetPublicProfileResponse = zod.object({
 })
 
 
+
+
+
+export const GetIntegrationSyncParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const getIntegrationSyncResponseConfigIntervalMinutesMin = 15;
+export const getIntegrationSyncResponseConfigIntervalMinutesMax = 1440;
+
+export const getIntegrationSyncResponseConfigPaginationPageSizeMax = 250;
+
+
+
+export const GetIntegrationSyncResponse = zod.object({
+  "enabled": zod.boolean(),
+  "config": zod.object({
+  "actionKey": zod.string(),
+  "props": zod.record(zod.string(), zod.unknown()),
+  "fields": zod.record(zod.string(), zod.object({
+  "source": zod.string().describe('Dotted provider path or normalized field prefixed with $'),
+  "owner": zod.enum(['provider', 'local'])
+})),
+  "intervalMinutes": zod.int().min(getIntegrationSyncResponseConfigIntervalMinutesMin).max(getIntegrationSyncResponseConfigIntervalMinutesMax),
+  "pagination": zod.object({
+  "mode": zod.enum(['single', 'page', 'offset', 'cursor']),
+  "prop": zod.string().optional(),
+  "nextPath": zod.string().optional(),
+  "pageSize": zod.int().min(1).max(getIntegrationSyncResponseConfigPaginationPageSizeMax).optional()
+}),
+  "updatedAtPath": zod.string().optional(),
+  "updatedSinceProp": zod.string().optional().describe('Optional provider input receiving the last completed high-water timestamp as ISO 8601'),
+  "outbound": zod.object({
+  "actionKey": zod.string(),
+  "props": zod.record(zod.string(), zod.unknown()),
+  "fields": zod.record(zod.string(), zod.string())
+}).optional()
+}).optional(),
+  "previewId": zod.string().optional(),
+  "preview": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "lastSyncAt": zod.string().nullish(),
+  "nextSyncAt": zod.string().nullish(),
+  "message": zod.string().nullish(),
+  "cursor": zod.record(zod.string(), zod.unknown()).optional(),
+  "issues": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "writes": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "runs": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+
+
+
+export const ControlIntegrationSyncParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const controlIntegrationSyncBodyConfigIntervalMinutesMin = 15;
+export const controlIntegrationSyncBodyConfigIntervalMinutesMax = 1440;
+
+export const controlIntegrationSyncBodyConfigPaginationPageSizeMax = 250;
+
+
+
+export const ControlIntegrationSyncBody = zod.object({
+  "command": zod.enum(['preview', 'approve', 'disable', 'run', 'reconcile']),
+  "config": zod.object({
+  "actionKey": zod.string(),
+  "props": zod.record(zod.string(), zod.unknown()),
+  "fields": zod.record(zod.string(), zod.object({
+  "source": zod.string().describe('Dotted provider path or normalized field prefixed with $'),
+  "owner": zod.enum(['provider', 'local'])
+})),
+  "intervalMinutes": zod.int().min(controlIntegrationSyncBodyConfigIntervalMinutesMin).max(controlIntegrationSyncBodyConfigIntervalMinutesMax),
+  "pagination": zod.object({
+  "mode": zod.enum(['single', 'page', 'offset', 'cursor']),
+  "prop": zod.string().optional(),
+  "nextPath": zod.string().optional(),
+  "pageSize": zod.int().min(1).max(controlIntegrationSyncBodyConfigPaginationPageSizeMax).optional()
+}),
+  "updatedAtPath": zod.string().optional(),
+  "updatedSinceProp": zod.string().optional().describe('Optional provider input receiving the last completed high-water timestamp as ISO 8601'),
+  "outbound": zod.object({
+  "actionKey": zod.string(),
+  "props": zod.record(zod.string(), zod.unknown()),
+  "fields": zod.record(zod.string(), zod.string())
+}).optional()
+}).optional(),
+  "previewId": zod.string().optional(),
+  "writeId": zod.int().optional(),
+  "confirmOutbound": zod.boolean().optional(),
+  "resolution": zod.enum(['applied', 'not_applied']).optional()
+})
+
+export const controlIntegrationSyncResponseConfigIntervalMinutesMin = 15;
+export const controlIntegrationSyncResponseConfigIntervalMinutesMax = 1440;
+
+export const controlIntegrationSyncResponseConfigPaginationPageSizeMax = 250;
+
+
+
+export const ControlIntegrationSyncResponse = zod.object({
+  "enabled": zod.boolean(),
+  "config": zod.object({
+  "actionKey": zod.string(),
+  "props": zod.record(zod.string(), zod.unknown()),
+  "fields": zod.record(zod.string(), zod.object({
+  "source": zod.string().describe('Dotted provider path or normalized field prefixed with $'),
+  "owner": zod.enum(['provider', 'local'])
+})),
+  "intervalMinutes": zod.int().min(controlIntegrationSyncResponseConfigIntervalMinutesMin).max(controlIntegrationSyncResponseConfigIntervalMinutesMax),
+  "pagination": zod.object({
+  "mode": zod.enum(['single', 'page', 'offset', 'cursor']),
+  "prop": zod.string().optional(),
+  "nextPath": zod.string().optional(),
+  "pageSize": zod.int().min(1).max(controlIntegrationSyncResponseConfigPaginationPageSizeMax).optional()
+}),
+  "updatedAtPath": zod.string().optional(),
+  "updatedSinceProp": zod.string().optional().describe('Optional provider input receiving the last completed high-water timestamp as ISO 8601'),
+  "outbound": zod.object({
+  "actionKey": zod.string(),
+  "props": zod.record(zod.string(), zod.unknown()),
+  "fields": zod.record(zod.string(), zod.string())
+}).optional()
+}).optional(),
+  "previewId": zod.string().optional(),
+  "preview": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "lastSyncAt": zod.string().nullish(),
+  "nextSyncAt": zod.string().nullish(),
+  "message": zod.string().nullish(),
+  "cursor": zod.record(zod.string(), zod.unknown()).optional(),
+  "issues": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "writes": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "runs": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
