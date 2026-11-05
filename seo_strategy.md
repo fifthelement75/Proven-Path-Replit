@@ -29,5 +29,6 @@
 - (None yet)
 
 ## Notes
-- Current public site architecture is a Vite + React SPA.
-- Per-route metadata implemented in client-side hooks is treated as insufficient for non-rendering crawlers and social preview bots.
+- Current public site architecture is a Vite + React app with a custom prerender step that writes route-specific `<head>` tags into static HTML files.
+- Public route bodies are still client-rendered only; the built HTML contains route-specific metadata but not server-rendered H1/body content.
+- Current machine-readable host signals are inconsistent: prerendered canonicals default to `provenpath.app`, while `robots.txt`, `sitemap.xml`, and `llms.txt` point to `provenpath.fyi`.
