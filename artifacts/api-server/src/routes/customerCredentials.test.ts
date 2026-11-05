@@ -19,6 +19,8 @@ let fetcher: ReturnType<typeof vi.fn>;
 beforeAll(async () => {
   await ensureIntegrationSyncSchema();
   vi.stubEnv("SESSION_SECRET", "integration-test-only-session-secret-at-least-32-chars");
+  vi.stubEnv("CUSTOMER_CREDENTIAL_KEYS", JSON.stringify({ test: Buffer.alloc(32, 7).toString("base64") }));
+  vi.stubEnv("CUSTOMER_CREDENTIAL_ACTIVE_KEY_ID", "test");
   vi.stubEnv("PIPEDREAM_ENVIRONMENT", "development");
   for (let n = 0; n < 2; n++) {
     const email = `customer_adapter_${crypto.randomUUID()}@example.test`;

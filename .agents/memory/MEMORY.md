@@ -7,3 +7,4 @@
 - [Customer integrations](customer-integrations.md) — every company chooses and authorizes its own listed tools; developer connections must not become shared customer credentials.
 - [Integration data safety](integration-data-safety.md) — authorization differs from syncing; review imports, confirm writes, and retain deduplication identity across reconnects.
 - [API generation](api-generation.md) — source spec must preserve validator repairs; generation must match React Query v5 and avoid ambiguous legacy exports.
+- [Credential key lifecycle](credential-key-lifecycle.md) — capture legacy secrets before session rotation; retire keys only after full verification and account for backups.

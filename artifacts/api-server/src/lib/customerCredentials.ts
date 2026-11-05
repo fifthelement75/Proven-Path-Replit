@@ -1,8 +1,9 @@
-import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
 import { db, integrationConnectionsTable, integrationCredentialsTable } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
 import { connectEnvironment, IntegrationError } from "./pipedreamConnect";
 import type { ExchangeAction } from "./integrationActions";
+import { credentialContext as context, customerCredentialsReady, sealCredential, openCredential, type Credential } from "./customerCredentialCrypto";
+export { customerCredentialsReady, sealCredential, openCredential } from "./customerCredentialCrypto";
 
 export const CUSTOMER_PROVIDERS = {
   otter: {
@@ -15,35 +16,8 @@ export const CUSTOMER_PROVIDERS = {
   },
 } as const;
 export type CustomerProvider = keyof typeof CUSTOMER_PROVIDERS;
-type Credential = { apiKey: string } | { customerId: string; username: string; password: string };
 export function isCustomerProvider(value: unknown): value is CustomerProvider {
   return typeof value === "string" && Object.hasOwn(CUSTOMER_PROVIDERS, value);
-}
-export function customerCredentialsReady() { return (process.env.SESSION_SECRET?.length ?? 0) >= 32; }
-function context(companyId: number, provider: string, environment: string, connectionId: number) {
-  return `company:${companyId}:provider:${provider}:environment:${environment}:connection:${connectionId}`;
-}
-function key(aad: string) {
-  if (!customerCredentialsReady()) throw new IntegrationError(503, "Customer credential encryption is not configured. Contact the platform administrator.");
-  return Buffer.from(hkdfSync("sha256", process.env.SESSION_SECRET!, "provenpath.customer-credentials.v1", aad, 32));
-}
-export function sealCredential(value: Credential, aad: string) {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", key(aad), iv);
-  cipher.setAAD(Buffer.from(aad));
-  const ciphertext = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]);
-  return ["v1", iv.toString("base64url"), cipher.getAuthTag().toString("base64url"), ciphertext.toString("base64url")].join(".");
-}
-export function openCredential(envelope: string, aad: string): Credential {
-  if (!customerCredentialsReady()) throw new IntegrationError(503, "Customer credential encryption is not configured.");
-  try {
-    const [version, iv, tag, data, extra] = envelope.split(".");
-    if (version !== "v1" || extra || !iv || !tag || !data) throw new Error("Invalid envelope");
-    const decipher = createDecipheriv("aes-256-gcm", key(aad), Buffer.from(iv, "base64url"));
-    decipher.setAAD(Buffer.from(aad));
-    decipher.setAuthTag(Buffer.from(tag, "base64url"));
-    return JSON.parse(Buffer.concat([decipher.update(Buffer.from(data, "base64url")), decipher.final()]).toString());
-  } catch { throw new IntegrationError(409, "The stored credential cannot be used. Reconnect this provider with a new credential."); }
 }
 export function parseCustomerCredential(provider: CustomerProvider, input: Record<string, unknown>): Credential {
   if (provider === "otter") {

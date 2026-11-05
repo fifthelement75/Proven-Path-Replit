@@ -20,6 +20,8 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(
 
 it("upgrades the prior schema before saving direct or existing Pipedream connections", async () => {
   vi.stubEnv("SESSION_SECRET", "migration-test-only-key-with-at-least-32-characters");
+  vi.stubEnv("CUSTOMER_CREDENTIAL_KEYS", JSON.stringify({ test: Buffer.alloc(32, 7).toString("base64") }));
+  vi.stubEnv("CUSTOMER_CREDENTIAL_ACTIVE_KEY_ID", "test");
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ data: [] }))));
   const schema = `credential_upgrade_${crypto.randomBytes(8).toString("hex")}`;
   const transaction = db.transaction.bind(db);
