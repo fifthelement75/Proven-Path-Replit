@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Signup() {
@@ -40,11 +41,15 @@ export default function Signup() {
           </p>
 
           <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-            <Input 
-              type="email" 
-              placeholder="Enter your work email" 
-              className="h-12 text-base text-center"
-            />
+            <div className="space-y-2 text-left">
+              <Label htmlFor="waitlist-email">Work email</Label>
+              <Input
+                id="waitlist-email"
+                type="email"
+                placeholder="you@company.com"
+                className="h-12 text-base text-center"
+              />
+            </div>
             <Button type="submit" className="w-full h-12 text-lg">
               Join Waitlist
             </Button>
