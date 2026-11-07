@@ -6,12 +6,13 @@ import { CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { trackEvent } from "@/lib/analytics";
+import trialPolicy from "@/content/trial-policy.json";
 
 export default function Pricing() {
   useDocumentMeta({
     title: "Pricing — Proven Path | Performance Management for Growing Teams",
     description:
-       "Simple monthly pricing for professionals and teams. Choose Professional at $9.99/month or Team at $29 per user/month with a 10-seat minimum.",
+      `Start a ${trialPolicy.durationDays}-day free trial with no credit card required. Professional is $9.99/month; Team is $29/user/month with a 10-user minimum.`,
     ogImage: "opengraph.jpg",
     canonicalPath: "/pricing",
   });
@@ -23,7 +24,7 @@ export default function Pricing() {
     },
     {
       q: "Is there a free trial?",
-      a: "Yes — every new account gets a 7-day free trial of the Professional plan with no credit card required."
+      a: `Yes — every new account gets a ${trialPolicy.durationDays}-day free trial of the Professional plan with no credit card required.`
     },
     {
       q: "What payment methods do you accept?",
@@ -49,7 +50,7 @@ export default function Pricing() {
         "Career coaching insights",
         "Priority support"
       ],
-      cta: "Start 7-day Free Trial",
+      cta: `Start ${trialPolicy.durationDays}-day Free Trial`,
        link: "/app/register?plan=professional",
       external: true,
       popular: false

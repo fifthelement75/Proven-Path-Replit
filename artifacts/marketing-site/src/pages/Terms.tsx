@@ -1,3 +1,4 @@
+import trialPolicy from "@/content/trial-policy.json";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/ui/Container";
@@ -153,7 +154,7 @@ const SECTIONS: Section[] = [
           "AI-powered development plans",
           "Public profile page",
           "Priority support",
-           "7-day free trial available",
+          `${trialPolicy.durationDays}-day free trial available`,
         ],
       },
       { kind: "p", text: "Team Plan ($29/user/month, billed monthly):" },
@@ -214,7 +215,7 @@ const SECTIONS: Section[] = [
       {
         kind: "ul",
         items: [
-          "Professional Plan includes a 7-day free trial",
+          `Professional Plan includes a ${trialPolicy.durationDays}-day free trial`,
           "You will not be charged during the trial period",
           "Your subscription begins automatically after the trial unless cancelled",
           "Only one free trial per user",

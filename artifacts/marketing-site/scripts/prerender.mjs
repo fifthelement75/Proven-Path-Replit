@@ -18,6 +18,12 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const trialPolicy = JSON.parse(
+  readFileSync(join(__dirname, "../src/content/trial-policy.json"), "utf-8"),
+);
+if (!Number.isSafeInteger(trialPolicy.durationDays) || trialPolicy.durationDays < 1) {
+  throw new Error("Invalid marketing trial duration.");
+}
 const distDir = join(__dirname, "../dist/public");
 const siteUrl = (process.env.SITE_URL || "https://provenpath.app").replace(/\/$/, "");
 const ogImageAlt = "Proven Path dashboard and performance intelligence preview";
@@ -33,7 +39,7 @@ const routes = [
     path: "/pricing",
     title: "Pricing — Proven Path | Performance Management for Growing Teams",
     description:
-      "Simple, transparent pricing for HR teams of every size. Start with a 7-day free trial of Proven Path Pro at $9.99/month — no credit card required.",
+      `Start a ${trialPolicy.durationDays}-day free trial with no credit card required. Professional is $9.99/month; Team is $29/user/month with a 10-user minimum.`,
     ldJson: {
       "@context": "https://schema.org",
       "@type": "FAQPage",
@@ -51,7 +57,7 @@ const routes = [
           "name": "Is there a free trial?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes — every new account gets a 7-day free trial of the Professional plan with no credit card required."
+            "text": `Yes — every new account gets a ${trialPolicy.durationDays}-day free trial of the Professional plan with no credit card required.`
           }
         },
         {
