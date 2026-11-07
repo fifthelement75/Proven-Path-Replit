@@ -15,6 +15,7 @@ import { getToken } from "@/lib/auth";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { IntegrationExchange } from "@/components/integration-exchange";
 import { IntegrationSync, IntegrationSyncSummary } from "@/components/integration-sync";
+import { OrgChart } from "@/components/org-chart";
 import { CustomerCredentialDialog } from "@/components/customer-credential-dialog";
 import type { IntegrationConnection as Connection, IntegrationCatalog } from "@workspace/api-client-react";
 
@@ -523,6 +524,8 @@ function inviteStatusClass(status: string): string {
 
 function ReportingStructure({ members }: { members: TeamMember[] }) {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"list" | "chart">("list");
+  const panelId = useId();
 
   const byManager = members.reduce<Record<string, TeamMember[]>>((acc, m) => {
     const key = m.managerId == null ? "__none__" : String(m.managerId);
@@ -538,6 +541,9 @@ function ReportingStructure({ members }: { members: TeamMember[] }) {
     <div className="mt-3 rounded-md border">
       <button
         type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        data-testid="button-toggle-reporting-structure"
         onClick={() => setOpen(v => !v)}
         className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
       >
@@ -549,7 +555,22 @@ function ReportingStructure({ members }: { members: TeamMember[] }) {
       </button>
 
       {open && (
-        <div className="border-t px-3 py-3 space-y-3">
+        <div id={panelId} className="border-t px-3 py-3 space-y-3">
+          <div role="group" aria-label="Reporting structure view" className="inline-flex rounded-md border bg-muted p-0.5 text-xs">
+            {([["list", "List"], ["chart", "Org chart"]] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={view === value}
+                data-testid={`button-reporting-view-${value}`}
+                onClick={() => setView(value)}
+                className={`rounded px-2.5 py-1 font-medium transition-[background-color,color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {view === "chart" ? <OrgChart members={members} /> : <>
           {topLevel.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1.5">No manager assigned</p>
@@ -593,6 +614,7 @@ function ReportingStructure({ members }: { members: TeamMember[] }) {
           {topLevel.length === 0 && managersWithReports.length === 0 && (
             <p className="text-xs text-muted-foreground">No reporting relationships configured yet.</p>
           )}
+          </>}
         </div>
       )}
     </div>
@@ -860,7 +882,7 @@ function TeamCard({ onInvite }: { onInvite?: () => void }) {
               })}
             </ul>
 
-            {members.length > 1 && <ReportingStructure members={members} />}
+            {members.length > 0 && <ReportingStructure members={members} />}
             </>
           )}
         </div>

@@ -43,6 +43,7 @@ function json(data: unknown, status = 200) {
 }
 
 let savedConnections: IntegrationConnection[];
+let savedMembers: Array<{ id: number; name: string; email: string; userRole: string; managerId: number | null; managerName: string | null }>;
 let failure: { path: string; kind: Failure } | undefined;
 let clients: QueryClient[];
 const fetchMock = vi.fn<typeof fetch>();
@@ -93,6 +94,7 @@ describe("Settings meeting connections", () => {
 
   beforeEach(() => {
     savedConnections = [connection("fireflies", 11), connection("granola", 12)];
+    savedMembers = [];
     failure = undefined;
     clients = [];
     mocks.toast.mockReset();
@@ -116,6 +118,7 @@ describe("Settings meeting connections", () => {
         case "/integrations/sync-key":
           return json({ syncKey: null });
         case "/employees":
+          return json(savedMembers);
         case "/invitations":
           return json([]);
         case "/integrations/disconnect": {
@@ -161,6 +164,29 @@ describe("Settings meeting connections", () => {
     // The real request wrapper still sends the signed-in fixture token.
     const [, init] = fetchMock.mock.calls.find(([url]) => url === "/api/integrations")!;
     expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer test-session-fixture");
+  });
+
+  it("switches between the reporting list and real employee hierarchy without losing panel collapse behavior", async () => {
+    savedMembers = [
+      { id: 1, name: "Team Lead", email: "lead@example.test", userRole: "admin", managerId: null, managerName: null },
+      { id: 2, name: "Direct Report", email: "report@example.test", userRole: "employee", managerId: 1, managerName: "Team Lead" },
+    ];
+    renderSettings();
+    const teamToggle = await screen.findByRole("button", { name: /Team members/ });
+    if (teamToggle.getAttribute("aria-expanded") !== "true") fireEvent.click(teamToggle);
+    fireEvent.click(await screen.findByRole("button", { name: "Reporting structure" }));
+    expect(screen.getByRole("button", { name: "List", pressed: true })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Org chart" }));
+    expect(screen.getByRole("button", { name: "Org chart", pressed: true })).toBeTruthy();
+    const reports = screen.getByRole("list", { name: "Direct reports of Team Lead" });
+    expect(within(reports).getByText("Direct Report")).toBeTruthy();
+    expect(screen.getByTestId("badge-org-role-1").textContent).toBe("Administrator");
+    fireEvent.click(screen.getByRole("button", { name: "List" }));
+    expect(screen.queryByTestId("org-chart")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reporting structure" }));
+    expect(screen.queryByRole("button", { name: "Org chart" })).toBeNull();
+    fireEvent.click(teamToggle);
+    expect(teamToggle.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("disconnects only the selected provider, restores its option, and retains the other after reload", async () => {
