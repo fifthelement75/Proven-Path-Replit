@@ -205,6 +205,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /healthz/customer-credential-encryption:
+    get:
+      operationId: getCustomerCredentialReadiness
+      tags: [health]
+      summary: Check customer credential encryption readiness
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Redacted readiness report for the authenticated administrator's company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerCredentialReadiness"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Administrator access required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "503":
+          description: Readiness report unavailable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 
   # Auth
   /auth/register:
@@ -1179,6 +1207,72 @@ components:
           type: string
       required:
         - status
+    CustomerCredentialReadiness:
+      type: object
+      required:
+        - status
+        - environment
+        - configurationCategory
+        - configuredKeyCount
+        - legacyDecryptionConfigured
+        - blockingCategories
+        - counts
+      properties:
+        status:
+          type: string
+          enum: [ready, blocked]
+        environment:
+          type: string
+          enum: [development, production]
+        configurationCategory:
+          type: [string, "null"]
+          enum:
+            - keyring_missing
+            - keyring_invalid_json
+            - keyring_invalid_structure
+            - active_key_id_invalid
+            - key_id_invalid
+            - key_material_invalid
+            - active_key_missing
+            - null
+        configuredKeyCount:
+          type: integer
+          minimum: 0
+        legacyDecryptionConfigured:
+          type: boolean
+        blockingCategories:
+          type: array
+          items:
+            type: string
+            enum:
+              - keyring_missing
+              - keyring_invalid_json
+              - keyring_invalid_structure
+              - active_key_id_invalid
+              - key_id_invalid
+              - key_material_invalid
+              - active_key_missing
+              - historical_key_missing
+              - legacy_secret_missing
+              - unrecognized_envelope
+        counts:
+          type: object
+          required:
+            - total
+            - legacyV1
+            - version2
+            - missingHistoricalKey
+            - unverifiableVersion2
+            - legacyKeyUnavailable
+            - unrecognizedEnvelope
+          properties:
+            total: { type: integer, minimum: 0 }
+            legacyV1: { type: integer, minimum: 0 }
+            version2: { type: integer, minimum: 0 }
+            missingHistoricalKey: { type: integer, minimum: 0 }
+            unverifiableVersion2: { type: integer, minimum: 0 }
+            legacyKeyUnavailable: { type: integer, minimum: 0 }
+            unrecognizedEnvelope: { type: integer, minimum: 0 }
 
     ErrorResponse:
       type: object

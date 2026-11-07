@@ -35,6 +35,7 @@ import type {
   CreateReviewBody,
   CreateShareLinkBody,
   CustomerCredentialInput,
+  CustomerCredentialReadiness,
   DevPlan,
   DevPlanSkill,
   Employee,
@@ -1163,6 +1164,107 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCustomerCredentialReadinessUrl = () => {
+
+
+
+
+  return `/api/healthz/customer-credential-encryption`
+}
+
+/**
+ * @summary Check customer credential encryption readiness
+ */
+export const getCustomerCredentialReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<CustomerCredentialReadiness> => {
+
+  return customFetch<CustomerCredentialReadiness>(getGetCustomerCredentialReadinessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCustomerCredentialReadinessQueryKey = () => {
+    return [
+    `/api/healthz/customer-credential-encryption`
+    ] as const;
+    }
+
+
+export const getGetCustomerCredentialReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError = ErrorType<ErrorResponse>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomerCredentialReadinessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>> = ({ signal }) => getCustomerCredentialReadiness({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomerCredentialReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>>
+export type GetCustomerCredentialReadinessQueryError = ErrorType<ErrorResponse>
+
+
+export function useGetCustomerCredentialReadiness<TData = Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError = ErrorType<ErrorResponse>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerCredentialReadiness>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerCredentialReadiness>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerCredentialReadiness<TData = Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerCredentialReadiness>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerCredentialReadiness>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerCredentialReadiness<TData = Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Check customer credential encryption readiness
+ */
+
+export function useGetCustomerCredentialReadiness<TData = Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerCredentialReadiness>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomerCredentialReadinessQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -343,6 +343,83 @@ export interface HealthStatus {
   status: string;
 }
 
+export type CustomerCredentialReadinessStatus = typeof CustomerCredentialReadinessStatus[keyof typeof CustomerCredentialReadinessStatus];
+
+
+export const CustomerCredentialReadinessStatus = {
+  ready: 'ready',
+  blocked: 'blocked',
+} as const;
+
+export type CustomerCredentialReadinessEnvironment = typeof CustomerCredentialReadinessEnvironment[keyof typeof CustomerCredentialReadinessEnvironment];
+
+
+export const CustomerCredentialReadinessEnvironment = {
+  development: 'development',
+  production: 'production',
+} as const;
+
+/**
+ * @nullable
+ */
+export type CustomerCredentialReadinessConfigurationCategory = typeof CustomerCredentialReadinessConfigurationCategory[keyof typeof CustomerCredentialReadinessConfigurationCategory] | null;
+
+
+export const CustomerCredentialReadinessConfigurationCategory = {
+  keyring_missing: 'keyring_missing',
+  keyring_invalid_json: 'keyring_invalid_json',
+  keyring_invalid_structure: 'keyring_invalid_structure',
+  active_key_id_invalid: 'active_key_id_invalid',
+  key_id_invalid: 'key_id_invalid',
+  key_material_invalid: 'key_material_invalid',
+  active_key_missing: 'active_key_missing',
+} as const;
+
+export type CustomerCredentialReadinessBlockingCategoriesItem = typeof CustomerCredentialReadinessBlockingCategoriesItem[keyof typeof CustomerCredentialReadinessBlockingCategoriesItem];
+
+
+export const CustomerCredentialReadinessBlockingCategoriesItem = {
+  keyring_missing: 'keyring_missing',
+  keyring_invalid_json: 'keyring_invalid_json',
+  keyring_invalid_structure: 'keyring_invalid_structure',
+  active_key_id_invalid: 'active_key_id_invalid',
+  key_id_invalid: 'key_id_invalid',
+  key_material_invalid: 'key_material_invalid',
+  active_key_missing: 'active_key_missing',
+  historical_key_missing: 'historical_key_missing',
+  legacy_secret_missing: 'legacy_secret_missing',
+  unrecognized_envelope: 'unrecognized_envelope',
+} as const;
+
+export type CustomerCredentialReadinessCounts = {
+  /** @minimum 0 */
+  total: number;
+  /** @minimum 0 */
+  legacyV1: number;
+  /** @minimum 0 */
+  version2: number;
+  /** @minimum 0 */
+  missingHistoricalKey: number;
+  /** @minimum 0 */
+  unverifiableVersion2: number;
+  /** @minimum 0 */
+  legacyKeyUnavailable: number;
+  /** @minimum 0 */
+  unrecognizedEnvelope: number;
+};
+
+export interface CustomerCredentialReadiness {
+  status: CustomerCredentialReadinessStatus;
+  environment: CustomerCredentialReadinessEnvironment;
+  /** @nullable */
+  configurationCategory: CustomerCredentialReadinessConfigurationCategory;
+  /** @minimum 0 */
+  configuredKeyCount: number;
+  legacyDecryptionConfigured: boolean;
+  blockingCategories: CustomerCredentialReadinessBlockingCategoriesItem[];
+  counts: CustomerCredentialReadinessCounts;
+}
+
 export interface ErrorResponse {
   error: string;
 }

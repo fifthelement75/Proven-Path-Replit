@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createCipheriv, hkdfSync, randomBytes } from "node:crypto";
-import { credentialContext, customerCredentialsReady, openCredential, sealCredential } from "./customerCredentialCrypto";
+import {
+  credentialContext,
+  customerCredentialsReady,
+  inspectCustomerCredentialKeyring,
+  openCredential,
+  sealCredential,
+} from "./customerCredentialCrypto";
 
 const old = Buffer.alloc(32, 1).toString("base64"), next = Buffer.alloc(32, 2).toString("base64");
 const legacy = "test-only-legacy-session-secret-more-than-32-characters";
@@ -68,6 +74,22 @@ describe("credential key lifecycle", () => {
     vi.stubEnv("CUSTOMER_CREDENTIAL_ACTIVE_KEY_ID", active);
     expect(customerCredentialsReady()).toBe(false);
     expect(() => sealCredential(value, aad)).toThrow("Customer credential encryption keys are unavailable.");
+  });
+  it.each([
+    ["", "old", "keyring_missing"],
+    ["not-json-secret", "old", "keyring_invalid_json"],
+    ["[]", "old", "keyring_invalid_structure"],
+    ['{"old":"short-secret"}', "old", "key_material_invalid"],
+    [JSON.stringify({ old }), "missing", "active_key_missing"],
+    [JSON.stringify({ old }), "invalid.id", "active_key_id_invalid"],
+    [JSON.stringify({ "invalid.id": old }), "old", "key_id_invalid"],
+  ])("classifies blocked keyring setup as %s", (keys, active, category) => {
+    vi.stubEnv("CUSTOMER_CREDENTIAL_KEYS", keys);
+    vi.stubEnv("CUSTOMER_CREDENTIAL_ACTIVE_KEY_ID", active);
+    expect(inspectCustomerCredentialKeyring()).toMatchObject({
+      ready: false,
+      configurationCategory: category,
+    });
   });
   it.each([
     credentialContext(3, "otter", "development", 2),

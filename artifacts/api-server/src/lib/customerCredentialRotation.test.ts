@@ -4,7 +4,12 @@ import { db, companiesTable, integrationConnectionsTable, integrationCredentials
 import { eq } from "drizzle-orm";
 import { ensureCustomerCredentialSchema } from "./ensureCustomerCredentialSchema";
 import { credentialContext, openCredential, sealCredential } from "./customerCredentialCrypto";
-import { rotateCustomerCredentials } from "./customerCredentialRotation";
+import {
+  getCustomerCredentialReadiness,
+  logCustomerCredentialReadiness,
+  rotateCustomerCredentials,
+} from "./customerCredentialRotation";
+import { logger } from "./logger";
 
 const old = Buffer.alloc(32, 3).toString("base64"), next = Buffer.alloc(32, 4).toString("base64");
 const legacy = "test-legacy-original-session-secret-over-32-characters";
@@ -46,6 +51,61 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 afterAll(async () => { await db.delete(companiesTable).where(eq(companiesTable.id, companyId)); });
 const rotate = (options: Omit<Parameters<typeof rotateCustomerCredentials>[0], "companyId" | "environment"> = {}) =>
   rotateCustomerCredentials({ environment: "development", companyId, ...options });
+
+it("reports redacted aggregate readiness for missing historical and legacy keys", async () => {
+  const historical = await insert("v2");
+  await insert("v1");
+  await insert("v2", "production");
+
+  const ready = await getCustomerCredentialReadiness({ environment: "development", companyId });
+  expect(ready).toMatchObject({
+    status: "ready",
+    configurationCategory: null,
+    counts: {
+      total: 2,
+      legacyV1: 1,
+      version2: 1,
+      missingHistoricalKey: 0,
+      unverifiableVersion2: 0,
+      legacyKeyUnavailable: 0,
+      unrecognizedEnvelope: 0,
+    },
+  });
+  expect(JSON.stringify(ready)).not.toContain(historical.encryptedCredential);
+  expect(JSON.stringify(ready)).not.toContain('"old"');
+  expect(JSON.stringify(ready)).not.toContain(String(companyId));
+
+  configure("next", { next });
+  vi.stubEnv("CUSTOMER_CREDENTIAL_LEGACY_SECRET", "");
+  vi.stubEnv("SESSION_SECRET", "");
+  const missingKeys = await getCustomerCredentialReadiness({ environment: "development", companyId });
+  expect(missingKeys).toMatchObject({
+    status: "blocked",
+    blockingCategories: ["historical_key_missing", "legacy_secret_missing"],
+    counts: {
+      total: 2,
+      missingHistoricalKey: 1,
+      legacyKeyUnavailable: 1,
+    },
+  });
+  const alert = vi.spyOn(logger, "error");
+  logCustomerCredentialReadiness(missingKeys);
+  const serializedAlert = JSON.stringify(alert.mock.calls);
+  expect(serializedAlert).toContain("historical_key_missing");
+  expect(serializedAlert).not.toContain(historical.encryptedCredential);
+  expect(serializedAlert).not.toContain('"old"');
+  expect(serializedAlert).not.toContain(String(companyId));
+  alert.mockRestore();
+
+  vi.stubEnv("CUSTOMER_CREDENTIAL_KEYS", "");
+  const invalidKeyring = await getCustomerCredentialReadiness({ environment: "development", companyId });
+  expect(invalidKeyring).toMatchObject({
+    status: "blocked",
+    configurationCategory: "keyring_missing",
+    counts: { version2: 1, unverifiableVersion2: 1 },
+  });
+});
+
 describe("resumable credential re-encryption", () => {
   it("supports dry run, partial migration, interruption, mixed-version reads and safe key retirement", async () => {
     const first = await insert("v1"), second = await insert("v2"), production = await insert("v2", "production");

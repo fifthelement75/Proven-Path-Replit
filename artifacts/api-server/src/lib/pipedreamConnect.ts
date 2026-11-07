@@ -10,7 +10,7 @@ export class IntegrationError extends Error {
 export function connectEnvironment() {
   const environment = process.env.PIPEDREAM_ENVIRONMENT ??
     (process.env.NODE_ENV === "production" ? "production" : "development");
-  if (!["development", "production"].includes(environment)) {
+  if (environment !== "development" && environment !== "production") {
     throw new IntegrationError(503, "PIPEDREAM_ENVIRONMENT must be development or production.");
   }
   return environment;

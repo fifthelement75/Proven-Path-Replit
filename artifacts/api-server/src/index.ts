@@ -7,6 +7,8 @@ import { ensureBillingSchema } from "./lib/ensureBillingSchema";
 import { ensureCustomerCredentialSchema } from "./lib/ensureCustomerCredentialSchema";
 import { ensureIntegrationSyncSchema } from "./lib/ensureIntegrationSyncSchema";
 import { startIntegrationSyncScheduler } from "./lib/integrationSync";
+import { getCustomerCredentialReadiness, logCustomerCredentialReadiness } from "./lib/customerCredentialRotation";
+import { connectEnvironment } from "./lib/pipedreamConnect";
 
 const rawPort = process.env["PORT"];
 
@@ -50,6 +52,19 @@ async function initStripe(): Promise<void> {
   }
 }
 
+async function reportCustomerCredentialReadiness(): Promise<void> {
+  try {
+    const report = await getCustomerCredentialReadiness({ environment: connectEnvironment() });
+    logCustomerCredentialReadiness(report);
+  } catch {
+    // Keep startup available; report only a safe category, never exception details.
+    logger.error(
+      { category: "customer_credential_readiness_check_failed" },
+      "Customer credential encryption readiness check failed",
+    );
+  }
+}
+
 async function main(): Promise<void> {
   // Guarantee the schema exists before accepting any API traffic.
   try {
@@ -68,6 +83,7 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     logger.info({ port }, "Server listening");
+    void reportCustomerCredentialReadiness();
     initStripe().catch((e) => logger.error({ err: e }, "initStripe failed"));
     startTrialReminderScheduler();
     startPanelInviteReminderScheduler();

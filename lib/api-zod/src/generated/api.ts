@@ -271,6 +271,46 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Check customer credential encryption readiness
+ */
+export const getCustomerCredentialReadinessResponseConfiguredKeyCountMin = 0;
+
+export const getCustomerCredentialReadinessResponseCountsTotalMin = 0;
+
+export const getCustomerCredentialReadinessResponseCountsLegacyV1Min = 0;
+
+export const getCustomerCredentialReadinessResponseCountsVersion2Min = 0;
+
+export const getCustomerCredentialReadinessResponseCountsMissingHistoricalKeyMin = 0;
+
+export const getCustomerCredentialReadinessResponseCountsUnverifiableVersion2Min = 0;
+
+export const getCustomerCredentialReadinessResponseCountsLegacyKeyUnavailableMin = 0;
+
+export const getCustomerCredentialReadinessResponseCountsUnrecognizedEnvelopeMin = 0;
+
+
+
+export const GetCustomerCredentialReadinessResponse = zod.object({
+  "status": zod.enum(['ready', 'blocked']),
+  "environment": zod.enum(['development', 'production']),
+  "configurationCategory": zod.union([zod.literal('keyring_missing'),zod.literal('keyring_invalid_json'),zod.literal('keyring_invalid_structure'),zod.literal('active_key_id_invalid'),zod.literal('key_id_invalid'),zod.literal('key_material_invalid'),zod.literal('active_key_missing'),zod.literal(null)]).nullable(),
+  "configuredKeyCount": zod.int().min(getCustomerCredentialReadinessResponseConfiguredKeyCountMin),
+  "legacyDecryptionConfigured": zod.boolean(),
+  "blockingCategories": zod.array(zod.enum(['keyring_missing', 'keyring_invalid_json', 'keyring_invalid_structure', 'active_key_id_invalid', 'key_id_invalid', 'key_material_invalid', 'active_key_missing', 'historical_key_missing', 'legacy_secret_missing', 'unrecognized_envelope'])),
+  "counts": zod.object({
+  "total": zod.int().min(getCustomerCredentialReadinessResponseCountsTotalMin),
+  "legacyV1": zod.int().min(getCustomerCredentialReadinessResponseCountsLegacyV1Min),
+  "version2": zod.int().min(getCustomerCredentialReadinessResponseCountsVersion2Min),
+  "missingHistoricalKey": zod.int().min(getCustomerCredentialReadinessResponseCountsMissingHistoricalKeyMin),
+  "unverifiableVersion2": zod.int().min(getCustomerCredentialReadinessResponseCountsUnverifiableVersion2Min),
+  "legacyKeyUnavailable": zod.int().min(getCustomerCredentialReadinessResponseCountsLegacyKeyUnavailableMin),
+  "unrecognizedEnvelope": zod.int().min(getCustomerCredentialReadinessResponseCountsUnrecognizedEnvelopeMin)
+})
+})
+
+
+/**
  * @summary Register a new company
  */
 export const RegisterCompanyBody = zod.object({

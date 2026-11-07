@@ -54,6 +54,14 @@ Configure each deployment through its secure secret manager; never paste keys in
 
 No schema change is needed: version and key ID are stored inside the existing encrypted envelope, separate from public connection metadata. Missing keys produce a generic configuration error, not a vendor-revocation diagnosis; corrupted ciphertext fails authentication. No decryption attempts try arbitrary keys.
 
+### Operator readiness and alerts
+
+- After the credential schema is ensured, each API instance runs a read-only readiness check for its active `PIPEDREAM_ENVIRONMENT` and writes a structured log. A blocked check logs only the environment, a configuration category, configured-key count, legacy-secret availability, aggregate credential counts, and blocking categories. It never logs key IDs, company/connection IDs, envelopes, credentials, key material, or raw parser/crypto errors.
+- `GET /api/healthz/customer-credential-encryption` provides a no-store readiness report to an authenticated company admin. It reports counts only for that admin's company in the current development or production environment; it does not require a paid plan. The existing public `/api/healthz` remains a generic liveness response.
+- Configuration categories identify missing or malformed keyring setup, invalid active/key IDs or key material, and a missing active key. Counts separately show legacy `v1` rows without a usable legacy secret, `v2` rows missing a retained key, `v2` rows that cannot be checked because the keyring itself is invalid, and unrecognized envelope formats. `configuredKeyCount` is a count only; no key IDs are returned.
+- A customer operation that is blocked by invalid encryption configuration or a missing historical key emits a deduplicated internal error log with the category only. Customer-facing errors remain generic. These checks are read-only: they do not rotate keys, rewrite envelopes, or synchronize credentials.
+- Readiness checks validate deployment configuration and stored envelope headers/key-ID availability; they do not authenticate every ciphertext. Use the documented rotation dry-run to verify decryption and envelope integrity before a key retirement.
+
 ### Initial legacy migration
 
 1. Back up the database and securely retain the original session secret. Install the dedicated keyring and active ID and capture the legacy secret. Restart all API instances. Existing `v1` rows continue to work; new/reconnected credentials are written as `v2`.
