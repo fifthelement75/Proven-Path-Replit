@@ -15,7 +15,12 @@ async function buildAll() {
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/index.ts"), path.resolve(artifactDir, "src/rotateCustomerCredentials.ts")],
+    entryPoints: [
+      path.resolve(artifactDir, "src/index.ts"),
+      path.resolve(artifactDir, "src/rotateCustomerCredentials.ts"),
+      path.resolve(artifactDir, "src/createCustomerCredentialBackupManifest.ts"),
+      path.resolve(artifactDir, "src/checkCustomerCredentialRetirement.ts"),
+    ],
     platform: "node",
     bundle: true,
     format: "esm",

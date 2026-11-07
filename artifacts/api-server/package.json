@@ -8,6 +8,8 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "credentials:rotate": "node --enable-source-maps ./dist/rotateCustomerCredentials.mjs",
+    "credentials:backup-manifest": "node --enable-source-maps ./dist/createCustomerCredentialBackupManifest.mjs",
+    "credentials:check-retirement": "node --enable-source-maps ./dist/checkCustomerCredentialRetirement.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },

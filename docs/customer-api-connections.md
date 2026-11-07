@@ -75,6 +75,24 @@ No schema change is needed: version and key ID are stored inside the existing en
 1. Add a fresh ID/key to the keyring on **every** API instance while keeping the old active ID. Restart and verify all instances can read both IDs before any writer switches.
 2. Change the active ID on all writers and restart. Keep all older key material present. Mixed old/new rows remain readable; keyring changes do not call vendor APIs or change connection metadata, health, import identity or sync configuration.
 3. Run dry-run and apply batches as above. Updates compare company/provider/environment/connection **and the original envelope**, so rotation never overwrites concurrent customer reconnection or resurrects disconnected credentials. Concurrent runs are safe but may report conflicts.
-4. Once all old writers are stopped and a full zero-pending verification succeeds in every environment, retire old keys. Retain securely escrowed old keys for backups that still contain old envelopes; restoring an old database without its historical keys makes those credentials unreadable.
+4. Once all old writers are stopped and a full zero-pending verification succeeds in every environment, check each retained database backup before retiring any key. Restore the snapshot into an isolated database using its normal recovery process, then run the manifest command against that restored database:
+
+   `pnpm --filter @workspace/api-server run credentials:backup-manifest -- --snapshot-id backup-2026-11-07 --retention-expires-at 2026-12-07T00:00:00Z`
+
+   `--snapshot-id` must be an opaque, non-secret identifier from the backup system. `--retention-expires-at` must be that snapshot's actual retention expiry in ISO-8601 format. The command reads credential envelopes only to classify their version and key ID; it prints aggregate counts, key IDs, a legacy-v1 presence flag, and the supplied retention metadata. It never prints company or connection IDs, credentials, ciphertext, or key material. It classifies malformed or unrecognized envelopes as `unknown`, which blocks retirement until investigated. Store each output beside its backup metadata, under the backup system's normal access controls.
+
+   Build one non-secret escrow inventory file from the authoritative secure key-escrow records:
+
+   `{"keyIds":["credential-key-2026-01","credential-key-2026-04"],"legacyV1Available":true}`
+
+   The inventory contains key IDs and a boolean only, never key material or the legacy secret. Keep it in a protected operator-controlled location; do not put secrets in the manifest or inventory file.
+
+   Supply every not-yet-expired retained manifest to the retirement check (repeat `--manifest` for each file):
+
+   `pnpm --filter @workspace/api-server run credentials:check-retirement -- --key-id credential-key-2026-01 --manifest /secure/backups/backup-2026-11-07.credentials.json --escrow-inventory /secure/escrow/customer-credential-inventory.json`
+
+   A nonzero exit blocks retirement. The report identifies retained snapshots that still use the target key, any other required IDs missing from escrow, legacy-v1 dependencies without confirmed legacy-secret escrow, and unknown envelopes. A target key still required by any unexpired snapshot cannot be retired. Expired manifests also block by default because the check cannot verify that a backup was actually deleted or made non-restorable. After confirming that condition in the backup system, either omit that manifest from the check or pass `--confirm-expired-snapshots-deleted`. The command is read-only: it does not alter keys, secrets, backups, or the active keyring.
+
+   This tooling does not connect to a cloud backup catalog or secret manager. Operators must enumerate all retained snapshots and build the escrow inventory from the deployment's authoritative systems; an omitted snapshot or inaccurate inventory cannot be detected by the command.
 
 Rollback means restoring the previous active ID **while retaining all keys already used**. Do not deploy a v1-only binary after any v2 writes. Retain the new key even when rolling the active ID back; interrupted batches can contain both versions/IDs. If a required key has been lost permanently, only affected customers need to reconnect. Do not print envelopes or raw exceptions while investigating.
