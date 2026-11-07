@@ -6,9 +6,11 @@ import { getTrustedSubscriptionSelection } from "../routes/stripeHelpers";
 
 export async function processStripeWebhook(rawBody: Buffer, signature: string): Promise<void> {
   const stripeSync = await getStripeSync();
-  const event = await stripeSync.processWebhook(rawBody, signature);
-
-  if (!event) return;
+  // StripeSync verifies the raw payload and syncs its own Stripe tables, but
+  // processWebhook returns void. Parse the event only after verification so
+  // application billing entitlements can consume the same verified payload.
+  await stripeSync.processWebhook(rawBody, signature);
+  const event = JSON.parse(rawBody.toString("utf8"));
 
   try {
     if (
@@ -27,6 +29,7 @@ export async function processStripeWebhook(rawBody: Buffer, signature: string): 
     }
   } catch (err) {
     logger.error({ err, eventType: event.type }, "Failed to handle stripe webhook event");
+    throw err;
   }
 }
 

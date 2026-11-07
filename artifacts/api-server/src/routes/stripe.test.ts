@@ -129,8 +129,10 @@ beforeEach(async () => {
   mocks.retrieveCustomer.mockResolvedValue({ metadata: { companyId: String(ids[0]) } });
   mocks.retrieveSubscription.mockResolvedValue(subscription());
   // Mock the sync service boundary, not the webhook orchestrator or entitlement helpers.
-  mocks.processWebhook.mockImplementation((body: Buffer, signature: string) =>
-    stripe.webhooks.constructEvent(body, signature, signingSecret));
+  mocks.processWebhook.mockImplementation((body: Buffer, signature: string) => {
+    // Match stripe-replit-sync: it verifies/handles the event and returns void.
+    stripe.webhooks.constructEvent(body, signature, signingSecret);
+  });
   await db.update(companiesTable).set({
     stripeCustomerId: "cus_billing_fixture", stripeSubscriptionId: "sub_previous",
     subscriptionStatus: "active", plan: "team", stripeSeatQuantity: 25,
@@ -228,6 +230,27 @@ describe("POST /api/stripe/webhook signed orchestration", () => {
     await expectEntitlement("free", null);
   });
 
+  it("does not acknowledge a verified event when company billing sync fails", async () => {
+    mocks.retrieveSubscription.mockRejectedValue(new Error("temporary Stripe read failure"));
+    const payload = JSON.stringify({
+      id: "evt_retry_fixture",
+      object: "event",
+      type: "checkout.session.completed",
+      data: { object: {
+        customer: "cus_billing_fixture",
+        subscription: "sub_billing_fixture",
+        metadata: { companyId: String(ids[0]) },
+      } },
+    });
+    const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: signingSecret });
+    const response = await request(app).post("/api/stripe/webhook")
+      .set("Content-Type", "application/json").set("Stripe-Signature", signature).send(payload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("temporary Stripe read failure");
+    expect(await company()).toMatchObject({ plan: "team", stripeSeatQuantity: 25, subscriptionStatus: "active" });
+  });
+
   it.each([0, 1, 9])("removes paid access for Team quantity %i below the minimum", async quantity => {
     await webhook("customer.subscription.updated", subscription("team", quantity));
     await expectEntitlement("free", null);
@@ -247,6 +270,23 @@ describe("POST /api/stripe/webhook signed orchestration", () => {
   it.each(["canceled", "unpaid", "incomplete_expired"])("clears the paid plan and seats when %s", async status => {
     await webhook("customer.subscription.deleted", subscription("team", 25, status));
     await expectEntitlement("free", null, status);
+  });
+
+  it("revokes active access after an invoice payment fails", async () => {
+    await webhook("invoice.payment_failed", {
+      id: "in_failed_fixture", customer: "cus_billing_fixture", subscription: "sub_billing_fixture",
+    });
+
+    expect(await company()).toMatchObject({
+      plan: "team", stripeSeatQuantity: 25, subscriptionStatus: "past_due",
+    });
+    const response = await request(app).get("/api/stripe/subscription")
+      .auth(adminToken, { type: "bearer" });
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      plan: "team", seatQuantity: 25,
+      hasActiveAccess: false, subscriptionActive: false, teamAccess: false,
+    });
   });
 
   it.each([["professional", 1], ["team", 10], ["team", 21]] as const)(
