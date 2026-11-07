@@ -50,6 +50,16 @@ test("every public route contains its own visible heading, main copy, and crawla
   assert.ok(readBuilt("terms/index.html").includes("Professional Plan includes a 7-day free trial"));
 });
 
+test("the waitlist email has a visible associated label in generated markup", () => {
+  const html = readBuilt("signup/index.html");
+  assert.match(html, /<label\b[^>]*\bfor="waitlist-email"[^>]*>Work email<\/label>/);
+  const emailInput = html.match(/<input\b[^>]*\btype="email"[^>]*>/)?.[0];
+  assert.ok(emailInput, "the waitlist email input is rendered");
+  assert.match(emailInput, /\bid="waitlist-email"/);
+  assert.match(emailInput, /\bplaceholder="you@company.com"/);
+  assert.equal((html.match(/\bid="waitlist-email"/g) ?? []).length, 1);
+});
+
 test("crawler discovery files use the same origin and reference generated pages", () => {
   for (const file of ["robots.txt", "sitemap.xml", "llms.txt"]) {
     const content = readBuilt(file);
