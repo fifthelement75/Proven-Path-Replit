@@ -1,0 +1,4 @@
+{
+  "origin": "https://provenpath.app",
+  "publicPaths": ["/", "/pricing", "/contact", "/signup", "/blog", "/privacy", "/terms", "/security"]
+}

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import siteConfig from "@/content/site-config.json";
 
 interface DocumentMeta {
   title: string;
@@ -6,6 +7,7 @@ interface DocumentMeta {
   ogImage?: string;
   ogImageAlt?: string;
   canonicalPath?: string;
+  noindex?: boolean;
 }
 
 function setMetaTag(
@@ -41,6 +43,7 @@ export function useDocumentMeta({
   ogImage,
   ogImageAlt = DEFAULT_IMAGE_ALT,
   canonicalPath,
+  noindex = false,
 }: DocumentMeta): void {
   useEffect(() => {
     document.title = title;
@@ -85,7 +88,7 @@ export function useDocumentMeta({
       const base = import.meta.env.BASE_URL;
       const fullImage = ogImage.startsWith("http")
         ? ogImage
-        : `${window.location.origin}${base}${ogImage.replace(/^\//, "")}`;
+        : `${siteConfig.origin}${base}${ogImage.replace(/^\//, "")}`;
       setMetaTag(
         'meta[property="og:image"]',
         "property",
@@ -112,19 +115,21 @@ export function useDocumentMeta({
       );
     }
 
+    if (noindex) {
+      setMetaTag('meta[name="robots"]', "name", "robots", "noindex, follow");
+      document.head.querySelector('link[rel="canonical"]')?.remove();
+      document.head.querySelector('meta[property="og:url"]')?.remove();
+      return;
+    }
+    document.head.querySelector('meta[name="robots"]')?.remove();
     if (canonicalPath) {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       const path = canonicalPath.startsWith("/")
         ? canonicalPath
         : `/${canonicalPath}`;
-      setLinkTag("canonical", `${window.location.origin}${base}${path}`);
+      const canonicalUrl = `${siteConfig.origin}${base}${path}`;
+      setLinkTag("canonical", canonicalUrl);
+      setMetaTag('meta[property="og:url"]', "property", "og:url", canonicalUrl);
     }
-
-    setMetaTag(
-      'meta[property="og:url"]',
-      "property",
-      "og:url",
-      window.location.href,
-    );
-  }, [title, description, ogImage, ogImageAlt, canonicalPath]);
+  }, [title, description, ogImage, ogImageAlt, canonicalPath, noindex]);
 }

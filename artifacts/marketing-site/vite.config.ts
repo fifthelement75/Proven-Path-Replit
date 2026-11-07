@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { readFileSync } from "node:fs";
+import { expandSiteOrigin, navigationMiddleware } from "./scripts/site-config.mjs";
 
 const rawPort = process.env.PORT;
 
@@ -28,7 +30,31 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  appType: "mpa",
   plugins: [
+    {
+      name: "marketing-canonical-and-not-found",
+      transformIndexHtml: expandSiteOrigin,
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+          const types = { "/robots.txt": "text/plain", "/sitemap.xml": "application/xml", "/llms.txt": "text/plain" };
+          if (!(pathname in types)) return next();
+          res.setHeader("Content-Type", `${types[pathname as keyof typeof types]}; charset=utf-8`);
+          res.end(expandSiteOrigin(readFileSync(path.resolve(import.meta.dirname, `public${pathname}`), "utf8")));
+        });
+        server.middlewares.use(navigationMiddleware(
+          readFileSync(path.resolve(import.meta.dirname, "public/404.html"), "utf8"), true,
+          path.resolve(import.meta.dirname, "public"),
+        ));
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use(navigationMiddleware(
+          readFileSync(path.resolve(import.meta.dirname, "dist/public/404.html"), "utf8"),
+          false, path.resolve(import.meta.dirname, "dist/public"),
+        ));
+      },
+    },
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

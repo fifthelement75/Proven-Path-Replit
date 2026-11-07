@@ -22,10 +22,6 @@ build = [ "pnpm", "--filter", "@workspace/marketing-site", "run", "build" ]
 publicDir = "artifacts/marketing-site/dist/public"
 serve = "static"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
-
 [services.env]
 PORT = "21209"
 BASE_PATH = "/"

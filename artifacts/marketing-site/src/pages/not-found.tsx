@@ -7,6 +7,7 @@ export default function NotFound() {
     title: "Page Not Found — Proven Path",
     description: "The page you're looking for doesn't exist. Return to Proven Path to explore performance intelligence for HR teams.",
     ogImage: "opengraph.jpg",
+    noindex: true,
   });
 
   return (
@@ -19,8 +20,11 @@ export default function NotFound() {
           </div>
 
           <p className="mt-4 text-sm text-gray-600">
-            Did you forget to add the page to the router?
+            The page you’re looking for does not exist or has moved.
           </p>
+          <a href={import.meta.env.BASE_URL} className="mt-6 inline-block font-semibold text-blue-600">
+            Return to Proven Path
+          </a>
         </CardContent>
       </Card>
     </div>

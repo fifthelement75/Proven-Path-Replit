@@ -4,12 +4,12 @@ ProvenPath is a performance intelligence platform for modern HR teams. It turns 
 
 ## Canonical homepage
 
-https://provenpath.fyi/
+__SITE_ORIGIN__/
 
 ## Priority pages
 
-- https://provenpath.fyi/ — Product overview and key features
-- https://provenpath.fyi/pricing — Pricing plans and tiers
-- https://provenpath.fyi/contact — Contact and sales inquiries
-- https://provenpath.fyi/privacy — Privacy policy
-- https://provenpath.fyi/terms — Terms of service
+- __SITE_ORIGIN__/ — Product overview and key features
+- __SITE_ORIGIN__/pricing — Pricing plans and tiers
+- __SITE_ORIGIN__/contact — Contact and sales inquiries
+- __SITE_ORIGIN__/privacy — Privacy policy
+- __SITE_ORIGIN__/terms — Terms of service

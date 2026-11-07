@@ -9,13 +9,13 @@
  * Usage (runs automatically via `pnpm build`):
  *   node scripts/prerender.mjs
  *
- * Environment variables:
- *   SITE_URL  — canonical origin (default: https://provenpath.app)
+ * Canonical origin: src/content/site-config.json (shared with Vite and the client).
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { siteOrigin, publicPaths, expandSiteOrigin } from "./site-config.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const trialPolicy = JSON.parse(
@@ -25,7 +25,7 @@ if (!Number.isSafeInteger(trialPolicy.durationDays) || trialPolicy.durationDays 
   throw new Error("Invalid marketing trial duration.");
 }
 const distDir = join(__dirname, "../dist/public");
-const siteUrl = (process.env.SITE_URL || "https://provenpath.app").replace(/\/$/, "");
+const siteUrl = siteOrigin;
 const ogImageAlt = "Proven Path dashboard and performance intelligence preview";
 
 const routes = [
@@ -177,7 +177,15 @@ function patchHtml(html, { title, description, canonicalUrl, pageUrl, ldJson }) 
   return html;
 }
 
-const templateHtml = readFileSync(join(distDir, "index.html"), "utf-8");
+if (JSON.stringify(routes.map(route => route.path).sort()) !== JSON.stringify([...publicPaths].sort())) {
+  throw new Error("Public marketing routes and prerender routes must match.");
+}
+const templateHtml = expandSiteOrigin(readFileSync(join(distDir, "index.html"), "utf-8"));
+
+for (const file of ["robots.txt", "sitemap.xml", "llms.txt"]) {
+  const template = readFileSync(join(__dirname, "../public", file), "utf-8");
+  writeFileSync(join(distDir, file), expandSiteOrigin(template), "utf-8");
+}
 
 for (const route of routes) {
   const canonicalUrl = `${siteUrl}${route.path === "/" ? "/" : route.path}`;
