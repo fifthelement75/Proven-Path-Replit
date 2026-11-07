@@ -7,6 +7,8 @@ import { logger } from "./lib/logger";
 import { processStripeWebhook } from "./lib/stripeWebhook";
 
 const app: Express = express();
+// Public requests arrive through one trusted Replit ingress proxy.
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({

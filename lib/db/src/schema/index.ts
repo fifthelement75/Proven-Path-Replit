@@ -18,3 +18,4 @@ export * from "./promoCodes";
 export * from "./integrations";
 export * from "./syncKeys";
 export * from "./invitations";
+export * from "./contactRateLimits";

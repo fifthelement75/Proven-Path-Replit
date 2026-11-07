@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { sendContactDemoEmail } from "../lib/email";
 import { logger } from "../lib/logger";
+import { checkContactRequestQuota } from "../lib/contactRateLimit";
 
 const router: IRouter = Router();
 
@@ -30,6 +31,21 @@ router.post("/contact", async (req, res): Promise<void> => {
   }
   if (firstName.length > 80 || lastName.length > 80 || email.length > 200 || company.length > 200 || teamSize.length > 80 || message.length > 4000) {
     res.status(400).json({ error: "One of the fields is too long." });
+    return;
+  }
+
+  let quota: { allowed: boolean; retryAfterSeconds: number };
+  try {
+    quota = await checkContactRequestQuota(req.ip || req.socket.remoteAddress || "unknown");
+  } catch {
+    // Fail closed so a store outage cannot silently remove the outbound-email cap.
+    logger.error("Contact request rate limit unavailable");
+    res.status(503).json({ error: "Contact requests are temporarily unavailable. Please try again later." });
+    return;
+  }
+  if (!quota.allowed) {
+    res.setHeader("Retry-After", String(quota.retryAfterSeconds));
+    res.status(429).json({ error: "Please wait before submitting another request." });
     return;
   }
 
