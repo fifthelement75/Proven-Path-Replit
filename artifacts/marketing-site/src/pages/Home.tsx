@@ -133,7 +133,7 @@ function FeatureCarousel({ slides, className, imageClass, imageHeight = "h-[320p
         <span className="w-3 h-3 rounded-full bg-yellow-400" />
         <span className="w-3 h-3 rounded-full bg-green-400" />
         <div className="ml-3 flex-1 max-w-xs">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={slide.url}
               initial={{ opacity: 0 }}
@@ -149,7 +149,7 @@ function FeatureCarousel({ slides, className, imageClass, imageHeight = "h-[320p
       </div>
 
       <div className={`relative ${imageHeight} bg-white overflow-hidden`}>
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.img
             key={slide.src}
             src={`${base}${slide.src}`}
@@ -164,7 +164,7 @@ function FeatureCarousel({ slides, className, imageClass, imageHeight = "h-[320p
       </div>
 
       <div className="flex flex-col items-center gap-2 py-3 bg-white border-t border-gray-100">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.p
             key={slide.caption}
             initial={{ opacity: 0 }}
@@ -458,7 +458,7 @@ export default function Home() {
           <Container>
             <div className="grid lg:grid-cols-[2fr_3fr] gap-12 lg:gap-8 items-center">
               <motion.div
-                initial="hidden"
+                initial={false}
                 animate="visible"
                 variants={staggerContainer}
                 style={{ y: heroContentY, x: heroContentX }}
@@ -509,7 +509,7 @@ export default function Home() {
               </motion.div>
               
               <motion.div 
-                initial={{ opacity: 0, x: 20 }}
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="relative hidden lg:block"

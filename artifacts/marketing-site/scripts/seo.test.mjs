@@ -18,8 +18,36 @@ test("all built marketing routes use the configured canonical origin", () => {
     assert.ok(html.includes(`"${siteOrigin}/#website"`), path);
     assert.ok(html.includes(`${siteOrigin}/opengraph.jpg`), path);
     assert.ok(!html.includes("__SITE_ORIGIN__"), path);
-    assert.ok(!html.includes("provenpath.fyi"), path);
+    assert.ok(!html.split("</head>")[0].includes("provenpath.fyi"), path);
   }
+});
+
+test("every public route contains its own visible heading, main copy, and crawlable links without JavaScript", () => {
+  const expectedCopy = {
+    "/": "Performance Intelligence That Powers",
+    "/pricing": "Pricing Built for Modern HR Teams",
+    "/contact": "Book a Demo",
+    "/signup": "Coming Soon",
+    "/privacy": "Privacy Policy",
+    "/terms": "Terms of Service",
+    "/blog": "Blog",
+    "/security": "Security",
+  };
+  for (const path of publicPaths) {
+    const html = readBuilt(path === "/" ? "index.html" : `${path.slice(1)}/index.html`);
+    assert.equal((html.match(/<h1\b/g) ?? []).length, 1, path);
+    assert.equal((html.match(/<main\b/g) ?? []).length, 1, path);
+    assert.match(html, /<div id="root"><.+/);
+    assert.ok(html.includes(expectedCopy[path]), path);
+    assert.match(html, /<a\b[^>]*href="\//, path);
+    assert.ok(!/style="[^"]*(?:opacity:0(?:[;"]|$)|visibility:hidden|display:none)/.test(html), path);
+  }
+  const home = readBuilt("index.html");
+  assert.ok(home.includes("every hiring and promotion decision is backed by verified data"));
+  const pricing = readBuilt("pricing/index.html");
+  assert.ok(pricing.includes("$9.99") && pricing.includes("$29") && pricing.includes("7-day free trial"));
+  assert.ok(readBuilt("contact/index.html").includes('id="firstName"'));
+  assert.ok(readBuilt("terms/index.html").includes("Professional Plan includes a 7-day free trial"));
 });
 
 test("crawler discovery files use the same origin and reference generated pages", () => {

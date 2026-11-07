@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,8 +11,6 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "@/pages/not-found";
-
-const queryClient = new QueryClient();
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -40,11 +38,12 @@ function Router() {
   );
 }
 
-function App() {
+function App({ ssrPath }: { ssrPath?: string }) {
+  const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")} ssrPath={ssrPath}>
           <ScrollToTop />
           <Router />
         </WouterRouter>

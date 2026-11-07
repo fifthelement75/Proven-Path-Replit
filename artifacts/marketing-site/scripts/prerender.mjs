@@ -1,10 +1,10 @@
 /**
- * Prerender script — generates per-route HTML files from the Vite build output.
+ * Prerender script — renders real page components into per-route static HTML.
  *
  * Each public marketing route gets its own dist/public/{route}/index.html with
  * route-specific <title>, <meta name="description">, <link rel="canonical">,
- * og:*, and twitter:* tags baked in, so social bots and non-JS crawlers see
- * the correct metadata without needing to execute JavaScript.
+ * og:*, and twitter:* tags plus the full React-rendered body, so non-JS crawlers
+ * receive the same main content, headings, and links as interactive visitors.
  *
  * Usage (runs automatically via `pnpm build`):
  *   node scripts/prerender.mjs
@@ -16,6 +16,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { siteOrigin, publicPaths, expandSiteOrigin } from "./site-config.mjs";
+import { render } from "../dist/server/entry-server.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const trialPolicy = JSON.parse(
@@ -191,13 +192,24 @@ for (const route of routes) {
   const canonicalUrl = `${siteUrl}${route.path === "/" ? "/" : route.path}`;
   const pageUrl = canonicalUrl;
 
-  const patched = patchHtml(templateHtml, {
+  const metadataHtml = patchHtml(templateHtml, {
     title: route.title,
     description: route.description,
     canonicalUrl,
     pageUrl,
     ldJson: route.ldJson,
   });
+  if (!metadataHtml.includes('<div id="root"></div>')) {
+    throw new Error("The marketing HTML template must contain an empty root before prerendering.");
+  }
+  const bodyHtml = render(route.path);
+  if (!bodyHtml.includes("<h1") || !bodyHtml.includes("<main")) {
+    throw new Error(`Prerendering did not produce main page content for ${route.path}.`);
+  }
+  const patched = metadataHtml.replace(
+    '<div id="root"></div>',
+    () => `<div id="root">${bodyHtml}</div>`,
+  );
 
   if (route.path === "/") {
     writeFileSync(join(distDir, "index.html"), patched, "utf-8");
