@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { CreateFeedbackBody, ListFeedbackParams, CreateFeedbackParams, RespondToFeedbackParams, RespondToFeedbackBody } from "@workspace/api-zod";
 import { requireTeamPlan } from "../middlewares/requireActivePlan";
+import { canAccessEmployee, managerCanAccessEmployee } from "../lib/access";
 
 const router = Router();
 
@@ -37,6 +38,10 @@ router.get("/employees/:employeeId/feedback", requireAuth, requireTeamPlan, asyn
     res.status(404).json({ error: "Employee not found" });
     return;
   }
+  if (!(await canAccessEmployee(req.auth!, params.data.employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee's feedback" });
+    return;
+  }
   const entries = await db.select().from(feedbackTable).where(eq(feedbackTable.employeeId, params.data.employeeId));
 
   const managerIds = entries.filter(e => e.managerId != null).map(e => e.managerId!);
@@ -65,6 +70,10 @@ router.post("/employees/:employeeId/feedback", requireAuth, requireTeamPlan, asy
     .where(and(eq(employeesTable.id, params.data.employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (empCheck.length === 0) {
     res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+  if (!(await managerCanAccessEmployee(req.auth!, params.data.employeeId))) {
+    res.status(403).json({ error: "Only admins and authorized managers can create employee feedback" });
     return;
   }
   const [entry] = await db.insert(feedbackTable).values({
@@ -96,6 +105,10 @@ router.post("/employees/:employeeId/feedback/:feedbackId/respond", requireAuth, 
     .where(and(eq(employeesTable.id, params.data.employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (empCheck.length === 0) {
     res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+  if (req.auth!.employeeId !== params.data.employeeId) {
+    res.status(403).json({ error: "Only the employee can respond to their feedback" });
     return;
   }
   const [entry] = await db.select().from(feedbackTable)

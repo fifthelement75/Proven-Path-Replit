@@ -17,7 +17,7 @@ router.get("/companies/me", requireAuth, async (req, res): Promise<void> => {
   res.json({ id: company.id, name: company.name, email: company.email, createdAt: company.createdAt.toISOString(), employeeCount: Number(cnt) });
 });
 
-router.get("/companies/me/health", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
+router.get("/companies/me/health", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
 
   const employees = await db.select({ id: employeesTable.id }).from(employeesTable).where(eq(employeesTable.companyId, companyId));
@@ -102,7 +102,7 @@ router.get("/companies/me/health", requireAuth, requireTeamPlan, async (req, res
   });
 });
 
-router.get("/companies/me/activity", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
+router.get("/companies/me/activity", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
 
   const employees = await db.select({ id: employeesTable.id }).from(employeesTable).where(eq(employeesTable.companyId, companyId));
@@ -179,7 +179,7 @@ router.get("/companies/me/activity", requireAuth, requireTeamPlan, async (req, r
   res.json(activities);
 });
 
-router.get("/companies/me/employee-summaries", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
+router.get("/companies/me/employee-summaries", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   const { companyId } = req.auth!;
 
   const employees = await db.select({

@@ -3,6 +3,7 @@ import { db, devPlansTable, devPlanSkillsTable, employeesTable, reviewsTable, fe
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { requireActivePlan } from "../middlewares/requireActivePlan";
+import { canAccessEmployee } from "../lib/access";
 import { GetDevPlanParams, GenerateDevPlanParams, MarkSkillCompleteParams, MarkSkillCompleteBody } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { logger } from "../lib/logger";
@@ -46,6 +47,10 @@ router.get("/employees/:employeeId/dev-plan", requireAuth, async (req, res): Pro
     res.status(404).json({ error: "Employee not found" });
     return;
   }
+  if (!(await canAccessEmployee(req.auth!, params.data.employeeId))) {
+    res.status(403).json({ error: "You do not have access to this employee's development plan" });
+    return;
+  }
   const [plan] = await db.select().from(devPlansTable).where(eq(devPlansTable.employeeId, params.data.employeeId)).limit(1);
   if (!plan) {
     res.status(404).json({ error: "No development plan found" });
@@ -68,6 +73,10 @@ router.post("/employees/:employeeId/dev-plan/generate", requireAuth, requireActi
     .where(and(eq(employeesTable.id, employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (!emp) {
     res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+  if (!(await canAccessEmployee(req.auth!, employeeId))) {
+    res.status(403).json({ error: "You do not have access to generate this employee's development plan" });
     return;
   }
 
@@ -201,6 +210,10 @@ router.patch("/employees/:employeeId/dev-plan/skills/:skillId/complete", require
     .where(and(eq(employeesTable.id, params.data.employeeId), eq(employeesTable.companyId, companyId))).limit(1);
   if (empCheck.length === 0) {
     res.status(404).json({ error: "Employee not found" });
+    return;
+  }
+  if (!(await canAccessEmployee(req.auth!, params.data.employeeId))) {
+    res.status(403).json({ error: "You do not have access to update this employee's development plan" });
     return;
   }
   // Verify the skill belongs to a dev plan that belongs to this employee (prevents IDOR)

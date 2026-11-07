@@ -1532,7 +1532,7 @@ function DevPlanTab({ employeeId }: { employeeId: number }) {
   );
 }
 
-function FeedbackCard({ entry, employeeId, onResponded }: { entry: FeedbackEntry; employeeId: number; onResponded: () => void }) {
+function FeedbackCard({ entry, employeeId, canRespond, onResponded }: { entry: FeedbackEntry; employeeId: number; canRespond: boolean; onResponded: () => void }) {
   const [responding, setResponding] = useState(false);
   const [responseText, setResponseText] = useState(entry.employeeResponse || "");
   const [error, setError] = useState("");
@@ -1566,15 +1566,15 @@ function FeedbackCard({ entry, employeeId, onResponded }: { entry: FeedbackEntry
           <div className="mt-3 pt-3 border-t">
             <p className="text-xs font-medium text-muted-foreground mb-1">Employee response</p>
             <p className="text-sm text-muted-foreground">{entry.employeeResponse}</p>
-            <Button variant="ghost" size="sm" className="mt-1 h-7 px-2 text-xs" onClick={() => { setResponseText(entry.employeeResponse || ""); setResponding(true); }}>Edit response</Button>
+            {canRespond && <Button variant="ghost" size="sm" className="mt-1 h-7 px-2 text-xs" onClick={() => { setResponseText(entry.employeeResponse || ""); setResponding(true); }}>Edit response</Button>}
           </div>
         )}
-        {!entry.employeeResponse && !responding && (
+        {canRespond && !entry.employeeResponse && !responding && (
           <div className="mt-3 pt-3 border-t">
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setResponding(true)}>Add employee response</Button>
           </div>
         )}
-        {responding && (
+        {canRespond && responding && (
           <div className="mt-3 pt-3 border-t space-y-2">
             <Label className="text-xs font-medium">Employee response</Label>
             {error && <p className="text-xs text-destructive">{error}</p>}
@@ -2102,6 +2102,7 @@ export default function EmployeeDetailPage() {
                 key={entry.id}
                 entry={entry}
                 employeeId={employeeId}
+                canRespond={user?.employeeId === employeeId}
                 onResponded={() => queryClient.invalidateQueries({ queryKey: ["feedback", employeeId] })}
               />
             ))}

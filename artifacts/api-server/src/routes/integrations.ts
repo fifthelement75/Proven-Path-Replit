@@ -2,7 +2,7 @@ import { Router } from "express";
 import crypto from "crypto";
 import { db, integrationConnectionsTable, integrationSyncTable, syncKeysTable, employeesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAdmin, requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
 import { assertEmployeeSeat, requireTeamEntitlement } from "../lib/entitlements";
 import { requireTeamPlan } from "../middlewares/requireActivePlan";
@@ -41,7 +41,7 @@ function isCategory(value: unknown): value is Category {
   return typeof value === "string" && (CATEGORIES as readonly string[]).includes(value);
 }
 
-router.get("/integrations", requireAuth, requireTeamPlan, async (req, res): Promise<void> => {
+router.get("/integrations", requireAdmin, requireTeamPlan, async (req, res): Promise<void> => {
   try {
     const connections = await db
       .select()
